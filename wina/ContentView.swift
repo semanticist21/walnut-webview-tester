@@ -148,9 +148,15 @@ struct ContentView: View {
             .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25)
             }
 
-            // Settings button
-            GlassIconButton(icon: "gearshape") {
-                showSettings = true
+            // Top right buttons
+            HStack(spacing: 12) {
+                GlassIconButton(icon: "checkmark.shield") {
+                    // TODO: 호환성 확인 기능 구현
+                }
+
+                GlassIconButton(icon: "gearshape") {
+                    showSettings = true
+                }
             }
             .padding(.top, 8)
             .padding(.trailing, 16)
