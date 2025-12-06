@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/
+
+# Serena MCP
+.serena/
+
+# Build
+build/
+DerivedData/
