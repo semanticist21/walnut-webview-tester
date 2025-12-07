@@ -88,3 +88,15 @@ wina/
 ### 작업 규칙
 - 끝나면 항상 문법검사 수행
 - 빌드 검증은 통합적인 작업 이후에만 확인 (시간 소요)
+
+## Image Conversion
+
+SVG → PNG 변환 시 `rsvg-convert` 사용 (ImageMagick은 색상이 어둡게 변환됨)
+
+```bash
+# 올바른 방법
+rsvg-convert -w 1024 -h 1024 input.svg -o output.png
+
+# 사용하지 말 것 (색상 왜곡)
+magick input.svg output.png
+```
