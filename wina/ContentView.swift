@@ -38,14 +38,14 @@ struct ContentView: View {
             GeometryReader { geometry in
                 VStack(spacing: 16) {
                     // URL parts chips - FlowLayout으로 줄바꿈
-                    FlowLayout(spacing: 8) {
-                    ForEach(urlParts, id: \.self) { part in
-                        ChipButton(label: part) {
-                            urlText += part
+                    FlowLayout(spacing: 8, alignment: .center) {
+                        ForEach(urlParts, id: \.self) { part in
+                            ChipButton(label: part) {
+                                urlText += part
+                            }
                         }
                     }
-                }
-                .frame(width: inputWidth)
+                    .frame(width: inputWidth)
 
                 // URL Input
                 HStack(spacing: 12) {
