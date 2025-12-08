@@ -166,7 +166,7 @@ struct ContentView: View {
                     Spacer()
 
                     HStack(spacing: 12) {
-                        CompatibilityCheckButton()
+                        InfoButton()
                         SettingsButton(showSettings: $showSettings)
                     }
                 }

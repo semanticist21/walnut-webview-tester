@@ -1,5 +1,5 @@
 //
-//  CompatibilityView.swift
+//  InfoView.swift
 //  wina
 //
 
@@ -7,7 +7,7 @@ import Metal
 import SwiftUI
 import WebKit
 
-struct CompatibilityView: View {
+struct InfoView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -17,19 +17,23 @@ struct CompatibilityView: View {
                     NavigationLink {
                         DeviceInfoView()
                     } label: {
-                        Label("Device Information", systemImage: "iphone")
+                        Label("Device", systemImage: "iphone")
                     }
 
                     NavigationLink {
-                        WebViewInfoView()
+                        BrowserInfoView()
                     } label: {
-                        Label("WebView Information", systemImage: "safari")
+                        Label("Browser", systemImage: "safari")
                     }
-                } header: {
-                    Text("Compatibility Check")
+
+                    NavigationLink {
+                        APICapabilitiesView()
+                    } label: {
+                        Label("API Capabilities", systemImage: "checklist")
+                    }
                 }
             }
-            .navigationTitle("Compatibility")
+            .navigationTitle("Info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -100,9 +104,9 @@ struct DeviceInfoView: View {
     }
 }
 
-// MARK: - WebView Information
+// MARK: - Browser Information
 
-struct WebViewInfoView: View {
+struct BrowserInfoView: View {
     @State private var webViewInfo: WebViewInfo?
     @State private var loadingStatus = "Launching WebView process..."
 
@@ -136,6 +140,40 @@ struct WebViewInfoView: View {
                     InfoRow(label: "Version", value: info.webGLVersion)
                 }
 
+                Section("Input") {
+                    InfoRow(label: "Max Touch Points", value: info.maxTouchPoints)
+                }
+            }
+        }
+        .overlay {
+            if webViewInfo == nil {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text(loadingStatus)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle("Browser")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            webViewInfo = await WebViewInfo.load { status in
+                loadingStatus = status
+            }
+        }
+    }
+}
+
+// MARK: - API Capabilities
+
+struct APICapabilitiesView: View {
+    @State private var webViewInfo: WebViewInfo?
+    @State private var loadingStatus = "Launching WebView process..."
+
+    var body: some View {
+        List {
+            if let info = webViewInfo {
                 Section("Core APIs") {
                     CapabilityRow(label: "JavaScript", supported: true)
                     CapabilityRow(label: "WebAssembly", supported: info.supportsWebAssembly)
@@ -205,10 +243,6 @@ struct WebViewInfoView: View {
                     CapabilityRow(label: "Credentials", supported: info.supportsCredentials)
                     CapabilityRow(label: "Payment Request", supported: info.supportsPaymentRequest)
                 }
-
-                Section("Input") {
-                    InfoRow(label: "Max Touch Points", value: info.maxTouchPoints)
-                }
             }
         }
         .overlay {
@@ -221,7 +255,7 @@ struct WebViewInfoView: View {
                 }
             }
         }
-        .navigationTitle("WebView Information")
+        .navigationTitle("API Capabilities")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             webViewInfo = await WebViewInfo.load { status in
@@ -715,5 +749,5 @@ extension WKWebView {
 }
 
 #Preview {
-    CompatibilityView()
+    InfoView()
 }
