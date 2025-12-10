@@ -2367,7 +2367,7 @@ struct ActiveSettingsView: View {
             .listSectionSpacing(0)
 
             Section("Core") {
-                ActiveSettingRow(label: "JavaScript", enabled: enableJavaScript, info: "Master switch for JavaScript.\nOff = No scripts run at all.\nMost websites won't work.")
+                ActiveSettingRow(label: "JavaScript", enabled: enableJavaScript, info: "Enable/disable all JavaScript.\nOff = No scripts run at all.\nMost websites won't work.")
                 ActiveSettingRow(label: "Content JavaScript", enabled: allowsContentJavaScript, info: "Scripts from web pages.\nOff = Block page scripts only.\nApp features still work.")
                 ActiveSettingRow(label: "Ignore Viewport Scale Limits", enabled: allowZoom, info: "Force pinch-to-zoom.\nOverrides pages that disable zoom.\nBetter accessibility.")
                 InfoRow(label: "Minimum Font Size", value: minimumFontSize == 0 ? "Default" : "\(Int(minimumFontSize)) pt", info: "Minimum text size.\nMakes small text readable.\n0 = Use page's font sizes.")
