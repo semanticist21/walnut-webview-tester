@@ -11,11 +11,17 @@ struct ContentView: View {
     @State private var urlText: String = ""
     @State private var isFocused: Bool = false
     @State private var showSettings: Bool = false
+    @State private var showBookmarks: Bool = false
     @FocusState private var textFieldFocused: Bool
     @AppStorage("recentURLs") private var recentURLsData: Data = Data()
+    @AppStorage("bookmarkedURLs") private var bookmarkedURLsData: Data = Data()
 
     private var recentURLs: [String] {
         (try? JSONDecoder().decode([String].self, from: recentURLsData)) ?? []
+    }
+
+    private var bookmarkedURLs: [String] {
+        (try? JSONDecoder().decode([String].self, from: bookmarkedURLsData)) ?? []
     }
 
     private var filteredURLs: [String] {
@@ -166,6 +172,7 @@ struct ContentView: View {
                     Spacer()
 
                     HStack(spacing: 12) {
+                        BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarkedURLs.isEmpty)
                         InfoButton()
                         SettingsButton(showSettings: $showSettings)
                     }
@@ -178,6 +185,22 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showBookmarks) {
+            BookmarksSheet(
+                bookmarkedURLs: bookmarkedURLs,
+                onSelect: { url in
+                    urlText = url
+                    submitURL()
+                },
+                onDelete: { url in
+                    removeBookmark(url)
+                },
+                onAddCurrent: !urlText.isEmpty ? {
+                    addBookmark(urlText)
+                } : nil,
+                currentURL: urlText
+            )
         }
     }
 
@@ -204,6 +227,101 @@ struct ContentView: View {
 
         if let data = try? JSONEncoder().encode(urls) {
             recentURLsData = data
+        }
+    }
+
+    private func addBookmark(_ url: String) {
+        var bookmarks = bookmarkedURLs
+        if !bookmarks.contains(url) {
+            bookmarks.insert(url, at: 0)
+            if let data = try? JSONEncoder().encode(bookmarks) {
+                bookmarkedURLsData = data
+            }
+        }
+    }
+
+    private func removeBookmark(_ url: String) {
+        var bookmarks = bookmarkedURLs
+        bookmarks.removeAll { $0 == url }
+        if let data = try? JSONEncoder().encode(bookmarks) {
+            bookmarkedURLsData = data
+        }
+    }
+}
+
+// MARK: - Bookmarks Sheet
+
+private struct BookmarksSheet: View {
+    let bookmarkedURLs: [String]
+    let onSelect: (String) -> Void
+    let onDelete: (String) -> Void
+    let onAddCurrent: (() -> Void)?
+    let currentURL: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let onAddCurrent, !currentURL.isEmpty, !bookmarkedURLs.contains(currentURL) {
+                    Section {
+                        Button {
+                            onAddCurrent()
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                Text("현재 URL 북마크 추가")
+                                Spacer()
+                                Text(currentURL)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                }
+
+                if bookmarkedURLs.isEmpty {
+                    Section {
+                        Text("저장된 북마크가 없습니다")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section("북마크") {
+                        ForEach(bookmarkedURLs, id: \.self) { url in
+                            Button {
+                                onSelect(url)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "bookmark.fill")
+                                        .foregroundStyle(.orange)
+                                    Text(url)
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    onDelete(url)
+                                } label: {
+                                    Label("삭제", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("북마크")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("완료") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }
