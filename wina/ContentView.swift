@@ -11,18 +11,11 @@ struct ContentView: View {
     @State private var urlText: String = ""
     @State private var isFocused: Bool = false
     @State private var showSettings: Bool = false
-    @State private var showBookmarks: Bool = false
-    @State private var showQRScanner: Bool = false
     @FocusState private var textFieldFocused: Bool
     @AppStorage("recentURLs") private var recentURLsData: Data = Data()
-    @AppStorage("bookmarkedURLs") private var bookmarkedURLsData: Data = Data()
 
     private var recentURLs: [String] {
         (try? JSONDecoder().decode([String].self, from: recentURLsData)) ?? []
-    }
-
-    private var bookmarkedURLs: [String] {
-        (try? JSONDecoder().decode([String].self, from: bookmarkedURLsData)) ?? []
     }
 
     private var filteredURLs: [String] {
@@ -38,15 +31,6 @@ struct ContentView: View {
         ".com",
         "192.168.", ":8080", ":3000"
     ]
-
-    // Quick test URL presets
-    private let testURLs: [(name: String, url: String)] = [
-        ("httpbin", "https://httpbin.org"),
-        ("example", "https://example.com"),
-        ("WebRTC", "https://test.webrtc.org"),
-        ("MDN", "https://developer.mozilla.org")
-    ]
-
     private let inputWidth: CGFloat = 340
 
     var body: some View {
@@ -73,147 +57,105 @@ struct ContentView: View {
                     }
                     .frame(width: inputWidth)
 
-                    // URL Input with action buttons
-                    HStack(spacing: 8) {
-                        // Paste from clipboard button
+                // URL Input
+                HStack(spacing: 12) {
+                    Image(systemName: "globe")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 16))
+
+                    TextField("URL 입력", text: $urlText)
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .submitLabel(.go)
+                        .font(.system(size: 16))
+                        .focused($textFieldFocused)
+                        .onSubmit {
+                            isFocused = false
+                            textFieldFocused = false
+                            submitURL()
+                        }
+
+                    if !urlText.isEmpty {
                         Button {
-                            pasteFromClipboard()
+                            urlText = ""
                         } label: {
-                            Image(systemName: "doc.on.clipboard")
-                                .font(.system(size: 16))
-                                .frame(width: 44, height: 44)
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .glassEffect(in: .circle)
-
-                        // Main URL input field
-                        HStack(spacing: 12) {
-                            Image(systemName: "globe")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 16))
-
-                            TextField("URL 입력", text: $urlText)
-                                .textFieldStyle(.plain)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .keyboardType(.URL)
-                                .submitLabel(.go)
-                                .font(.system(size: 16))
-                                .focused($textFieldFocused)
-                                .onSubmit {
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .frame(width: inputWidth)
+                .glassEffect(in: .capsule)
+                .overlay(alignment: .top) {
+                    // 자동완성 드롭다운 (오버레이)
+                    if isFocused && !filteredURLs.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(filteredURLs.prefix(4), id: \.self) { url in
+                                Button {
+                                    urlText = url
                                     isFocused = false
                                     textFieldFocused = false
                                     submitURL()
-                                }
-
-                            if !urlText.isEmpty {
-                                Button {
-                                    urlText = ""
                                 } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
+                                    HStack {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(size: 14))
+                                        Text(url)
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 18)
+                                    .padding(.vertical, 10)
                                 }
                                 .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 14)
-                        .frame(width: inputWidth - 116) // Adjusted for side buttons
-                        .glassEffect(in: .capsule)
-                        .overlay(alignment: .top) {
-                            // 자동완성 드롭다운 (오버레이)
-                            if isFocused && !filteredURLs.isEmpty {
-                                VStack(spacing: 0) {
-                                    ForEach(filteredURLs.prefix(4), id: \.self) { url in
-                                        Button {
-                                            urlText = url
-                                            isFocused = false
-                                            textFieldFocused = false
-                                            submitURL()
-                                        } label: {
-                                            HStack {
-                                                Image(systemName: "clock.arrow.circlepath")
-                                                    .foregroundStyle(.secondary)
-                                                    .font(.system(size: 14))
-                                                Text(url)
-                                                    .font(.system(size: 14))
-                                                    .foregroundStyle(.primary)
-                                                    .lineLimit(1)
-                                                Spacer()
-                                            }
-                                            .padding(.horizontal, 18)
-                                            .padding(.vertical, 10)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .overlay(alignment: .trailing) {
-                                            Button {
-                                                removeURL(url)
-                                            } label: {
-                                                Image(systemName: "xmark")
-                                                    .foregroundStyle(.tertiary)
-                                                    .font(.system(size: 12))
-                                            }
-                                            .buttonStyle(.plain)
-                                            .padding(.trailing, 18)
-                                        }
-
-                                        if url != filteredURLs.prefix(4).last {
-                                            Divider()
-                                                .padding(.horizontal, 16)
-                                        }
+                                .overlay(alignment: .trailing) {
+                                    Button {
+                                        removeURL(url)
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .foregroundStyle(.tertiary)
+                                            .font(.system(size: 12))
                                     }
+                                    .buttonStyle(.plain)
+                                    .padding(.trailing, 18)
                                 }
-                                .frame(width: inputWidth - 116)
-                                .glassEffect(in: .rect(cornerRadius: 16))
-                                .offset(y: 56)
-                            }
-                        }
 
-                        // QR Scanner button
-                        Button {
-                            showQRScanner = true
-                        } label: {
-                            Image(systemName: "qrcode.viewfinder")
-                                .font(.system(size: 16))
-                                .frame(width: 44, height: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .glassEffect(in: .circle)
-                    }
-                    .onChange(of: textFieldFocused) { _, newValue in
-                        if newValue {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isFocused = true
+                                if url != filteredURLs.prefix(4).last {
+                                    Divider()
+                                        .padding(.horizontal, 16)
+                                }
                             }
-                        } else {
-                            isFocused = false
                         }
-                    }
-
-                    // Quick test URL presets
-                    HStack(spacing: 8) {
-                        ForEach(testURLs, id: \.url) { preset in
-                            Button {
-                                urlText = preset.url
-                                submitURL()
-                            } label: {
-                                Text(preset.name)
-                                    .font(.system(size: 12))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                            }
-                            .buttonStyle(.plain)
-                            .glassEffect(in: .capsule)
-                        }
+                        .frame(width: inputWidth)
+                        .glassEffect(in: .rect(cornerRadius: 16))
+                        .offset(y: 56)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isFocused = false
-                    textFieldFocused = false
+                .onChange(of: textFieldFocused) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isFocused = true
+                        }
+                    } else {
+                        isFocused = false  // 애니메이션 없이 즉시 사라짐
+                    }
                 }
-                .position(x: geometry.size.width / 2, y: geometry.size.height * 0.35)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isFocused = false
+                textFieldFocused = false
+            }
+            .position(x: geometry.size.width / 2, y: geometry.size.height * 0.32)
             }
 
             // Top bar
@@ -224,17 +166,6 @@ struct ContentView: View {
                     Spacer()
 
                     HStack(spacing: 12) {
-                        // Bookmarks button
-                        Button {
-                            showBookmarks = true
-                        } label: {
-                            Image(systemName: bookmarkedURLs.isEmpty ? "bookmark" : "bookmark.fill")
-                                .font(.system(size: 16))
-                                .frame(width: 44, height: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .glassEffect(in: .circle)
-
                         InfoButton()
                         SettingsButton(showSettings: $showSettings)
                     }
@@ -247,37 +178,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
-        }
-        .sheet(isPresented: $showBookmarks) {
-            BookmarksSheet(
-                bookmarkedURLs: bookmarkedURLs,
-                onSelect: { url in
-                    urlText = url
-                    submitURL()
-                },
-                onDelete: { url in
-                    removeBookmark(url)
-                },
-                onAddCurrent: !urlText.isEmpty ? {
-                    addBookmark(urlText)
-                } : nil,
-                currentURL: urlText
-            )
-        }
-        .sheet(isPresented: $showQRScanner) {
-            QRScannerSheet { scannedCode in
-                // Check if it's a valid URL
-                if scannedCode.hasPrefix("http://") || scannedCode.hasPrefix("https://") {
-                    urlText = scannedCode
-                    submitURL()
-                } else if scannedCode.contains(".") {
-                    // Likely a domain, add https://
-                    urlText = "https://\(scannedCode)"
-                    submitURL()
-                } else {
-                    urlText = scannedCode
-                }
-            }
         }
     }
 
@@ -304,107 +204,6 @@ struct ContentView: View {
 
         if let data = try? JSONEncoder().encode(urls) {
             recentURLsData = data
-        }
-    }
-
-    private func pasteFromClipboard() {
-        if let clipboardString = UIPasteboard.general.string {
-            urlText = clipboardString
-        }
-    }
-
-    private func addBookmark(_ url: String) {
-        var bookmarks = bookmarkedURLs
-        if !bookmarks.contains(url) {
-            bookmarks.insert(url, at: 0)
-            if let data = try? JSONEncoder().encode(bookmarks) {
-                bookmarkedURLsData = data
-            }
-        }
-    }
-
-    private func removeBookmark(_ url: String) {
-        var bookmarks = bookmarkedURLs
-        bookmarks.removeAll { $0 == url }
-        if let data = try? JSONEncoder().encode(bookmarks) {
-            bookmarkedURLsData = data
-        }
-    }
-}
-
-// MARK: - Bookmarks Sheet
-
-private struct BookmarksSheet: View {
-    let bookmarkedURLs: [String]
-    let onSelect: (String) -> Void
-    let onDelete: (String) -> Void
-    let onAddCurrent: (() -> Void)?
-    let currentURL: String
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if let onAddCurrent, !currentURL.isEmpty, !bookmarkedURLs.contains(currentURL) {
-                    Section {
-                        Button {
-                            onAddCurrent()
-                        } label: {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                    .foregroundStyle(.blue)
-                                Text("현재 URL 북마크 추가")
-                                Spacer()
-                                Text(currentURL)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                }
-
-                if bookmarkedURLs.isEmpty {
-                    Section {
-                        Text("저장된 북마크가 없습니다")
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Section("북마크") {
-                        ForEach(bookmarkedURLs, id: \.self) { url in
-                            Button {
-                                onSelect(url)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "bookmark.fill")
-                                        .foregroundStyle(.orange)
-                                    Text(url)
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(1)
-                                    Spacer()
-                                }
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    onDelete(url)
-                                } label: {
-                                    Label("삭제", systemImage: "trash")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("북마크")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("완료") {
-                        dismiss()
-                    }
-                }
-            }
         }
     }
 }
