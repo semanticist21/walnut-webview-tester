@@ -90,9 +90,9 @@ struct ContentView: View {
 
                 // WebView Type Toggle
                 Picker("WebView Type", selection: $useSafariWebView) {
-                    Label("WKWebView", systemImage: "square.stack.3d.up")
+                    Text("WKWebView")
                         .tag(false)
-                    Label("Safari", systemImage: "safari")
+                    Text("Safari")
                         .tag(true)
                 }
                 .pickerStyle(.segmented)
