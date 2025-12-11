@@ -16,7 +16,6 @@ struct WebViewContainer: View {
 
     // Loading State
     @State private var isLoading: Bool = true
-    @State private var loadingProgress: Double = 0.0
 
     // Core Settings
     @AppStorage("enableJavaScript") private var enableJavaScript: Bool = true
@@ -92,8 +91,7 @@ struct WebViewContainer: View {
                     WKWebViewRepresentable(
                         urlString: normalizedURL,
                         configuration: webViewConfiguration,
-                        isLoading: $isLoading,
-                        loadingProgress: $loadingProgress
+                        isLoading: $isLoading
                     )
                     .id(webViewID)
                     .frame(width: webViewWidth, height: webViewHeight)
@@ -104,17 +102,12 @@ struct WebViewContainer: View {
                         if isLoading {
                             ZStack {
                                 Color(uiColor: .systemBackground)
-                                    .opacity(0.9)
 
-                                VStack(spacing: 16) {
+                                VStack(spacing: 12) {
                                     ProgressView()
-                                        .scaleEffect(1.5)
-
-                                    if loadingProgress > 0 {
-                                        ProgressView(value: loadingProgress)
-                                            .frame(width: 120)
-                                            .tint(.accentColor)
-                                    }
+                                    Text("Loading WebView...")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                             .clipShape(RoundedRectangle(cornerRadius: isFullSize ? 0 : 12))
@@ -198,7 +191,6 @@ struct WKWebViewRepresentable: UIViewRepresentable {
     let urlString: String
     let configuration: WKWebViewConfiguration
     @Binding var isLoading: Bool
-    @Binding var loadingProgress: Double
 
     // Navigation & Gestures
     @AppStorage("allowsBackForwardGestures") private var allowsBackForwardGestures: Bool = true
@@ -217,7 +209,7 @@ struct WKWebViewRepresentable: UIViewRepresentable {
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(isLoading: $isLoading, loadingProgress: $loadingProgress)
+        Coordinator(isLoading: $isLoading)
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -288,23 +280,14 @@ struct WKWebViewRepresentable: UIViewRepresentable {
 
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         @Binding var isLoading: Bool
-        @Binding var loadingProgress: Double
 
-        private var progressObservation: NSKeyValueObservation?
         private var loadingObservation: NSKeyValueObservation?
 
-        init(isLoading: Binding<Bool>, loadingProgress: Binding<Double>) {
+        init(isLoading: Binding<Bool>) {
             _isLoading = isLoading
-            _loadingProgress = loadingProgress
         }
 
         func observeWebView(_ webView: WKWebView) {
-            progressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] webView, _ in
-                DispatchQueue.main.async {
-                    self?.loadingProgress = webView.estimatedProgress
-                }
-            }
-
             loadingObservation = webView.observe(\.isLoading, options: .new) { [weak self] webView, _ in
                 DispatchQueue.main.async {
                     self?.isLoading = webView.isLoading
@@ -367,7 +350,6 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         }
 
         deinit {
-            progressObservation?.invalidate()
             loadingObservation?.invalidate()
         }
     }
