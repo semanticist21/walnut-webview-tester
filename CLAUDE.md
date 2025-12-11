@@ -42,7 +42,8 @@ SwiftUI 기반 단일 타겟 iOS 앱. 최소 지원 버전: iOS 26.1 (Tahoe)
 wina/
 ├── winaApp.swift              # App entry point (@main), 다크모드 상태 관리
 ├── ContentView.swift          # Root view, URL 입력 + 유효성 검사 + 북마크 + 최근 URL 기록
-├── SettingsView.swift         # WebView 설정 (20개 항목) + 권한 관리 (Camera, Mic, Location)
+├── SettingsView.swift         # WKWebView 설정 (20개 항목) + 권한 관리
+├── SafariVCSettingsView.swift # SafariVC 전용 설정 (5개 항목)
 ├── Features/
 │   ├── AppBar/                # 상단 바 버튼들
 │   │   ├── ThemeToggleButton.swift
@@ -179,22 +180,61 @@ Safari에서만 지원되거나 WebKit에서 구현하지 않은 API:
 
 ## Settings 구조
 
-SettingsView에서 관리하는 모든 WKWebView 설정 (20개):
+WebView 타입에 따라 다른 Settings 화면이 표시됨:
 
-| 섹션 | 설정 |
-|------|------|
-| Core | JavaScript, Content JavaScript, Ignore Viewport Scale Limits, Minimum Font Size |
-| Media | Auto-play Media, Inline Playback, AirPlay, Picture in Picture |
-| Navigation | Back/Forward Gestures, Link Preview |
-| Content Mode | Recommended / Mobile / Desktop |
-| Behavior | JS Can Open Windows, Fraudulent Website Warning, Text Interaction, Element Fullscreen API, Suppress Incremental Rendering |
-| Data Detectors | Phone Numbers, Links, Addresses, Calendar Events |
+### WKWebView Settings (SettingsView.swift)
+
+3개 섹션으로 구분:
+
+**Static Settings (WebView 재로드 필요)**
+| 카테고리 | 설정 |
+|----------|------|
+| Configuration | JavaScript, Content JavaScript, Minimum Font Size, Auto-play Media, Inline Playback, AirPlay, PiP, Content Mode, JS Can Open Windows, Fraudulent Website Warning, Element Fullscreen API, Suppress Incremental Rendering, Data Detectors (Phone, Links, Address, Calendar) |
 | Privacy & Security | Private Browsing, Upgrade to HTTPS |
-| User-Agent | Custom User-Agent string |
-| WebView Size | Width/Height ratio sliders (25%~100%), presets (100%, 75%, 50%) |
-| Permissions | Camera, Microphone, Location |
+
+**Live Settings (즉시 적용)**
+| 카테고리 | 설정 |
+|----------|------|
+| Navigation & Interaction | Back/Forward Gestures, Link Preview, Ignore Viewport Scale Limits, Text Interaction, Find Interaction |
+| Display & Appearance | Page Zoom (50%~300%), Under Page Background Color, Custom User-Agent |
+| WebView Size | Width/Height ratio sliders (25%~100%), presets (100%, App, 75%) |
+
+**System**
+| 카테고리 | 설정 |
+|----------|------|
+| Permissions | Camera, Microphone, Location (WebRTC, Geolocation용) |
+
+### SafariVC Settings (SafariVCSettingsView.swift)
+
+SFSafariViewController는 설정 가능 항목이 제한적:
+
+| 카테고리 | 설정 |
+|----------|------|
+| Behavior | Reader Mode (자동 진입), Bar Collapsing (스크롤 시 축소) |
+| UI Style | Dismiss Button Style (Done/Close/Cancel) |
+| Colors | Control Tint, Bar Tint |
+
+> **WKWebView vs SafariVC 차이점**: SafariVC는 JavaScript 비활성화, Custom User-Agent, Content Mode, Data Detectors 등 대부분의 커스터마이징이 불가능. Safari의 쿠키/비밀번호를 공유하는 대신 앱에서 제어할 수 없음.
+
+### Settings 표시 로직 (ContentView.swift)
+```swift
+if useSafariWebView {
+    SafariVCSettingsView()      // SafariVC 선택 시
+} else if showWebView {
+    DynamicSettingsView(...)    // WKWebView 로드 후 (Live Settings)
+} else {
+    SettingsView()              // WKWebView 로드 전 (Static + Live + System)
+}
+```
 
 모든 설정은 `@AppStorage`로 UserDefaults에 영속화됨.
+
+### UI 컴포넌트
+- `SettingsCategoryRow`: 아이콘, 제목, 부가설명이 포함된 NavigationLink 스타일
+- `SettingToggleRow`: info 버튼이 포함된 Toggle 스타일
+- `InfoCategoryRow`: Info 뷰에서 사용하는 동일 스타일의 카테고리 row
+- `SafariSettingToggleRow`: SafariVC용 Toggle 스타일
+- `SafariColorPickerRow`: SafariVC용 색상 선택 row
 
 ## Info 버튼 컴포넌트
 

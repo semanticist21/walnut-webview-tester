@@ -81,7 +81,9 @@ struct ContentView: View {
             topBar
         }
         .sheet(isPresented: $showSettings) {
-            if showWebView {
+            if useSafariWebView {
+                SafariVCSettingsView()
+            } else if showWebView {
                 DynamicSettingsView(webViewID: $webViewID)
             } else {
                 SettingsView()
