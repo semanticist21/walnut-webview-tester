@@ -258,7 +258,7 @@ struct InfoView: View {
             ])
         }
 
-        // Performance (항목만 노출, 값은 벤치마크 실행 필요)
+        // Performance (items only, values require benchmark execution)
         let perfPlaceholder = "Run benchmark"
         items.append(contentsOf: [
             InfoSearchItem(category: "Performance", label: "Math", value: perfPlaceholder, linkToPerformance: true),
@@ -768,7 +768,7 @@ private struct UserAgentText: View {
 
     private var formattedUserAgent: AttributedString {
 
-        // 패턴: key/value 또는 괄호 내용
+        // Pattern: key/value or parenthesized content
         let patterns: [(pattern: String, color: Color)] = [
             ("Mozilla/[\\d.]+", .blue),
             ("AppleWebKit/[\\d.]+", .orange),
@@ -780,7 +780,7 @@ private struct UserAgentText: View {
 
         var text = userAgent
 
-        // 주요 구분자에서 줄바꿈 추가
+        // Add line breaks at major separators
         text = text.replacingOccurrences(of: ") ", with: ")\n")
 
         var attributed = AttributedString(text)

@@ -14,6 +14,9 @@ struct ContentView: View {
     @State private var showBookmarks: Bool = false
     @State private var urlValidationState: URLValidationState = .empty
     @State private var useSafariWebView: Bool = false
+    @State private var showWebView: Bool = false
+    @State private var loadedURL: String = ""
+    @State private var webViewID: UUID = UUID()
     @FocusState private var textFieldFocused: Bool
     @AppStorage("recentURLs") private var recentURLsData: Data = Data()
     @AppStorage("bookmarkedURLs") private var bookmarkedURLsData: Data = Data()
@@ -65,9 +68,47 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            GeometryReader { geometry in
-                VStack(spacing: 16) {
-                    // Walnut logo
+            if showWebView {
+                // WebView screen
+                WebViewContainer(urlString: loadedURL, useSafari: useSafariWebView, webViewID: $webViewID)
+                    .ignoresSafeArea(edges: .bottom)
+            } else {
+                // URL input screen
+                urlInputView
+            }
+
+            // Top bar (always visible)
+            topBar
+        }
+        .sheet(isPresented: $showSettings) {
+            if showWebView {
+                DynamicSettingsView(webViewID: $webViewID)
+            } else {
+                SettingsView()
+            }
+        }
+        .sheet(isPresented: $showBookmarks) {
+            BookmarksSheet(
+                bookmarkedURLs: bookmarkedURLs,
+                onSelect: { url in
+                    urlText = url
+                    submitURL()
+                },
+                onDelete: { url in
+                    removeBookmark(url)
+                },
+                onAddCurrent: !urlText.isEmpty ? {
+                    addBookmark(urlText)
+                } : nil,
+                currentURL: urlText
+            )
+        }
+    }
+
+    private var urlInputView: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 16) {
+                // Walnut logo
                     if let walnutURL = Bundle.main.url(forResource: "walnut", withExtension: "avif"),
                        let imageData = try? Data(contentsOf: walnutURL),
                        let uiImage = UIImage(data: imageData) {
@@ -78,7 +119,7 @@ struct ContentView: View {
                             .padding(.bottom, -12)
                     }
 
-                    // URL parts chips - FlowLayout으로 줄바꿈
+                    // URL parts chips - FlowLayout for wrapping
                     FlowLayout(spacing: 8, alignment: .center) {
                         ForEach(urlParts, id: \.self) { part in
                             ChipButton(label: part) {
@@ -106,7 +147,7 @@ struct ContentView: View {
                             .font(.system(size: 16))
                             .contentTransition(.symbolEffect(.replace))
 
-                        TextField("URL 입력", text: $urlText)
+                        TextField("Enter URL", text: $urlText)
                             .textFieldStyle(.plain)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -158,7 +199,7 @@ struct ContentView: View {
                 }
                 .animation(.easeOut(duration: 0.25), value: urlValidationState)
                 .overlay(alignment: .top) {
-                    // 자동완성 드롭다운 (오버레이)
+                    // Autocomplete dropdown (overlay)
                     if isFocused && !filteredURLs.isEmpty {
                         VStack(spacing: 0) {
                             ForEach(filteredURLs.prefix(4), id: \.self) { url in
@@ -222,47 +263,38 @@ struct ContentView: View {
                 textFieldFocused = false
             }
             .position(x: geometry.size.width / 2, y: geometry.size.height * 0.32)
-            }
+        }
+    }
 
-            // Top bar
-            VStack {
-                HStack {
-                    HStack(spacing: 12) {
+    private var topBar: some View {
+        VStack {
+            HStack {
+                HStack(spacing: 12) {
+                    if showWebView {
+                        BackButton {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showWebView = false
+                            }
+                        }
+                    } else {
                         ThemeToggleButton()
                         BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarkedURLs.isEmpty)
                     }
-
-                    Spacer()
-
-                    HStack(spacing: 12) {
-                        InfoButton()
-                        SettingsButton(showSettings: $showSettings)
-                    }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
 
                 Spacer()
+
+                HStack(spacing: 12) {
+                    if !showWebView {
+                        InfoButton()
+                    }
+                    SettingsButton(showSettings: $showSettings)
+                }
             }
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-        }
-        .sheet(isPresented: $showBookmarks) {
-            BookmarksSheet(
-                bookmarkedURLs: bookmarkedURLs,
-                onSelect: { url in
-                    urlText = url
-                    submitURL()
-                },
-                onDelete: { url in
-                    removeBookmark(url)
-                },
-                onAddCurrent: !urlText.isEmpty ? {
-                    addBookmark(urlText)
-                } : nil,
-                currentURL: urlText
-            )
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
+            Spacer()
         }
     }
 
@@ -280,7 +312,10 @@ struct ContentView: View {
             recentURLsData = data
         }
 
-        // TODO: WebView 로딩 구현
+        loadedURL = urlText
+        withAnimation(.easeOut(duration: 0.2)) {
+            showWebView = true
+        }
     }
 
     private func removeURL(_ url: String) {
@@ -319,53 +354,46 @@ struct ContentView: View {
     }
 
     private func isValidURL(_ string: String) -> Bool {
-        // http/https 스킴이 없으면 https:// 붙여서 검증
-        var urlString = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        // Add https:// if no scheme present
+        var urlString = trimmed
         if !urlString.lowercased().hasPrefix("http://") && !urlString.lowercased().hasPrefix("https://") {
             urlString = "https://" + urlString
         }
 
-        guard let url = URL(string: urlString),
-              let host = url.host,
-              !host.isEmpty else {
+        // Special handling for localhost
+        if let url = URL(string: urlString), url.host == "localhost" {
+            return true
+        }
+
+        // Special handling for IP addresses
+        if let url = URL(string: urlString), let host = url.host, isValidIPAddress(host) {
+            return true
+        }
+
+        // URL validation using NSDataDetector (Apple's link detection engine)
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
             return false
         }
 
-        // localhost 허용
-        if host == "localhost" {
-            return true
+        let range = NSRange(urlString.startIndex..., in: urlString)
+        let matches = detector.matches(in: urlString, options: [], range: range)
+
+        // Exactly one match must cover the entire string
+        guard matches.count == 1,
+              let match = matches.first,
+              match.range.location == 0,
+              match.range.length == urlString.utf16.count else {
+            return false
         }
-
-        // IP 주소 검증
-        if isValidIPAddress(host) {
-            return true
-        }
-
-        // 도메인 검증: . 으로 분리된 부분이 각각 유효해야 함
-        let parts = host.split(separator: ".", omittingEmptySubsequences: false)
-
-        // 최소 2개 파트 필요 (예: example.com)
-        guard parts.count >= 2 else { return false }
-
-        // 각 파트가 비어있지 않고, 유효한 문자만 포함해야 함
-        for part in parts {
-            // 빈 파트 불허 (.com, example. 등)
-            guard !part.isEmpty else { return false }
-            // 알파벳, 숫자, 하이픈만 허용
-            let allowedChars = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
-            guard part.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) else { return false }
-            // 하이픈으로 시작/끝나면 안됨
-            guard !part.hasPrefix("-") && !part.hasSuffix("-") else { return false }
-        }
-
-        // TLD가 최소 2글자 이상
-        guard let tld = parts.last, tld.count >= 2 else { return false }
 
         return true
     }
 
     private func isValidIPAddress(_ string: String) -> Bool {
-        // IPv4 검증
+        // IPv4 validation
         let ipv4Parts = string.split(separator: ".")
         if ipv4Parts.count == 4 {
             return ipv4Parts.allSatisfy { part in
@@ -398,7 +426,7 @@ private struct BookmarksSheet: View {
                             HStack {
                                 Image(systemName: "plus.circle.fill")
                                     .foregroundStyle(.blue)
-                                Text("현재 URL 북마크 추가")
+                                Text("Add Current URL to Bookmarks")
                                 Spacer()
                                 Text(currentURL)
                                     .font(.caption)
@@ -411,11 +439,11 @@ private struct BookmarksSheet: View {
 
                 if bookmarkedURLs.isEmpty {
                     Section {
-                        Text("저장된 북마크가 없습니다")
+                        Text("No saved bookmarks")
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Section("북마크") {
+                    Section("Bookmarks") {
                         ForEach(bookmarkedURLs, id: \.self) { url in
                             Button {
                                 onSelect(url)
@@ -434,18 +462,18 @@ private struct BookmarksSheet: View {
                                 Button(role: .destructive) {
                                     onDelete(url)
                                 } label: {
-                                    Label("삭제", systemImage: "trash")
+                                    Label("Delete", systemImage: "trash")
                                 }
                             }
                         }
                     }
                 }
             }
-            .navigationTitle("북마크")
+            .navigationTitle("Bookmarks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("완료") {
+                    Button("Done") {
                         dismiss()
                     }
                 }
