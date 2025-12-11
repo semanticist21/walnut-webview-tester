@@ -92,7 +92,7 @@ struct ContentView: View {
                 Picker("WebView Type", selection: $useSafariWebView) {
                     Text("WKWebView")
                         .tag(false)
-                    Text("Safari")
+                    Text("SafariVC")
                         .tag(true)
                 }
                 .pickerStyle(.segmented)
