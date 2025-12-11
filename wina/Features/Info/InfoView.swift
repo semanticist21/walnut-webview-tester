@@ -346,7 +346,11 @@ struct InfoView: View {
                             NavigationLink {
                                 ActiveSettingsView(showSettings: $showSettings)
                             } label: {
-                                Label("Active Settings", systemImage: "slider.horizontal.3")
+                                InfoCategoryRow(
+                                    icon: "slider.horizontal.3",
+                                    title: "Active Settings",
+                                    description: "Current WebView configuration values"
+                                )
                             }
                         } header: {
                             Text("Current Configuration")
@@ -356,43 +360,71 @@ struct InfoView: View {
                             NavigationLink {
                                 DeviceInfoView()
                             } label: {
-                                Label("Device", systemImage: "iphone")
+                                InfoCategoryRow(
+                                    icon: "iphone",
+                                    title: "Device",
+                                    description: "Hardware, CPU, Memory, Display, Locale"
+                                )
                             }
 
                             NavigationLink {
                                 BrowserInfoView()
                             } label: {
-                                Label("Browser", systemImage: "safari")
+                                InfoCategoryRow(
+                                    icon: "safari",
+                                    title: "Browser",
+                                    description: "User Agent, WebKit Version, WebGL Info"
+                                )
                             }
 
                             NavigationLink {
                                 APICapabilitiesView()
                             } label: {
-                                Label("API Capabilities", systemImage: "checklist")
+                                InfoCategoryRow(
+                                    icon: "checklist",
+                                    title: "API Capabilities",
+                                    description: "46+ Web APIs support status"
+                                )
                             }
 
                             NavigationLink {
                                 MediaCodecsView()
                             } label: {
-                                Label("Media Codecs", systemImage: "play.rectangle")
+                                InfoCategoryRow(
+                                    icon: "play.rectangle",
+                                    title: "Media Codecs",
+                                    description: "Video, Audio, Container format support"
+                                )
                             }
 
                             NavigationLink {
                                 PerformanceView()
                             } label: {
-                                Label("Performance", systemImage: "gauge.with.needle")
+                                InfoCategoryRow(
+                                    icon: "gauge.with.needle",
+                                    title: "Performance",
+                                    description: "JavaScript, DOM, Graphics benchmarks"
+                                )
                             }
 
                             NavigationLink {
                                 DisplayFeaturesView()
                             } label: {
-                                Label("Display", systemImage: "sparkles.rectangle.stack")
+                                InfoCategoryRow(
+                                    icon: "sparkles.rectangle.stack",
+                                    title: "Display",
+                                    description: "Screen size, Color gamut, HDR support"
+                                )
                             }
 
                             NavigationLink {
                                 AccessibilityFeaturesView()
                             } label: {
-                                Label("Accessibility", systemImage: "accessibility")
+                                InfoCategoryRow(
+                                    icon: "accessibility",
+                                    title: "Accessibility",
+                                    description: "Motion, Contrast, Color scheme preferences"
+                                )
                             }
                         } header: {
                             Text("WebView Capabilities")
@@ -427,6 +459,33 @@ struct InfoView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+    }
+}
+
+// MARK: - Info Category Row
+
+private struct InfoCategoryRow: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 6)
     }
 }
 

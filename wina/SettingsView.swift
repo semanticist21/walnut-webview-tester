@@ -26,52 +26,12 @@ struct StaticSettingsView: View {
 
                 Section {
                     NavigationLink {
-                        CoreSettingsView()
+                        ConfigurationSettingsDetailView()
                     } label: {
                         SettingsCategoryRow(
-                            icon: "gearshape",
-                            title: "Core",
-                            description: "JavaScript, Font Size"
-                        )
-                    }
-
-                    NavigationLink {
-                        MediaSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "play.rectangle",
-                            title: "Media",
-                            description: "Autoplay, AirPlay, PiP"
-                        )
-                    }
-
-                    NavigationLink {
-                        ContentModeSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "iphone.and.arrow.forward",
-                            title: "Content Mode",
-                            description: "Mobile, Desktop"
-                        )
-                    }
-
-                    NavigationLink {
-                        BehaviorSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "hand.tap",
-                            title: "Behavior",
-                            description: "Pop-ups, Fullscreen, Rendering"
-                        )
-                    }
-
-                    NavigationLink {
-                        DataDetectorsSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "text.magnifyingglass",
-                            title: "Data Detectors",
-                            description: "Phone, Links, Addresses"
+                            icon: "gearshape.2",
+                            title: "Configuration",
+                            description: "JavaScript, Media, Content Mode, Behavior, Data Detectors"
                         )
                     }
 
@@ -81,7 +41,7 @@ struct StaticSettingsView: View {
                         SettingsCategoryRow(
                             icon: "lock.shield",
                             title: "Privacy & Security",
-                            description: "Private Browsing, HTTPS"
+                            description: "Private Browsing, HTTPS Upgrade"
                         )
                     }
 
@@ -91,7 +51,7 @@ struct StaticSettingsView: View {
                         SettingsCategoryRow(
                             icon: "hand.raised",
                             title: "Permissions",
-                            description: "Camera, Mic, Location"
+                            description: "Camera, Microphone, Location for WebRTC & Geolocation"
                         )
                     }
                 }
@@ -157,27 +117,55 @@ private struct SettingsCategoryRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(.title2)
                 .foregroundStyle(Color.accentColor)
-                .frame(width: 28)
+                .frame(width: 32)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
+                    .font(.body)
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 }
 
-// MARK: - Core Settings
+// MARK: - Configuration Settings Detail View
 
-private struct CoreSettingsView: View {
+private struct ConfigurationSettingsDetailView: View {
+    // Core Settings
     @AppStorage("enableJavaScript") private var enableJavaScript: Bool = true
     @AppStorage("allowsContentJavaScript") private var allowsContentJavaScript: Bool = true
     @AppStorage("minimumFontSize") private var minimumFontSize: Double = 0
+
+    // Media Settings
+    @AppStorage("mediaAutoplay") private var mediaAutoplay: Bool = false
+    @AppStorage("inlineMediaPlayback") private var inlineMediaPlayback: Bool = true
+    @AppStorage("allowsAirPlay") private var allowsAirPlay: Bool = true
+    @AppStorage("allowsPictureInPicture") private var allowsPictureInPicture: Bool = true
+
+    // Content Mode
+    @AppStorage("preferredContentMode") private var preferredContentMode: Int = 0
+
+    // Behavior Settings
+    @AppStorage("javaScriptCanOpenWindows") private var javaScriptCanOpenWindows: Bool = false
+    @AppStorage("fraudulentWebsiteWarning") private var fraudulentWebsiteWarning: Bool = true
+    @AppStorage("elementFullscreenEnabled") private var elementFullscreenEnabled: Bool = false
+    @AppStorage("suppressesIncrementalRendering") private var suppressesIncrementalRendering: Bool = false
+
+    // Data Detectors
+    @AppStorage("detectPhoneNumbers") private var detectPhoneNumbers: Bool = false
+    @AppStorage("detectLinks") private var detectLinks: Bool = false
+    @AppStorage("detectAddresses") private var detectAddresses: Bool = false
+    @AppStorage("detectCalendarEvents") private var detectCalendarEvents: Bool = false
+
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
 
     var body: some View {
         List {
@@ -202,23 +190,10 @@ private struct CoreSettingsView: View {
                     Text("pt")
                         .foregroundStyle(.secondary)
                 }
+            } header: {
+                Text("Core")
             }
-        }
-        .navigationTitle("Core")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
 
-// MARK: - Media Settings
-
-private struct MediaSettingsView: View {
-    @AppStorage("mediaAutoplay") private var mediaAutoplay: Bool = false
-    @AppStorage("inlineMediaPlayback") private var inlineMediaPlayback: Bool = true
-    @AppStorage("allowsAirPlay") private var allowsAirPlay: Bool = true
-    @AppStorage("allowsPictureInPicture") private var allowsPictureInPicture: Bool = true
-
-    var body: some View {
-        List {
             Section {
                 SettingToggleRow(
                     title: "Auto-play Media",
@@ -240,20 +215,10 @@ private struct MediaSettingsView: View {
                     isOn: $allowsPictureInPicture,
                     info: "Allows videos to continue playing in a floating window."
                 )
+            } header: {
+                Text("Media")
             }
-        }
-        .navigationTitle("Media")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
 
-// MARK: - Content Mode Settings
-
-private struct ContentModeSettingsView: View {
-    @AppStorage("preferredContentMode") private var preferredContentMode: Int = 0
-
-    var body: some View {
-        List {
             Section {
                 Picker("Content Mode", selection: $preferredContentMode) {
                     Text("Recommended").tag(0)
@@ -262,34 +227,12 @@ private struct ContentModeSettingsView: View {
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
+            } header: {
+                Text("Content Mode")
             } footer: {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("• Recommended: System decides based on device")
-                    Text("• Mobile: Optimized for small screens")
-                    Text("• Desktop: Requests full website version")
-                }
-                .font(.caption)
+                Text("Recommended: System decides • Mobile: Optimized for small screens • Desktop: Full website")
             }
-        }
-        .navigationTitle("Content Mode")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
 
-// MARK: - Behavior Settings
-
-private struct BehaviorSettingsView: View {
-    @AppStorage("javaScriptCanOpenWindows") private var javaScriptCanOpenWindows: Bool = false
-    @AppStorage("fraudulentWebsiteWarning") private var fraudulentWebsiteWarning: Bool = true
-    @AppStorage("elementFullscreenEnabled") private var elementFullscreenEnabled: Bool = false
-    @AppStorage("suppressesIncrementalRendering") private var suppressesIncrementalRendering: Bool = false
-
-    private var isIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-
-    var body: some View {
-        List {
             Section {
                 SettingToggleRow(
                     title: "JS Can Open Windows",
@@ -304,7 +247,7 @@ private struct BehaviorSettingsView: View {
                 SettingToggleRow(
                     title: "Element Fullscreen API",
                     isOn: $elementFullscreenEnabled,
-                    info: isIPad ? "iPad: Full element fullscreen support.\nWorks with any HTML element.\nVideo, div, canvas, etc." : "iPhone: Limited to video elements only.\nFull API not available.\niPad recommended for full support.",
+                    info: isIPad ? "iPad: Full element fullscreen support.\nWorks with any HTML element." : "iPhone: Limited to video elements only.\niPad recommended for full support.",
                     disabled: !isIPad
                 )
                 SettingToggleRow(
@@ -312,23 +255,10 @@ private struct BehaviorSettingsView: View {
                     isOn: $suppressesIncrementalRendering,
                     info: "Waits for full page load before displaying. May feel slower but cleaner."
                 )
+            } header: {
+                Text("Behavior")
             }
-        }
-        .navigationTitle("Behavior")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
 
-// MARK: - Data Detectors Settings
-
-private struct DataDetectorsSettingsView: View {
-    @AppStorage("detectPhoneNumbers") private var detectPhoneNumbers: Bool = false
-    @AppStorage("detectLinks") private var detectLinks: Bool = false
-    @AppStorage("detectAddresses") private var detectAddresses: Bool = false
-    @AppStorage("detectCalendarEvents") private var detectCalendarEvents: Bool = false
-
-    var body: some View {
-        List {
             Section {
                 SettingToggleRow(
                     title: "Phone Numbers",
@@ -350,11 +280,13 @@ private struct DataDetectorsSettingsView: View {
                     isOn: $detectCalendarEvents,
                     info: "Detects dates and times, allowing to add to Calendar."
                 )
+            } header: {
+                Text("Data Detectors")
             } footer: {
-                Text("Automatically detect and convert specific content types into interactive links")
+                Text("Auto-detect content types and convert to interactive links")
             }
         }
-        .navigationTitle("Data Detectors")
+        .navigationTitle("Configuration")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -521,7 +453,6 @@ struct DynamicSettingsView: View {
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
 
     // WebView Size (Triggers Reload)
-    // App preset: 100% width, ~82% height (excluding AppBar 56 + TabBar 49 + SafeArea ~47 = 152px)
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
 
@@ -535,87 +466,35 @@ struct DynamicSettingsView: View {
                 }
 
                 Section {
-                    SettingToggleRow(
-                        title: "Back/Forward Gestures",
-                        isOn: $allowsBackForwardGestures,
-                        info: "Enables swipe from edge to navigate history."
-                    )
-                    SettingToggleRow(
-                        title: "Link Preview",
-                        isOn: $allowsLinkPreview,
-                        info: "Shows page preview on long-press or 3D Touch on links."
-                    )
-                    SettingToggleRow(
-                        title: "Ignore Viewport Scale Limits",
-                        isOn: $allowZoom,
-                        info: "Allows pinch-to-zoom even when the page disables it via viewport meta tag."
-                    )
-                    SettingToggleRow(
-                        title: "Text Interaction",
-                        isOn: $textInteractionEnabled,
-                        info: "Enables text selection, copy, and other text interactions."
-                    )
-                } header: {
-                    Text("Navigation & Interaction")
-                }
-
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Page Zoom")
-                            Spacer()
-                            Text("\(Int(pageZoom * 100))%")
-                                .foregroundStyle(.secondary)
-                        }
-                        Slider(value: $pageZoom, in: 0.5...3.0, step: 0.1)
-                        HStack {
-                            Text("50%")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                            Spacer()
-                            Text("300%")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
+                    NavigationLink {
+                        InteractionSettingsDetailView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "hand.draw",
+                            title: "Navigation & Interaction",
+                            description: "Gestures, Zoom, Text Selection, Find"
+                        )
                     }
-                    ColorPickerRow(
-                        title: "Under Page Background",
-                        colorHex: $underPageBackgroundColorHex,
-                        info: "Background color shown when scrolling beyond page bounds."
-                    )
-                } header: {
-                    Text("Display")
-                }
 
-                Section {
-                    SettingToggleRow(
-                        title: "Find Interaction",
-                        isOn: $findInteractionEnabled,
-                        info: "Enables the system find panel (Cmd+F on iPad with keyboard)."
-                    )
-                } header: {
-                    Text("Features")
-                }
+                    NavigationLink {
+                        DisplaySettingsDetailView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "textformat.size",
+                            title: "Display & Appearance",
+                            description: "Page Zoom, Background Color, User-Agent"
+                        )
+                    }
 
-                Section {
-                    TextField("Custom User-Agent", text: $customUserAgent, axis: .vertical)
-                        .lineLimit(2...4)
-                        .font(.system(size: 14, design: .monospaced))
-                } header: {
-                    Text("User-Agent")
-                } footer: {
-                    Text("Override the default browser identification string")
-                }
-
-                Section {
-                    WebViewSizeControl(
-                        widthRatio: $webViewWidthRatio,
-                        heightRatio: $webViewHeightRatio
-                    )
-                } header: {
-                    Text("WebView Size")
-                } footer: {
-                    Text("Resize WebView for responsive testing.\n⚠️ Changing size will recreate the WebView.")
+                    NavigationLink {
+                        WebViewSizeSettingsView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "rectangle.dashed",
+                            title: "WebView Size",
+                            description: "Resize for responsive testing (recreates WebView)"
+                        )
+                    }
                 }
             }
             .navigationTitle("Live Settings")
@@ -656,6 +535,132 @@ struct DynamicSettingsView: View {
         // WebView Size (App preset)
         webViewWidthRatio = 1.0
         webViewHeightRatio = 0.82
+    }
+}
+
+// MARK: - Interaction Settings Detail View
+
+private struct InteractionSettingsDetailView: View {
+    @AppStorage("allowsBackForwardGestures") private var allowsBackForwardGestures: Bool = true
+    @AppStorage("allowsLinkPreview") private var allowsLinkPreview: Bool = true
+    @AppStorage("allowZoom") private var allowZoom: Bool = true
+    @AppStorage("textInteractionEnabled") private var textInteractionEnabled: Bool = true
+    @AppStorage("findInteractionEnabled") private var findInteractionEnabled: Bool = false
+
+    var body: some View {
+        List {
+            Section {
+                SettingToggleRow(
+                    title: "Back/Forward Gestures",
+                    isOn: $allowsBackForwardGestures,
+                    info: "Enables swipe from edge to navigate history."
+                )
+                SettingToggleRow(
+                    title: "Link Preview",
+                    isOn: $allowsLinkPreview,
+                    info: "Shows page preview on long-press or 3D Touch on links."
+                )
+                SettingToggleRow(
+                    title: "Ignore Viewport Scale Limits",
+                    isOn: $allowZoom,
+                    info: "Allows pinch-to-zoom even when the page disables it via viewport meta tag."
+                )
+                SettingToggleRow(
+                    title: "Text Interaction",
+                    isOn: $textInteractionEnabled,
+                    info: "Enables text selection, copy, and other text interactions."
+                )
+                SettingToggleRow(
+                    title: "Find Interaction",
+                    isOn: $findInteractionEnabled,
+                    info: "Enables the system find panel (Cmd+F on iPad with keyboard)."
+                )
+            }
+        }
+        .navigationTitle("Navigation & Interaction")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Display Settings Detail View
+
+private struct DisplaySettingsDetailView: View {
+    @AppStorage("pageZoom") private var pageZoom: Double = 1.0
+    @AppStorage("underPageBackgroundColor") private var underPageBackgroundColorHex: String = ""
+    @AppStorage("customUserAgent") private var customUserAgent: String = ""
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Page Zoom")
+                        Spacer()
+                        Text("\(Int(pageZoom * 100))%")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $pageZoom, in: 0.5...3.0, step: 0.1)
+                    HStack {
+                        Text("50%")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text("300%")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                ColorPickerRow(
+                    title: "Under Page Background",
+                    colorHex: $underPageBackgroundColorHex,
+                    info: "Background color shown when scrolling beyond page bounds."
+                )
+            } header: {
+                Text("Display")
+            }
+
+            Section {
+                TextField("Custom User-Agent", text: $customUserAgent, axis: .vertical)
+                    .lineLimit(2...6)
+                    .font(.system(size: 14, design: .monospaced))
+
+                if !customUserAgent.isEmpty {
+                    Button("Clear User-Agent") {
+                        customUserAgent = ""
+                    }
+                    .foregroundStyle(.red)
+                }
+            } header: {
+                Text("User-Agent")
+            } footer: {
+                Text("Override the default browser identification string")
+            }
+        }
+        .navigationTitle("Display & Appearance")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - WebView Size Settings
+
+private struct WebViewSizeSettingsView: View {
+    @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
+    @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
+
+    var body: some View {
+        List {
+            Section {
+                WebViewSizeControl(
+                    widthRatio: $webViewWidthRatio,
+                    heightRatio: $webViewHeightRatio
+                )
+            } footer: {
+                Text("Resize WebView for responsive testing.\n⚠️ Changing size will recreate the WebView.")
+            }
+        }
+        .navigationTitle("WebView Size")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -707,66 +712,17 @@ struct SettingsView: View {
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
 
-    @State private var cameraStatus: AVAuthorizationStatus = .notDetermined
-    @State private var microphoneStatus: AVAuthorizationStatus = .notDetermined
-    @State private var locationStatus: CLAuthorizationStatus = .notDetermined
-    @StateObject private var locationDelegate = LocationManagerDelegate()
-
-    private var isIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     NavigationLink {
-                        CoreSettingsView()
+                        ConfigurationSettingsDetailView()
                     } label: {
                         SettingsCategoryRow(
-                            icon: "gearshape",
-                            title: "Core",
-                            description: "JavaScript, Font Size"
-                        )
-                    }
-
-                    NavigationLink {
-                        MediaSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "play.rectangle",
-                            title: "Media",
-                            description: "Autoplay, AirPlay, PiP"
-                        )
-                    }
-
-                    NavigationLink {
-                        ContentModeSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "iphone.and.arrow.forward",
-                            title: "Content Mode",
-                            description: "Mobile, Desktop"
-                        )
-                    }
-
-                    NavigationLink {
-                        BehaviorSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "hand.tap",
-                            title: "Behavior",
-                            description: "Pop-ups, Fullscreen, Rendering"
-                        )
-                    }
-
-                    NavigationLink {
-                        DataDetectorsSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "text.magnifyingglass",
-                            title: "Data Detectors",
-                            description: "Phone, Links, Addresses"
+                            icon: "gearshape.2",
+                            title: "Configuration",
+                            description: "JavaScript, Media, Content Mode, Behavior, Data Detectors"
                         )
                     }
 
@@ -776,41 +732,33 @@ struct SettingsView: View {
                         SettingsCategoryRow(
                             icon: "lock.shield",
                             title: "Privacy & Security",
-                            description: "Private Browsing, HTTPS"
+                            description: "Private Browsing, HTTPS Upgrade"
                         )
                     }
                 } header: {
-                    Text("Configuration")
+                    Text("Static (Requires Reload)")
+                } footer: {
+                    Text("Changes require WebView reload to take effect")
                 }
 
                 Section {
                     NavigationLink {
-                        NavigationInteractionSettingsView()
+                        InteractionSettingsDetailView()
                     } label: {
                         SettingsCategoryRow(
                             icon: "hand.draw",
                             title: "Navigation & Interaction",
-                            description: "Gestures, Zoom, Text Selection"
+                            description: "Gestures, Zoom, Text Selection, Find"
                         )
                     }
 
                     NavigationLink {
-                        DisplaySettingsView()
+                        DisplaySettingsDetailView()
                     } label: {
                         SettingsCategoryRow(
                             icon: "textformat.size",
-                            title: "Display",
-                            description: "Page Zoom, Background Color"
-                        )
-                    }
-
-                    NavigationLink {
-                        UserAgentSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "person.badge.key",
-                            title: "User-Agent",
-                            description: "Custom browser identification"
+                            title: "Display & Appearance",
+                            description: "Page Zoom, Background Color, User-Agent"
                         )
                     }
 
@@ -820,11 +768,13 @@ struct SettingsView: View {
                         SettingsCategoryRow(
                             icon: "rectangle.dashed",
                             title: "WebView Size",
-                            description: "Responsive testing"
+                            description: "Resize for responsive testing"
                         )
                     }
                 } header: {
-                    Text("Live Settings")
+                    Text("Live (Instant Apply)")
+                } footer: {
+                    Text("Changes apply immediately without reload")
                 }
 
                 Section {
@@ -834,9 +784,11 @@ struct SettingsView: View {
                         SettingsCategoryRow(
                             icon: "hand.raised",
                             title: "Permissions",
-                            description: "Camera, Mic, Location"
+                            description: "Camera, Microphone, Location"
                         )
                     }
+                } header: {
+                    Text("System")
                 }
             }
             .navigationTitle("Settings")
@@ -903,143 +855,6 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Navigation & Interaction Settings
-
-private struct NavigationInteractionSettingsView: View {
-    @AppStorage("allowsBackForwardGestures") private var allowsBackForwardGestures: Bool = true
-    @AppStorage("allowsLinkPreview") private var allowsLinkPreview: Bool = true
-    @AppStorage("allowZoom") private var allowZoom: Bool = true
-    @AppStorage("textInteractionEnabled") private var textInteractionEnabled: Bool = true
-    @AppStorage("findInteractionEnabled") private var findInteractionEnabled: Bool = false
-
-    var body: some View {
-        List {
-            Section {
-                SettingToggleRow(
-                    title: "Back/Forward Gestures",
-                    isOn: $allowsBackForwardGestures,
-                    info: "Enables swipe from edge to navigate history."
-                )
-                SettingToggleRow(
-                    title: "Link Preview",
-                    isOn: $allowsLinkPreview,
-                    info: "Shows page preview on long-press or 3D Touch on links."
-                )
-                SettingToggleRow(
-                    title: "Ignore Viewport Scale Limits",
-                    isOn: $allowZoom,
-                    info: "Allows pinch-to-zoom even when the page disables it via viewport meta tag."
-                )
-                SettingToggleRow(
-                    title: "Text Interaction",
-                    isOn: $textInteractionEnabled,
-                    info: "Enables text selection, copy, and other text interactions."
-                )
-                SettingToggleRow(
-                    title: "Find Interaction",
-                    isOn: $findInteractionEnabled,
-                    info: "Enables the system find panel (Cmd+F on iPad with keyboard)."
-                )
-            }
-        }
-        .navigationTitle("Navigation & Interaction")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - Display Settings
-
-private struct DisplaySettingsView: View {
-    @AppStorage("pageZoom") private var pageZoom: Double = 1.0
-    @AppStorage("underPageBackgroundColor") private var underPageBackgroundColorHex: String = ""
-
-    var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Page Zoom")
-                        Spacer()
-                        Text("\(Int(pageZoom * 100))%")
-                            .foregroundStyle(.secondary)
-                    }
-                    Slider(value: $pageZoom, in: 0.5...3.0, step: 0.1)
-                    HStack {
-                        Text("50%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Spacer()
-                        Text("300%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
-
-            Section {
-                ColorPickerRow(
-                    title: "Under Page Background",
-                    colorHex: $underPageBackgroundColorHex,
-                    info: "Background color shown when scrolling beyond page bounds."
-                )
-            }
-        }
-        .navigationTitle("Display")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - User Agent Settings
-
-private struct UserAgentSettingsView: View {
-    @AppStorage("customUserAgent") private var customUserAgent: String = ""
-
-    var body: some View {
-        List {
-            Section {
-                TextField("Custom User-Agent", text: $customUserAgent, axis: .vertical)
-                    .lineLimit(2...6)
-                    .font(.system(size: 14, design: .monospaced))
-            } footer: {
-                Text("Override the default browser identification string. Leave empty to use default.")
-            }
-
-            if !customUserAgent.isEmpty {
-                Section {
-                    Button("Clear User-Agent") {
-                        customUserAgent = ""
-                    }
-                    .foregroundStyle(.red)
-                }
-            }
-        }
-        .navigationTitle("User-Agent")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - WebView Size Settings
-
-private struct WebViewSizeSettingsView: View {
-    @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
-    @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
-
-    var body: some View {
-        List {
-            Section {
-                WebViewSizeControl(
-                    widthRatio: $webViewWidthRatio,
-                    heightRatio: $webViewHeightRatio
-                )
-            } footer: {
-                Text("Resize WebView for responsive testing.\n⚠️ Changing size will recreate the WebView.")
-            }
-        }
-        .navigationTitle("WebView Size")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
 // MARK: - Setting Toggle Row
 
 private struct SettingToggleRow: View {
@@ -1095,8 +910,6 @@ private struct WebViewSizeControl: View {
     @Binding var widthRatio: Double
     @Binding var heightRatio: Double
 
-    // Typical app UI height (AppBar 56 + TabBar 49 + SafeArea ~47 = ~152px)
-    // Takes about 18% of screen height
     private var appContainerHeightRatio: Double {
         let totalUIHeight: CGFloat = 152
         return 1.0 - (totalUIHeight / screenSize.height)
@@ -1123,7 +936,6 @@ private struct WebViewSizeControl: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // Preset buttons
             HStack(spacing: 8) {
                 PresetButton(label: "100%", isSelected: widthRatio == 1.0 && heightRatio == 1.0) {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -1145,7 +957,6 @@ private struct WebViewSizeControl: View {
                 }
             }
 
-            // Width slider
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("Width")
@@ -1158,7 +969,6 @@ private struct WebViewSizeControl: View {
                 Slider(value: $widthRatio, in: 0.25...1.0, step: 0.01)
             }
 
-            // Height slider
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("Height")
@@ -1171,7 +981,6 @@ private struct WebViewSizeControl: View {
                 Slider(value: $heightRatio, in: 0.25...1.0, step: 0.01)
             }
 
-            // Current size display
             HStack {
                 Spacer()
                 Text("\(currentWidth) × \(currentHeight)")
