@@ -3,8 +3,8 @@
 //  wina
 //
 
-import SwiftUI
 import SafariServices
+import SwiftUI
 
 struct SafariVCInfoView: View {
     @Environment(\.dismiss) private var dismiss
@@ -90,8 +90,8 @@ struct SafariVCInfoView: View {
     private var filteredItems: [String: [SafariInfoSearchItem]] {
         let filtered = searchText.isEmpty ? allItems : allItems.filter {
             $0.label.localizedCaseInsensitiveContains(searchText) ||
-            $0.value.localizedCaseInsensitiveContains(searchText) ||
-            $0.category.localizedCaseInsensitiveContains(searchText)
+                $0.value.localizedCaseInsensitiveContains(searchText) ||
+                $0.category.localizedCaseInsensitiveContains(searchText)
         }
         return Dictionary(grouping: filtered, by: { $0.category })
     }
@@ -102,232 +102,18 @@ struct SafariVCInfoView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            Group {
                 if isSearching {
-                    // Search Results
-                    if filteredItems.isEmpty {
-                        Section {
-                            Text("No results for \"\(searchText)\"")
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        ForEach(Array(filteredItems.keys.sorted()), id: \.self) { category in
-                            Section {
-                                ForEach(filteredItems[category] ?? [], id: \.id) { item in
-                                    SearchResultRow(item: item)
-                                }
-                            } header: {
-                                Text(category)
-                            }
-                        }
-                    }
+                    searchResultsView
                 } else {
-                    // Active Settings Section
-                    Section {
-                    HStack {
-                        Spacer()
-                        Button {
-                            showingSettings = true
-                        } label: {
-                            Label("Open Settings", systemImage: "gear")
-                                .font(.subheadline)
-                        }
-                        .buttonStyle(.bordered)
-                        Spacer()
-                    }
-                    .listRowBackground(Color.clear)
-
-                    ActiveSettingRow(
-                        title: "Reader Mode",
-                        isEnabled: entersReaderIfAvailable,
-                        info: "Automatically enters Reader mode when available"
-                    )
-                    ActiveSettingRow(
-                        title: "Bar Collapsing",
-                        isEnabled: barCollapsingEnabled,
-                        info: "Navigation bar collapses on scroll"
-                    )
-                    SafariInfoRow(
-                        label: "Dismiss Button",
-                        value: dismissButtonStyleText,
-                        info: "Button style shown in top-left corner"
-                    )
-                    SafariInfoRow(
-                        label: "Control Tint",
-                        value: controlTintColorHex.isEmpty ? "System" : controlTintColorHex,
-                        info: "Tint color for buttons and controls"
-                    )
-                    SafariInfoRow(
-                        label: "Bar Tint",
-                        value: barTintColorHex.isEmpty ? "System" : barTintColorHex,
-                        info: "Background color of navigation bar"
-                    )
-                } header: {
-                    Text("Active Settings")
-                }
-
-                // Safari Features Section
-                Section {
-                    SafariFeatureRow(
-                        title: "Reader Mode",
-                        description: "Distraction-free article view with customizable appearance",
-                        availability: "iOS 9.0+"
-                    )
-                    SafariFeatureRow(
-                        title: "AutoFill",
-                        description: "Access to saved passwords via iCloud Keychain",
-                        availability: "iOS 9.0+"
-                    )
-                    SafariFeatureRow(
-                        title: "Fraudulent Website Detection",
-                        description: "Warns users about suspected phishing sites",
-                        availability: "iOS 9.0+"
-                    )
-                    SafariFeatureRow(
-                        title: "Content Blockers",
-                        description: "User's installed Safari content blockers are applied",
-                        availability: "iOS 9.0+"
-                    )
-                    SafariFeatureRow(
-                        title: "Safari Extensions",
-                        description: "User's Safari web extensions are available",
-                        availability: "iOS 15.0+"
-                    )
-                } header: {
-                    Text("Safari Features")
-                }
-
-                // API Availability Section
-                Section {
-                    SafariAPIRow(
-                        api: "SFSafariViewController",
-                        description: "Core Safari view controller",
-                        minVersion: "iOS 9.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "Configuration",
-                        description: "Reader mode, bar collapsing options",
-                        minVersion: "iOS 11.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "preferredBarTintColor",
-                        description: "Navigation bar background color",
-                        minVersion: "iOS 10.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "preferredControlTintColor",
-                        description: "Button and control tint color",
-                        minVersion: "iOS 10.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "dismissButtonStyle",
-                        description: "Done/Close/Cancel button style",
-                        minVersion: "iOS 11.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "prewarmConnections",
-                        description: "Pre-load URLs before presenting",
-                        minVersion: "iOS 15.0",
-                        supported: true
-                    )
-                    SafariAPIRow(
-                        api: "Activity Button",
-                        description: "Custom Share Extension in toolbar",
-                        minVersion: "iOS 15.0",
-                        supported: true
-                    )
-                } header: {
-                    Text("API Availability")
-                }
-
-                // Privacy & Data Section
-                Section {
-                    SafariPrivacyRow(
-                        title: "Cookie Isolation",
-                        description: "Cookies are NOT shared with Safari app",
-                        since: "iOS 11.0"
-                    )
-                    SafariPrivacyRow(
-                        title: "LocalStorage Isolation",
-                        description: "Website data is sandboxed per app",
-                        since: "iOS 11.0"
-                    )
-                    SafariPrivacyRow(
-                        title: "Session Isolation",
-                        description: "Each SFSafariViewController instance has separate storage",
-                        since: "iOS 11.0"
-                    )
-                } header: {
-                    Text("Privacy & Data")
-                }
-
-                // Delegate Events Section
-                Section {
-                    SafariDelegateRow(
-                        method: "safariViewControllerDidFinish(_:)",
-                        description: "Called when user taps Done button"
-                    )
-                    SafariDelegateRow(
-                        method: "didCompleteInitialLoad",
-                        description: "Called when initial page load completes (success or failure)"
-                    )
-                    SafariDelegateRow(
-                        method: "activityItemsFor(_:title:)",
-                        description: "Provide custom activities for Share sheet"
-                    )
-                    SafariDelegateRow(
-                        method: "initialLoadDidRedirectTo(_:)",
-                        description: "Called when initial load redirects to new URL"
-                    )
-                    SafariDelegateRow(
-                        method: "willOpenInBrowser()",
-                        description: "Called before opening URL in Safari app"
-                    )
-                    SafariDelegateRow(
-                        method: "excludedActivityTypes",
-                        description: "Exclude specific activities from Share sheet"
-                    )
-                } header: {
-                    Text("Delegate Events")
-                }
-
-                // Limitations Section
-                Section {
-                    SafariLimitationRow(
-                        title: "No JavaScript Injection",
-                        description: "Cannot execute custom JavaScript code"
-                    )
-                    SafariLimitationRow(
-                        title: "No DOM Access",
-                        description: "Cannot read or modify page content"
-                    )
-                    SafariLimitationRow(
-                        title: "No Navigation Control",
-                        description: "Cannot intercept or redirect navigation"
-                    )
-                    SafariLimitationRow(
-                        title: "No URL Changes",
-                        description: "Cannot change URL after presentation"
-                    )
-                    SafariLimitationRow(
-                        title: "Limited UI Customization",
-                        description: "Only colors and dismiss button style can be changed"
-                    )
-                } header: {
-                    Text("Limitations")
-                }
+                    menuView
                 }
             }
-            .searchable(text: $searchText, prompt: "Search settings and features")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search all info")
             .navigationTitle("SafariVC Info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -338,6 +124,423 @@ struct SafariVCInfoView: View {
             }
         }
     }
+
+    // MARK: - Search Results View
+
+    @ViewBuilder
+    private var searchResultsView: some View {
+        List {
+            ForEach(filteredItems.keys.sorted(), id: \.self) { category in
+                Section(category) {
+                    ForEach(filteredItems[category] ?? []) { item in
+                        HStack {
+                            Text(item.label)
+                            Spacer()
+                            Text(item.value)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
+        }
+        .overlay {
+            if filteredItems.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+    }
+
+    // MARK: - Menu View
+
+    @ViewBuilder
+    private var menuView: some View {
+        List {
+            Section {
+                NavigationLink {
+                    SafariActiveSettingsDetailView(showSettings: $showingSettings)
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "slider.horizontal.3",
+                        title: "Active Settings",
+                        description: "Current SafariVC configuration"
+                    )
+                }
+            } header: {
+                Text("Current Configuration")
+            }
+
+            Section {
+                NavigationLink {
+                    SafariFeaturesDetailView()
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "safari",
+                        title: "Safari Features",
+                        description: "Reader, AutoFill, Content Blockers"
+                    )
+                }
+
+                NavigationLink {
+                    SafariAPIDetailView()
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "chevron.left.forwardslash.chevron.right",
+                        title: "API Availability",
+                        description: "SFSafariViewController APIs"
+                    )
+                }
+
+                NavigationLink {
+                    SafariPrivacyDetailView()
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "lock.shield",
+                        title: "Privacy & Data",
+                        description: "Cookie, Storage isolation"
+                    )
+                }
+
+                NavigationLink {
+                    SafariDelegateDetailView()
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "arrow.triangle.branch",
+                        title: "Delegate Events",
+                        description: "Available callback methods"
+                    )
+                }
+
+                NavigationLink {
+                    SafariLimitationsDetailView()
+                } label: {
+                    SafariInfoCategoryRow(
+                        icon: "exclamationmark.triangle",
+                        title: "Limitations",
+                        description: "What SafariVC cannot do"
+                    )
+                }
+            } header: {
+                Text("SafariVC Capabilities")
+            }
+        }
+    }
+}
+
+// MARK: - Safari Info Category Row
+
+private struct SafariInfoCategoryRow: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+// MARK: - Active Settings Detail View
+
+private struct SafariActiveSettingsDetailView: View {
+    @Binding var showSettings: Bool
+
+    @AppStorage("safariEntersReaderIfAvailable") private var entersReaderIfAvailable: Bool = false
+    @AppStorage("safariBarCollapsingEnabled") private var barCollapsingEnabled: Bool = true
+    @AppStorage("safariDismissButtonStyle") private var dismissButtonStyle: Int = 0
+    @AppStorage("safariControlTintColorHex") private var controlTintColorHex: String = ""
+    @AppStorage("safariBarTintColorHex") private var barTintColorHex: String = ""
+
+    private var dismissButtonStyleText: String {
+        switch dismissButtonStyle {
+        case 1: return "Close"
+        case 2: return "Cancel"
+        default: return "Done"
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                HStack {
+                    Spacer()
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Open Settings", systemImage: "gear")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
+            }
+
+            Section("Behavior") {
+                SafariInfoRow(
+                    label: "Reader Mode",
+                    value: entersReaderIfAvailable ? "Enabled" : "Disabled",
+                    valueColor: entersReaderIfAvailable ? .green : .secondary,
+                    info: "Automatically enters Reader mode when available for the page."
+                )
+                SafariInfoRow(
+                    label: "Bar Collapsing",
+                    value: barCollapsingEnabled ? "Enabled" : "Disabled",
+                    valueColor: barCollapsingEnabled ? .green : .secondary,
+                    info: "Navigation bar collapses when scrolling down."
+                )
+            }
+
+            Section("UI Style") {
+                SafariInfoRow(
+                    label: "Dismiss Button",
+                    value: dismissButtonStyleText,
+                    info: "Button style shown in top-left corner."
+                )
+            }
+
+            Section("Colors") {
+                SafariInfoRow(
+                    label: "Control Tint",
+                    value: controlTintColorHex.isEmpty ? "System" : controlTintColorHex,
+                    info: "Tint color for buttons and controls."
+                )
+                SafariInfoRow(
+                    label: "Bar Tint",
+                    value: barTintColorHex.isEmpty ? "System" : barTintColorHex,
+                    info: "Background color of navigation bar."
+                )
+            }
+        }
+        .navigationTitle("Active Settings")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari Features Detail View
+
+private struct SafariFeaturesDetailView: View {
+    var body: some View {
+        List {
+            Section("Included Safari Features") {
+                SafariCapabilityRow(
+                    label: "Reader Mode",
+                    supported: true,
+                    info: "Distraction-free article view with customizable appearance."
+                )
+                SafariCapabilityRow(
+                    label: "AutoFill",
+                    supported: true,
+                    info: "Access to saved passwords via iCloud Keychain."
+                )
+                SafariCapabilityRow(
+                    label: "Fraudulent Website Detection",
+                    supported: true,
+                    info: "Warns users about suspected phishing sites."
+                )
+                SafariCapabilityRow(
+                    label: "Content Blockers",
+                    supported: true,
+                    info: "User's installed Safari content blockers are applied."
+                )
+                SafariCapabilityRow(
+                    label: "Safari Extensions",
+                    supported: true,
+                    availability: "iOS 15.0+",
+                    info: "User's Safari web extensions are available."
+                )
+            }
+        }
+        .navigationTitle("Safari Features")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari API Detail View
+
+private struct SafariAPIDetailView: View {
+    var body: some View {
+        List {
+            Section("Core API") {
+                SafariAPIRow(
+                    api: "SFSafariViewController",
+                    description: "Core Safari view controller",
+                    minVersion: "iOS 9.0"
+                )
+                SafariAPIRow(
+                    api: "Configuration",
+                    description: "Reader mode, bar collapsing options",
+                    minVersion: "iOS 11.0"
+                )
+            }
+
+            Section("Appearance") {
+                SafariAPIRow(
+                    api: "preferredBarTintColor",
+                    description: "Navigation bar background color",
+                    minVersion: "iOS 10.0"
+                )
+                SafariAPIRow(
+                    api: "preferredControlTintColor",
+                    description: "Button and control tint color",
+                    minVersion: "iOS 10.0"
+                )
+                SafariAPIRow(
+                    api: "dismissButtonStyle",
+                    description: "Done/Close/Cancel button style",
+                    minVersion: "iOS 11.0"
+                )
+            }
+
+            Section("Advanced") {
+                SafariAPIRow(
+                    api: "prewarmConnections",
+                    description: "Pre-load URLs before presenting",
+                    minVersion: "iOS 15.0"
+                )
+                SafariAPIRow(
+                    api: "Activity Button",
+                    description: "Custom Share Extension in toolbar",
+                    minVersion: "iOS 15.0"
+                )
+            }
+        }
+        .navigationTitle("API Availability")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari Privacy Detail View
+
+private struct SafariPrivacyDetailView: View {
+    var body: some View {
+        List {
+            Section("Data Isolation") {
+                SafariPrivacyRow(
+                    title: "Cookie Isolation",
+                    description: "Cookies are NOT shared with Safari app. Each app has separate cookie storage.",
+                    since: "iOS 11.0"
+                )
+                SafariPrivacyRow(
+                    title: "LocalStorage Isolation",
+                    description: "Website data is sandboxed per app. Data stored in one app is not accessible from another.",
+                    since: "iOS 11.0"
+                )
+                SafariPrivacyRow(
+                    title: "Session Isolation",
+                    description: "Each SFSafariViewController instance has separate storage. Closing and reopening clears session.",
+                    since: "iOS 11.0"
+                )
+            }
+
+            Section {
+                Text("Prior to iOS 11, SFSafariViewController shared cookies and website data with Safari. This was changed for user privacy.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Privacy & Data")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari Delegate Detail View
+
+private struct SafariDelegateDetailView: View {
+    var body: some View {
+        List {
+            Section("SFSafariViewControllerDelegate") {
+                SafariDelegateRow(
+                    method: "safariViewControllerDidFinish(_:)",
+                    description: "Called when user taps Done button. Use this to dismiss the view controller."
+                )
+                SafariDelegateRow(
+                    method: "didCompleteInitialLoad",
+                    description: "Called when initial page load completes (success or failure). Good for analytics."
+                )
+                SafariDelegateRow(
+                    method: "initialLoadDidRedirectTo(_:)",
+                    description: "Called when initial load redirects to new URL. Track final landing URL."
+                )
+                SafariDelegateRow(
+                    method: "willOpenInBrowser()",
+                    description: "Called before opening URL in Safari app. Clean up or save state."
+                )
+            }
+
+            Section("Activity Customization") {
+                SafariDelegateRow(
+                    method: "activityItemsFor(_:title:)",
+                    description: "Provide custom activities for Share sheet. Return array of UIActivity objects."
+                )
+                SafariDelegateRow(
+                    method: "excludedActivityTypes",
+                    description: "Exclude specific activities from Share sheet. Return array of activity type identifiers."
+                )
+            }
+        }
+        .navigationTitle("Delegate Events")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari Limitations Detail View
+
+private struct SafariLimitationsDetailView: View {
+    var body: some View {
+        List {
+            Section("Content Access") {
+                SafariLimitationRow(
+                    title: "No JavaScript Injection",
+                    description: "Cannot execute custom JavaScript code. No evaluateJavaScript() method available."
+                )
+                SafariLimitationRow(
+                    title: "No DOM Access",
+                    description: "Cannot read or modify page content. Cannot extract text, images, or any page data."
+                )
+            }
+
+            Section("Navigation") {
+                SafariLimitationRow(
+                    title: "No Navigation Control",
+                    description: "Cannot intercept or redirect navigation. Cannot block or modify requests."
+                )
+                SafariLimitationRow(
+                    title: "No URL Changes",
+                    description: "Cannot change URL after presentation. Must dismiss and create new instance."
+                )
+            }
+
+            Section("Customization") {
+                SafariLimitationRow(
+                    title: "Limited UI Customization",
+                    description: "Only colors and dismiss button style can be changed. Cannot add custom toolbar items."
+                )
+            }
+
+            Section {
+                Text("These limitations exist because SFSafariViewController prioritizes user privacy and security. For full control, use WKWebView instead.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Limitations")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 }
 
 // MARK: - Helper Views
@@ -345,109 +548,77 @@ struct SafariVCInfoView: View {
 private struct SafariInfoRow: View {
     let label: String
     let value: String
-    var info: String? = nil
+    var valueColor: Color = .secondary
+    var info: String?
 
     @State private var showInfo = false
 
     var body: some View {
         HStack {
             Text(label)
-                .foregroundStyle(.secondary)
+            if let info {
+                Button {
+                    showInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showInfo) {
+                    Text(info)
+                        .font(.footnote)
+                        .padding()
+                        .presentationCompactAdaptation(.popover)
+                }
+            }
             Spacer()
             Text(value)
+                .foregroundStyle(valueColor)
+        }
+    }
+}
+
+private struct SafariCapabilityRow: View {
+    let label: String
+    let supported: Bool
+    var availability: String?
+    var info: String?
+
+    @State private var showInfo = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: supported ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(supported ? .green : .secondary)
+
+            Text(label)
+
             if let info {
                 Button {
                     showInfo = true
                 } label: {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                        .font(.subheadline)
+                        .font(.footnote)
                 }
                 .buttonStyle(.plain)
                 .popover(isPresented: $showInfo) {
                     Text(info)
-                        .font(.callout)
+                        .font(.footnote)
                         .padding()
                         .presentationCompactAdaptation(.popover)
                 }
             }
-        }
-    }
-}
-
-private struct ActiveSettingRow: View {
-    let title: String
-    let isEnabled: Bool
-    var info: String? = nil
-
-    @State private var showInfo = false
-
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(isEnabled ? "Enabled" : "Disabled")
-                .foregroundStyle(isEnabled ? .green : .secondary)
-            if let info {
-                Button {
-                    showInfo = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .foregroundStyle(.secondary)
-                        .font(.subheadline)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showInfo) {
-                    Text(info)
-                        .font(.callout)
-                        .padding()
-                        .presentationCompactAdaptation(.popover)
-                }
-            }
-        }
-    }
-}
-
-private struct SafariFeatureRow: View {
-    let title: String
-    let description: String
-    let availability: String
-
-    @State private var showInfo = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .font(.body)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-            }
 
             Spacer()
 
-            Text(availability)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Button {
-                showInfo = true
-            } label: {
-                Image(systemName: "info.circle")
+            if let availability {
+                Text(availability)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .font(.subheadline)
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $showInfo) {
-                Text(description)
-                    .font(.callout)
-                    .padding()
-                    .presentationCompactAdaptation(.popover)
             }
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -455,19 +626,30 @@ private struct SafariAPIRow: View {
     let api: String
     let description: String
     let minVersion: String
-    let supported: Bool
 
     @State private var showInfo = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: supported ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundStyle(supported ? .green : .red)
-                .font(.body)
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(api)
-                    .font(.subheadline.monospaced())
+            Text(api)
+                .font(.subheadline.monospaced())
+
+            Button {
+                showInfo = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showInfo) {
+                Text(description)
+                    .font(.footnote)
+                    .padding()
+                    .presentationCompactAdaptation(.popover)
             }
 
             Spacer()
@@ -475,23 +657,7 @@ private struct SafariAPIRow: View {
             Text(minVersion)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            Button {
-                showInfo = true
-            } label: {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $showInfo) {
-                Text(description)
-                    .font(.callout)
-                    .padding()
-                    .presentationCompactAdaptation(.popover)
-            }
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -503,14 +669,25 @@ private struct SafariPrivacyRow: View {
     @State private var showInfo = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: "lock.shield.fill")
                 .foregroundStyle(.blue)
-                .font(.body)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
+            Text(title)
+
+            Button {
+                showInfo = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showInfo) {
+                Text(description)
+                    .font(.footnote)
+                    .padding()
+                    .presentationCompactAdaptation(.popover)
             }
 
             Spacer()
@@ -518,23 +695,7 @@ private struct SafariPrivacyRow: View {
             Text(since)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            Button {
-                showInfo = true
-            } label: {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $showInfo) {
-                Text(description)
-                    .font(.callout)
-                    .padding()
-                    .presentationCompactAdaptation(.popover)
-            }
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -545,33 +706,31 @@ private struct SafariDelegateRow: View {
     @State private var showInfo = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: "function")
                 .foregroundStyle(.purple)
-                .font(.body)
 
             Text(method)
                 .font(.caption.monospaced())
                 .lineLimit(1)
-
-            Spacer()
 
             Button {
                 showInfo = true
             } label: {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
-                    .font(.subheadline)
+                    .font(.footnote)
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showInfo) {
                 Text(description)
-                    .font(.callout)
+                    .font(.footnote)
                     .padding()
                     .presentationCompactAdaptation(.popover)
             }
+
+            Spacer()
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -582,32 +741,29 @@ private struct SafariLimitationRow: View {
     @State private var showInfo = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: "xmark.circle.fill")
                 .foregroundStyle(.red)
-                .font(.body)
 
             Text(title)
-                .font(.subheadline)
-
-            Spacer()
 
             Button {
                 showInfo = true
             } label: {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
-                    .font(.subheadline)
+                    .font(.footnote)
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showInfo) {
                 Text(description)
-                    .font(.callout)
+                    .font(.footnote)
                     .padding()
                     .presentationCompactAdaptation(.popover)
             }
+
+            Spacer()
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -618,19 +774,6 @@ private struct SafariInfoSearchItem: Identifiable {
     let category: String
     let label: String
     let value: String
-}
-
-private struct SearchResultRow: View {
-    let item: SafariInfoSearchItem
-
-    var body: some View {
-        HStack {
-            Text(item.label)
-            Spacer()
-            Text(item.value)
-                .foregroundStyle(.secondary)
-        }
-    }
 }
 
 #Preview {

@@ -603,9 +603,9 @@ struct LoadedSettingsView: View {
     }
 }
 
-// MARK: - Settings Category Row
+// MARK: - Settings Category Row (Shared)
 
-private struct SettingsCategoryRow: View {
+struct SettingsCategoryRow: View {
     let icon: String
     let iconColor: Color
     let title: String

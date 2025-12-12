@@ -16,13 +16,14 @@ struct ColorPickerRow: View {
     var info: String?
 
     @State private var showInfo: Bool = false
-    @State private var selectedColor: Color = .clear
 
-    init(title: String, colorHex: Binding<String>, info: String? = nil) {
-        self.title = title
-        self._colorHex = colorHex
-        self.info = info
-        self._selectedColor = State(initialValue: Color(hex: colorHex.wrappedValue) ?? .clear)
+    private var selectedColor: Binding<Color> {
+        Binding(
+            get: { Color(hex: colorHex) ?? .accentColor },
+            set: { newValue in
+                colorHex = newValue.toHex() ?? ""
+            }
+        )
     }
 
     var body: some View {
@@ -33,13 +34,13 @@ struct ColorPickerRow: View {
                     showInfo.toggle()
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 14))
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .popover(isPresented: $showInfo) {
                     Text(info)
-                        .font(.caption)
+                        .font(.footnote)
                         .padding()
                         .presentationCompactAdaptation(.popover)
                 }
@@ -48,18 +49,14 @@ struct ColorPickerRow: View {
             if !colorHex.isEmpty {
                 Button {
                     colorHex = ""
-                    selectedColor = .clear
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
-            ColorPicker("", selection: $selectedColor, supportsOpacity: false)
+            ColorPicker("", selection: selectedColor, supportsOpacity: false)
                 .labelsHidden()
-                .onChange(of: selectedColor) { _, newValue in
-                    colorHex = newValue.toHex() ?? ""
-                }
         }
     }
 }
