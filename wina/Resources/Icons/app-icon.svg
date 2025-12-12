@@ -82,8 +82,8 @@
 
     <!-- Walnut image - moved left: x=37 -> x=20 -->
     <image
-      x="20"
-      y="-30"
+      x="37"
+      y="37"
       width="950"
       height="950"
       filter="url(#walnutShadow)"
