@@ -104,6 +104,7 @@ struct InfoView: View {
                 InfoSearchItem(category: "Device", label: "Model", value: info.model),
                 InfoSearchItem(category: "Device", label: "Model Identifier", value: info.modelIdentifier),
                 InfoSearchItem(category: "Device", label: "System", value: "\(info.systemName) \(info.systemVersion)"),
+                InfoSearchItem(category: "Device", label: "OS Build", value: info.osBuild),
                 InfoSearchItem(category: "Device", label: "CPU Cores", value: info.cpuCores),
                 InfoSearchItem(category: "Device", label: "Active Cores", value: info.activeCores),
                 InfoSearchItem(category: "Device", label: "Physical Memory", value: info.physicalMemory),
@@ -523,6 +524,7 @@ struct DeviceInfoView: View {
                     InfoRow(label: "Model Identifier", value: info.modelIdentifier)
                     InfoRow(label: "System Name", value: info.systemName)
                     InfoRow(label: "System Version", value: info.systemVersion)
+                    InfoRow(label: "OS Build", value: info.osBuild, info: "Darwin kernel build number.\nUseful for tracking WebKit bugs\nin specific OS builds.")
                 }
 
                 Section("Processor") {
@@ -878,6 +880,7 @@ private struct DeviceInfo: Sendable {
     let modelIdentifier: String
     let systemName: String
     let systemVersion: String
+    let osBuild: String
     let cpuCores: String
     let activeCores: String
     let physicalMemory: String
@@ -907,6 +910,7 @@ private struct DeviceInfo: Sendable {
         let traitCollection = windowScene?.traitCollection
 
         let gpuName = MTLCreateSystemDefaultDevice()?.name ?? "Unknown"
+        let osBuild = getOSBuild()
 
         let memoryGB = Double(processInfo.physicalMemory) / 1_073_741_824
         let memoryString = String(format: "%.1f GB", memoryGB)
@@ -930,6 +934,7 @@ private struct DeviceInfo: Sendable {
             modelIdentifier: getModelIdentifier(),
             systemName: device.systemName,
             systemVersion: device.systemVersion,
+            osBuild: osBuild,
             cpuCores: "\(processInfo.processorCount)",
             activeCores: "\(processInfo.activeProcessorCount)",
             physicalMemory: memoryString,
@@ -956,6 +961,14 @@ private struct DeviceInfo: Sendable {
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
         return identifier
+    }
+
+    private static func getOSBuild() -> String {
+        var size = 0
+        sysctlbyname("kern.osversion", nil, &size, nil, 0)
+        var build = [CChar](repeating: 0, count: size)
+        sysctlbyname("kern.osversion", &build, &size, nil, 0)
+        return String(cString: build)
     }
 }
 
@@ -1603,7 +1616,7 @@ struct PerformanceView: View {
                 }
 
                 Section("System") {
-                    InfoRow(label: "Logical Cores", value: info.hardwareConcurrency, info: "navigator.hardwareConcurrency.\nJS thread pool sizing.\nMay be capped for privacy.")
+                    InfoRow(label: "JS Reported Cores", value: info.hardwareConcurrency, info: "navigator.hardwareConcurrency.\nJS thread pool sizing.\nMay differ from actual CPU cores\nfor privacy protection.")
                     InfoRow(label: "Timer Resolution", value: info.timerResolution, info: "performance.now() precision.\nReduced for Spectre mitigation.\nTypically 1ms in WKWebView.")
                 }
 
@@ -2495,12 +2508,18 @@ struct ActiveSettingsView: View {
                 Text("Changes apply instantly without reload")
             }
 
-            Section("Display") {
+            Section {
                 InfoRow(label: "Page Zoom", value: "\(Int(pageZoom * 100))%", info: "Scale of page content.\n100% = Default size.\nUseful for small text.")
                 InfoRow(label: "Under Page Background", value: underPageBackgroundColorHex.isEmpty ? "Default" : underPageBackgroundColorHex, info: "Background color shown when scrolling beyond page bounds.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "rectangle.on.rectangle")
+                        .foregroundStyle(.blue)
+                    Text("Display")
+                }
             }
 
-            Section("User-Agent") {
+            Section {
                 if customUserAgent.isEmpty {
                     InfoRow(label: "Status", value: "Default")
                 } else {
@@ -2512,12 +2531,24 @@ struct ActiveSettingsView: View {
                             .textSelection(.enabled)
                     }
                 }
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "safari")
+                        .foregroundStyle(.cyan)
+                    Text("User-Agent")
+                }
             }
 
-            Section("WebView Size") {
+            Section {
                 InfoRow(label: "Width", value: "\(Int(webViewWidthRatio * 100))%", info: "WebView width ratio.\n100% = Full screen width.")
                 InfoRow(label: "Height", value: "\(Int(webViewHeightRatio * 100))%", info: "WebView height ratio.\n100% = Full screen height.")
                 InfoRow(label: "Dimensions", value: webViewSizeText, info: "Current WebView size in points.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "aspectratio")
+                        .foregroundStyle(.purple)
+                    Text("WebView Size")
+                }
             }
 
             // MARK: - Configuration Settings
@@ -2535,26 +2566,50 @@ struct ActiveSettingsView: View {
                 Text("Changes require WebView reload")
             }
 
-            Section("Media") {
+            Section {
                 ActiveSettingRow(label: "Auto-play Media", enabled: mediaAutoplay, info: "Videos play automatically.\nOff = Tap to play videos.\nSaves battery and data.")
                 ActiveSettingRow(label: "Inline Playback", enabled: inlineMediaPlayback, info: "Play videos in page.\nOff = Always fullscreen.\nNeeded for background videos.")
                 ActiveSettingRow(label: "AirPlay", enabled: allowsAirPlay, info: "Stream to Apple TV.\nOff = Hide AirPlay button.\nFor local-only playback.")
                 ActiveSettingRow(label: "Picture in Picture", enabled: allowsPictureInPicture, info: "Floating video window.\nWatch while using other apps.\nSwipe up or tap button.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "play.rectangle.fill")
+                        .foregroundStyle(.pink)
+                    Text("Media")
+                }
             }
 
-            Section("Content Mode") {
+            Section {
                 InfoRow(label: "Mode", value: contentModeText, info: "Mobile or desktop sites.\nRecommended: Auto-detect.\nDesktop useful on iPad.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "iphone.and.arrow.forward")
+                        .foregroundStyle(.indigo)
+                    Text("Content Mode")
+                }
             }
 
-            Section("Behavior") {
+            Section {
                 ActiveSettingRow(label: "JS Can Open Windows", enabled: javaScriptCanOpenWindows, info: "Allow popup windows.\nOff = Block popups.\nSome sites need this on.")
                 ActiveSettingRow(label: "Fraudulent Website Warning", enabled: fraudulentWebsiteWarning, info: "Warn about dangerous sites.\nPhishing and malware alerts.\nKeep on for safety.")
                 ActiveSettingRow(label: "Element Fullscreen API", enabled: elementFullscreenEnabled, info: isIPad ? "iPad: Full fullscreen support.\nAny element can go fullscreen.\nVideos, games, presentations." : "iPhone: Video fullscreen only.\nFull API on iPad only.\nVideos still work normally.", unavailable: !isIPad)
                 ActiveSettingRow(label: "Suppress Incremental Rendering", enabled: suppressesIncrementalRendering, info: "Wait for full page load.\nCleaner appearance.\nFeels slower to load.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "hand.tap.fill")
+                        .foregroundStyle(.teal)
+                    Text("Behavior")
+                }
             }
 
-            Section("Data Detectors") {
+            Section {
                 InfoRow(label: "Active", value: activeDataDetectors, info: "Auto-link special content.\nPhone numbers, addresses, dates.\nTap to call, map, or add event.")
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "link")
+                        .foregroundStyle(.mint)
+                    Text("Data Detectors")
+                }
             }
 
             Section("Privacy & Security") {
