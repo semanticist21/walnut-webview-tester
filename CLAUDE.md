@@ -519,3 +519,4 @@ Info 뷰에서 사용되는 재사용 컴포넌트들:
 - `CodecRow`: 코덱 지원 상태 (probably/maybe/none)
 
 info 버튼 클릭 시 popover로 설명 표시 (통일된 스타일).
+- 빌드는 항상 확인할 필요 없음

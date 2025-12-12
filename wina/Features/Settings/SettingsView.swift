@@ -375,18 +375,19 @@ struct LiveSettingsView: View {
             }
 
             Section {
-                TextField("Custom User-Agent", text: $customUserAgent, axis: .vertical)
-                    .lineLimit(2...6)
-                    .font(.system(size: 14, design: .monospaced))
-
-                if !customUserAgent.isEmpty {
-                    Button("Clear User-Agent") {
-                        customUserAgent = ""
+                NavigationLink {
+                    UserAgentPickerView()
+                } label: {
+                    HStack {
+                        Text("User Agent")
+                        Spacer()
+                        Text(customUserAgent.isEmpty ? "Default" : "Custom")
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
-                    .foregroundStyle(.red)
                 }
             } header: {
-                Text("User-Agent")
+                Text("Identity")
             }
 
             Section {
@@ -606,17 +607,19 @@ struct LoadedSettingsView: View {
 // MARK: - Settings Category Row (Shared)
 
 struct SettingsCategoryRow: View {
-    let icon: String
-    let iconColor: Color
+    var icon: String? = nil
+    var iconColor: Color = .accentColor
     let title: String
     let description: String
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(iconColor)
-                .frame(width: 28)
+            if let icon {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 28)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -927,18 +930,19 @@ struct SettingsView: View {
     @ViewBuilder
     private var userAgentSection: some View {
         Section {
-            TextField("Custom User-Agent", text: $customUserAgent, axis: .vertical)
-                .lineLimit(2...6)
-                .font(.system(size: 14, design: .monospaced))
-
-            if !customUserAgent.isEmpty {
-                Button("Clear User-Agent") {
-                    customUserAgent = ""
+            NavigationLink {
+                UserAgentPickerView()
+            } label: {
+                HStack {
+                    Text("User Agent")
+                    Spacer()
+                    Text(customUserAgent.isEmpty ? "Default" : "Custom")
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .foregroundStyle(.red)
             }
         } header: {
-            Text("User-Agent")
+            Text("Identity")
         }
     }
 

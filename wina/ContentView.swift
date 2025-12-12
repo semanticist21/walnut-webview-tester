@@ -17,6 +17,8 @@ struct ContentView: View {
     @State private var showWebView: Bool = false
     @State private var loadedURL: String = ""
     @State private var webViewID: UUID = UUID()
+    @State private var bookmarks: [String] = []
+    @State private var cachedRecentURLs: [String] = []
     @FocusState private var textFieldFocused: Bool
     @AppStorage("recentURLs") private var recentURLsData: Data = Data()
     @AppStorage("bookmarkedURLs") private var bookmarkedURLsData: Data = Data()
@@ -47,19 +49,19 @@ struct ContentView: View {
         }
     }
 
-    private var recentURLs: [String] {
+    private func decodeRecentURLs() -> [String] {
         (try? JSONDecoder().decode([String].self, from: recentURLsData)) ?? []
     }
 
-    private var bookmarkedURLs: [String] {
+    private func loadBookmarks() -> [String] {
         (try? JSONDecoder().decode([String].self, from: bookmarkedURLsData)) ?? []
     }
 
     private var filteredURLs: [String] {
         if urlText.isEmpty {
-            return recentURLs
+            return cachedRecentURLs
         }
-        return recentURLs.filter { $0.localizedCaseInsensitiveContains(urlText) }
+        return cachedRecentURLs.filter { $0.localizedCaseInsensitiveContains(urlText) }
     }
 
     private let urlParts = [
@@ -93,7 +95,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showBookmarks) {
             BookmarksSheet(
-                bookmarkedURLs: bookmarkedURLs,
+                bookmarkedURLs: bookmarks,
                 onSelect: { url in
                     urlText = url
                 },
@@ -117,21 +119,27 @@ struct ContentView: View {
                 webViewID = UUID()
             }
         }
+        .task {
+            cachedRecentURLs = decodeRecentURLs()
+            bookmarks = loadBookmarks()
+        }
+        .onChange(of: recentURLsData) { _, _ in
+            cachedRecentURLs = decodeRecentURLs()
+        }
+        .onChange(of: bookmarkedURLsData) { _, _ in
+            bookmarks = loadBookmarks()
+        }
     }
 
     private var urlInputView: some View {
         GeometryReader { geometry in
             VStack(spacing: 16) {
                 // Walnut logo
-                    if let walnutURL = Bundle.main.url(forResource: "walnut", withExtension: "avif"),
-                       let imageData = try? Data(contentsOf: walnutURL),
-                       let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 120)
-                            .padding(.bottom, -12)
-                    }
+                Image("walnut")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
+                    .padding(.bottom, -12)
 
                     // URL parts chips - FlowLayout for wrapping
                     FlowLayout(spacing: 8, alignment: .center) {
@@ -291,7 +299,7 @@ struct ContentView: View {
                         }
                     } else {
                         ThemeToggleButton()
-                        BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarkedURLs.isEmpty)
+                        BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarks.isEmpty)
                     }
                 }
 
@@ -314,7 +322,7 @@ struct ContentView: View {
     private func submitURL() {
         guard !urlText.isEmpty else { return }
 
-        var urls = recentURLs
+        var urls = cachedRecentURLs
         urls.removeAll { $0 == urlText }
         urls.insert(urlText, at: 0)
         if urls.count > 20 {
@@ -332,7 +340,7 @@ struct ContentView: View {
     }
 
     private func removeURL(_ url: String) {
-        var urls = recentURLs
+        var urls = cachedRecentURLs
         urls.removeAll { $0 == url }
 
         if let data = try? JSONEncoder().encode(urls) {
@@ -341,17 +349,14 @@ struct ContentView: View {
     }
 
     private func addBookmark(_ url: String) {
-        var bookmarks = bookmarkedURLs
-        if !bookmarks.contains(url) {
-            bookmarks.insert(url, at: 0)
-            if let data = try? JSONEncoder().encode(bookmarks) {
-                bookmarkedURLsData = data
-            }
+        guard !bookmarks.contains(url) else { return }
+        bookmarks.insert(url, at: 0)
+        if let data = try? JSONEncoder().encode(bookmarks) {
+            bookmarkedURLsData = data
         }
     }
 
     private func removeBookmark(_ url: String) {
-        var bookmarks = bookmarkedURLs
         bookmarks.removeAll { $0 == url }
         if let data = try? JSONEncoder().encode(bookmarks) {
             bookmarkedURLsData = data

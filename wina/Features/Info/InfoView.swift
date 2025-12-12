@@ -107,6 +107,7 @@ struct InfoView: View {
     @AppStorage("underPageBackgroundColor") private var underPageBackgroundColorHex: String = ""
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
+    @AppStorage("cachedSystemUserAgent") private var cachedSystemUserAgent: String = ""
 
     private var contentModeText: String {
         switch preferredContentMode {
@@ -365,7 +366,17 @@ struct InfoView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if isSearching {
+                if isLoading {
+                    // Centered loading indicator
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text(loadingStatus)
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if isSearching {
                     // Search results view
                     List {
                         ForEach(filteredItems.keys.sorted(), id: \.self) { category in
@@ -412,19 +423,6 @@ struct InfoView: View {
                 } else {
                     // Default menu view
                     List {
-                        // Loading indicator when WebView is initializing
-                        if isLoading {
-                            Section {
-                                HStack {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Text(loadingStatus)
-                                        .foregroundStyle(.secondary)
-                                        .font(.subheadline)
-                                }
-                            }
-                        }
-
                         Section {
                             NavigationLink {
                                 ActiveSettingsView(showSettings: $showSettings)
@@ -546,6 +544,11 @@ struct InfoView: View {
             displayInfo = await display
             accessibilityInfo = await accessibility
             isLoading = false
+
+            // Cache system user agent for UserAgentPickerView
+            if let ua = webViewInfo?.userAgent, !ua.isEmpty, ua != "Unknown" {
+                cachedSystemUserAgent = ua
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -1515,14 +1518,13 @@ struct MediaCodecsView: View {
 
     var body: some View {
         List {
-            Section {
-                Text("Codec support may vary depending on device and OS version.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .listSectionSpacing(0)
-
             if let info = codecInfo {
+                Section {
+                    Text("Codec support may vary depending on device and OS version.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .listSectionSpacing(0)
                 Section("Video Codecs") {
                     CodecRow(label: "H.264 (AVC)", support: info.h264)
                     CodecRow(label: "H.265 (HEVC)", support: info.hevc)
