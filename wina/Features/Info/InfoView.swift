@@ -7,6 +7,65 @@ import Metal
 import SwiftUI
 import WebKit
 
+// MARK: - Shared WebView Manager
+
+@MainActor
+fileprivate final class SharedInfoWebView {
+    static let shared = SharedInfoWebView()
+
+    fileprivate var webView: WKWebView?
+    fileprivate var isReady = false
+    private var initTask: Task<Void, Never>?
+
+    // Cache
+    fileprivate var cachedWebViewInfo: WebViewInfo?
+    fileprivate var cachedCodecInfo: MediaCodecInfo?
+    fileprivate var cachedDisplayInfo: DisplayInfo?
+    fileprivate var cachedAccessibilityInfo: AccessibilityInfo?
+
+    private init() {}
+
+    fileprivate func initialize(onStatusUpdate: @escaping (String) -> Void) async {
+        // Already initialized
+        if isReady, webView != nil { return }
+
+        // Wait for existing init
+        if let initTask {
+            await initTask.value
+            return
+        }
+
+        initTask = Task {
+            onStatusUpdate("Launching WebView process...")
+
+            let config = WKWebViewConfiguration()
+            let wv = WKWebView(frame: .zero, configuration: config)
+
+            onStatusUpdate("Initializing WebView...")
+            await wv.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+
+            self.webView = wv
+            self.isReady = true
+        }
+
+        await initTask?.value
+    }
+
+    fileprivate func evaluateJavaScript(_ script: String) async -> Any? {
+        guard let webView, isReady else { return nil }
+        return await webView.evaluateJavaScriptAsync(script)
+    }
+
+    fileprivate func clearCache() {
+        cachedWebViewInfo = nil
+        cachedCodecInfo = nil
+        cachedDisplayInfo = nil
+        cachedAccessibilityInfo = nil
+    }
+}
+
+// MARK: - InfoView
+
 struct InfoView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
@@ -353,6 +412,19 @@ struct InfoView: View {
                 } else {
                     // Default menu view
                     List {
+                        // Loading indicator when WebView is initializing
+                        if isLoading {
+                            Section {
+                                HStack {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text(loadingStatus)
+                                        .foregroundStyle(.secondary)
+                                        .font(.subheadline)
+                                }
+                            }
+                        }
+
                         Section {
                             NavigationLink {
                                 ActiveSettingsView(showSettings: $showSettings)
@@ -455,17 +527,25 @@ struct InfoView: View {
             }
         }
         .task {
+            // Load device info immediately (no WebView needed)
             deviceInfo = await DeviceInfo.load()
-            webViewInfo = await WebViewInfo.load { status in
+
+            // Pre-initialize shared WebView in background
+            await SharedInfoWebView.shared.initialize { status in
                 loadingStatus = status
             }
+
+            // Load all info using shared WebView (parallel)
+            async let webView = WebViewInfo.load { _ in }
             async let codec = MediaCodecInfo.load { _ in }
             async let display = DisplayInfo.load { _ in }
             async let accessibility = AccessibilityInfo.load { _ in }
 
+            webViewInfo = await webView
             codecInfo = await codec
             displayInfo = await display
             accessibilityInfo = await accessibility
+            isLoading = false
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -974,7 +1054,7 @@ private struct DeviceInfo: Sendable {
 
 // MARK: - WebView Info Model
 
-private struct WebViewInfo: Sendable {
+fileprivate struct WebViewInfo: Sendable {
     // Browser
     let browserType: String
     let vendor: String
@@ -1060,17 +1140,47 @@ private struct WebViewInfo: Sendable {
     // Input
     let maxTouchPoints: String
 
+    static let empty = WebViewInfo(
+        browserType: "N/A", vendor: "N/A", platform: "N/A", language: "N/A", languages: "N/A",
+        userAgent: "N/A", webKitVersion: "N/A", jsCoreVersion: "N/A", colorDepth: "N/A",
+        webGLRenderer: "N/A", webGLVendor: "N/A", webGLVersion: "N/A",
+        supportsJavaScript: false, supportsWebAssembly: false, supportsWebWorkers: false,
+        supportsServiceWorkers: false, supportsSharedWorkers: false,
+        supportsWebGL: false, supportsWebGL2: false, supportsWebAudio: false,
+        supportsMediaDevices: false, supportsMediaRecorder: false, supportsMediaSource: false,
+        supportsPictureInPicture: false, supportsFullscreen: false,
+        cookiesEnabled: false, supportsLocalStorage: false, supportsSessionStorage: false,
+        supportsIndexedDB: false, supportsCacheAPI: false,
+        isOnline: false, supportsWebSocket: false, supportsWebRTC: false,
+        supportsFetch: false, supportsBeacon: false, supportsEventSource: false,
+        supportsGeolocation: false, supportsDeviceOrientation: false, supportsDeviceMotion: false,
+        supportsVibration: false, supportsBattery: false, supportsBluetooth: false,
+        supportsUSB: false, supportsNFC: false,
+        supportsClipboard: false, supportsWebShare: false, supportsNotifications: false,
+        supportsPointerEvents: false, supportsTouchEvents: false, supportsGamepad: false,
+        supportsDragDrop: false,
+        supportsIntersectionObserver: false, supportsResizeObserver: false,
+        supportsMutationObserver: false, supportsPerformanceObserver: false,
+        supportsCrypto: false, supportsCredentials: false, supportsPaymentRequest: false,
+        maxTouchPoints: "0"
+    )
+
     @MainActor
     static func load(onStatusUpdate: @escaping (String) -> Void) async -> WebViewInfo {
-        onStatusUpdate("Launching WebView process...")
+        let shared = SharedInfoWebView.shared
 
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // Return cached if available
+        if let cached = shared.cachedWebViewInfo {
+            onStatusUpdate("Using cached data...")
+            return cached
+        }
 
-        // Load blank HTML and wait for actual load completion
-        // Use a real URL as baseURL to enable localStorage/sessionStorage access
-        onStatusUpdate("Initializing WebView...")
-        await webView.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+        // Initialize shared WebView
+        await shared.initialize(onStatusUpdate: onStatusUpdate)
+        guard let webView = shared.webView else {
+            onStatusUpdate("WebView initialization failed")
+            return WebViewInfo.empty
+        }
 
         // Get browser info
         onStatusUpdate("Detecting browser info...")
@@ -1237,7 +1347,7 @@ private struct WebViewInfo: Sendable {
         // Get touch points
         let maxTouchPoints = await webView.evaluateJavaScriptAsync("navigator.maxTouchPoints") as? Int ?? 0
 
-        return WebViewInfo(
+        let result = WebViewInfo(
             browserType: browserType,
             vendor: vendor,
             platform: platform,
@@ -1307,6 +1417,10 @@ private struct WebViewInfo: Sendable {
             // Input
             maxTouchPoints: "\(maxTouchPoints)"
         )
+
+        // Cache result
+        shared.cachedWebViewInfo = result
+        return result
     }
 
     private static func checkFeature(_ webView: WKWebView, _ script: String) async -> Bool {
@@ -1475,7 +1589,7 @@ enum CodecSupport: String {
     }
 }
 
-private struct MediaCodecInfo: Sendable {
+fileprivate struct MediaCodecInfo: Sendable {
     // Video
     let h264: CodecSupport
     let hevc: CodecSupport
@@ -1503,15 +1617,29 @@ private struct MediaCodecInfo: Sendable {
     let supportsMSE: Bool
     let supportsEME: Bool
 
+    static let empty = MediaCodecInfo(
+        h264: .none, hevc: .none, vp8: .none, vp9: .none, av1: .none, theora: .none,
+        aac: .none, mp3: .none, opus: .none, vorbis: .none, flac: .none, wav: .none,
+        mp4: .none, webm: .none, ogg: .none, hls: .none,
+        supportsMediaCapabilities: false, supportsMSE: false, supportsEME: false
+    )
+
     @MainActor
     static func load(onStatusUpdate: @escaping (String) -> Void) async -> MediaCodecInfo {
-        onStatusUpdate("Launching WebView process...")
+        let shared = SharedInfoWebView.shared
 
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // Return cached if available
+        if let cached = shared.cachedCodecInfo {
+            onStatusUpdate("Using cached data...")
+            return cached
+        }
 
-        onStatusUpdate("Initializing WebView...")
-        await webView.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+        // Initialize shared WebView
+        await shared.initialize(onStatusUpdate: onStatusUpdate)
+        guard let webView = shared.webView else {
+            onStatusUpdate("WebView initialization failed")
+            return MediaCodecInfo.empty
+        }
 
         onStatusUpdate("Detecting media codecs...")
         let script = """
@@ -1566,7 +1694,7 @@ private struct MediaCodecInfo: Sendable {
             }
         }
 
-        return MediaCodecInfo(
+        let codecResult = MediaCodecInfo(
             h264: parseSupport(result["h264"]),
             hevc: parseSupport(result["hevc"]),
             vp8: parseSupport(result["vp8"]),
@@ -1587,6 +1715,10 @@ private struct MediaCodecInfo: Sendable {
             supportsMSE: result["mse"] as? Bool ?? false,
             supportsEME: result["eme"] as? Bool ?? false
         )
+
+        // Cache result
+        shared.cachedCodecInfo = codecResult
+        return codecResult
     }
 }
 
@@ -2104,7 +2236,7 @@ struct DisplayFeaturesView: View {
     }
 }
 
-private struct DisplayInfo: Sendable {
+fileprivate struct DisplayInfo: Sendable {
     // Screen
     let screenWidth: String
     let screenHeight: String
@@ -2130,15 +2262,31 @@ private struct DisplayInfo: Sendable {
     let invertedColors: Bool
     let forcedColors: Bool
 
+    static let empty = DisplayInfo(
+        screenWidth: "N/A", screenHeight: "N/A", aspectRatio: "N/A",
+        availWidth: "N/A", availHeight: "N/A", devicePixelRatio: "N/A", orientation: "N/A",
+        colorDepth: "N/A", pixelDepth: "N/A",
+        supportsSRGB: false, supportsP3: false, supportsRec2020: false,
+        supportsHDR: false, dynamicRange: "N/A",
+        colorScheme: "N/A", invertedColors: false, forcedColors: false
+    )
+
     @MainActor
     static func load(onStatusUpdate: @escaping (String) -> Void) async -> DisplayInfo {
-        onStatusUpdate("Launching WebView process...")
+        let shared = SharedInfoWebView.shared
 
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // Return cached if available
+        if let cached = shared.cachedDisplayInfo {
+            onStatusUpdate("Using cached data...")
+            return cached
+        }
 
-        onStatusUpdate("Initializing WebView...")
-        await webView.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+        // Initialize shared WebView
+        await shared.initialize(onStatusUpdate: onStatusUpdate)
+        guard let webView = shared.webView else {
+            onStatusUpdate("WebView initialization failed")
+            return DisplayInfo.empty
+        }
 
         onStatusUpdate("Detecting display features...")
         let script = """
@@ -2219,7 +2367,7 @@ private struct DisplayInfo: Sendable {
             return "\(w / divisor):\(h / divisor)"
         }
 
-        return DisplayInfo(
+        let displayResult = DisplayInfo(
             screenWidth: formatPx(result["screenWidth"]),
             screenHeight: formatPx(result["screenHeight"]),
             aspectRatio: calculateAspectRatio(width: result["screenWidth"], height: result["screenHeight"]),
@@ -2238,6 +2386,10 @@ private struct DisplayInfo: Sendable {
             invertedColors: result["invertedColors"] as? Bool ?? false,
             forcedColors: result["forcedColors"] as? Bool ?? false
         )
+
+        // Cache result
+        shared.cachedDisplayInfo = displayResult
+        return displayResult
     }
 }
 
@@ -2296,7 +2448,7 @@ struct AccessibilityFeaturesView: View {
     }
 }
 
-private struct AccessibilityInfo: Sendable {
+fileprivate struct AccessibilityInfo: Sendable {
     // User Preferences
     let reducedMotion: String
     let reducedTransparency: String
@@ -2318,15 +2470,29 @@ private struct AccessibilityInfo: Sendable {
     let hover: String
     let anyHover: String
 
+    static let empty = AccessibilityInfo(
+        reducedMotion: "N/A", reducedTransparency: "N/A", contrast: "N/A", colorScheme: "N/A",
+        reducedData: "N/A", prefersReducedData: "N/A",
+        invertedColors: "N/A", forcedColors: "N/A", colorGamut: "N/A",
+        pointerType: "N/A", anyPointer: "N/A", hover: "N/A", anyHover: "N/A"
+    )
+
     @MainActor
     static func load(onStatusUpdate: @escaping (String) -> Void) async -> AccessibilityInfo {
-        onStatusUpdate("Launching WebView process...")
+        let shared = SharedInfoWebView.shared
 
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // Return cached if available
+        if let cached = shared.cachedAccessibilityInfo {
+            onStatusUpdate("Using cached data...")
+            return cached
+        }
 
-        onStatusUpdate("Initializing WebView...")
-        await webView.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+        // Initialize shared WebView
+        await shared.initialize(onStatusUpdate: onStatusUpdate)
+        guard let webView = shared.webView else {
+            onStatusUpdate("WebView initialization failed")
+            return AccessibilityInfo.empty
+        }
 
         onStatusUpdate("Detecting accessibility preferences...")
         let script = """
@@ -2385,7 +2551,7 @@ private struct AccessibilityInfo: Sendable {
 
         let result = await webView.evaluateJavaScriptAsync(script) as? [String: String] ?? [:]
 
-        return AccessibilityInfo(
+        let a11yResult = AccessibilityInfo(
             reducedMotion: result["reducedMotion"] ?? "Unknown",
             reducedTransparency: result["reducedTransparency"] ?? "Unknown",
             contrast: result["contrast"] ?? "Unknown",
@@ -2400,6 +2566,10 @@ private struct AccessibilityInfo: Sendable {
             hover: result["hover"] ?? "Unknown",
             anyHover: result["anyHover"] ?? "Unknown"
         )
+
+        // Cache result
+        shared.cachedAccessibilityInfo = a11yResult
+        return a11yResult
     }
 }
 
