@@ -248,7 +248,8 @@ private struct ConfigurationSettingsDetailView: View {
                     title: "Element Fullscreen API",
                     isOn: $elementFullscreenEnabled,
                     info: isIPad ? "iPad: Full element fullscreen support.\nWorks with any HTML element." : "iPhone: Limited to video elements only.\niPad recommended for full support.",
-                    disabled: !isIPad
+                    disabled: !isIPad,
+                    disabledLabel: "(iPad only)"
                 )
                 SettingToggleRow(
                     title: "Suppress Incremental Rendering",
@@ -855,55 +856,6 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Setting Toggle Row
-
-private struct SettingToggleRow: View {
-    let title: String
-    @Binding var isOn: Bool
-    let info: String?
-    let disabled: Bool
-
-    init(title: String, isOn: Binding<Bool>, info: String? = nil, disabled: Bool = false) {
-        self.title = title
-        self._isOn = isOn
-        self.info = info
-        self.disabled = disabled
-    }
-
-    @State private var showInfo = false
-
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack {
-                Text(title)
-                    .foregroundStyle(disabled ? .secondary : .primary)
-                if disabled {
-                    Text("(iPad only)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                if let info {
-                    Button {
-                        showInfo = true
-                    } label: {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(.secondary)
-                            .font(.footnote)
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $showInfo) {
-                        Text(info)
-                            .font(.footnote)
-                            .padding()
-                            .presentationCompactAdaptation(.popover)
-                    }
-                }
-            }
-        }
-        .disabled(disabled)
-    }
-}
-
 // MARK: - WebView Size Control
 
 private struct WebViewSizeControl: View {
@@ -1009,93 +961,6 @@ private struct PresetButton: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Color Picker Row
-
-private struct ColorPickerRow: View {
-    let title: String
-    @Binding var colorHex: String
-    let info: String?
-
-    @State private var showInfo: Bool = false
-    @State private var selectedColor: Color = .clear
-
-    init(title: String, colorHex: Binding<String>, info: String? = nil) {
-        self.title = title
-        self._colorHex = colorHex
-        self.info = info
-        self._selectedColor = State(initialValue: Color(hex: colorHex.wrappedValue) ?? .clear)
-    }
-
-    var body: some View {
-        HStack {
-            Text(title)
-            if let info {
-                Button {
-                    showInfo.toggle()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showInfo) {
-                    Text(info)
-                        .font(.caption)
-                        .padding()
-                        .presentationCompactAdaptation(.popover)
-                }
-            }
-            Spacer()
-            if !colorHex.isEmpty {
-                Button {
-                    colorHex = ""
-                    selectedColor = .clear
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            ColorPicker("", selection: $selectedColor, supportsOpacity: false)
-                .labelsHidden()
-                .onChange(of: selectedColor) { _, newValue in
-                    colorHex = newValue.toHex() ?? ""
-                }
-        }
-    }
-}
-
-// MARK: - Color Extensions
-
-private extension Color {
-    init?(hex: String) {
-        guard !hex.isEmpty else { return nil }
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        guard hexSanitized.count == 6 else { return nil }
-
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-
-        self.init(
-            red: Double((rgb & 0xFF0000) >> 16) / 255.0,
-            green: Double((rgb & 0x00FF00) >> 8) / 255.0,
-            blue: Double(rgb & 0x0000FF) / 255.0
-        )
-    }
-
-    func toHex() -> String? {
-        guard let components = UIColor(self).cgColor.components, components.count >= 3 else {
-            return nil
-        }
-        let r = Int(components[0] * 255)
-        let g = Int(components[1] * 255)
-        let b = Int(components[2] * 255)
-        return String(format: "#%02X%02X%02X", r, g, b)
     }
 }
 

@@ -42,20 +42,30 @@ SwiftUI 기반 단일 타겟 iOS 앱. 최소 지원 버전: iOS 26.1 (Tahoe)
 wina/
 ├── winaApp.swift              # App entry point (@main), 다크모드 상태 관리
 ├── ContentView.swift          # Root view, URL 입력 + 유효성 검사 + 북마크 + 최근 URL 기록
-├── SettingsView.swift         # WKWebView 설정 (20개 항목) + 권한 관리
-├── SafariVCSettingsView.swift # SafariVC 전용 설정 (5개 항목)
 ├── Features/
 │   ├── AppBar/                # 상단 바 버튼들
 │   │   ├── ThemeToggleButton.swift
 │   │   ├── SettingsButton.swift
 │   │   ├── InfoButton.swift
-│   │   └── BookmarkButton.swift
-│   └── Info/                  # WKWebView 정보 표시 (8개 서브메뉴 + 전체 검색)
-│       └── InfoView.swift     # 단일 파일에 모든 Info 뷰/모델 포함 (~2500줄)
-├── Shared/Components/         # 재사용 컴포넌트
-│   ├── GlassIconButton.swift  # 원형 glass effect 버튼
-│   ├── ChipButton.swift       # 탭 가능한 칩 버튼
-│   └── FlowLayout.swift       # 자동 줄바꿈 Layout
+│   │   ├── BookmarkButton.swift
+│   │   └── BackButton.swift
+│   ├── Settings/              # WebView 설정
+│   │   ├── SettingsView.swift         # WKWebView 설정 (20개 항목)
+│   │   └── SafariVCSettingsView.swift # SafariVC 전용 설정 (5개 항목)
+│   ├── Info/                  # WKWebView 정보 표시
+│   │   ├── InfoView.swift             # WKWebView Info (~2500줄)
+│   │   └── SafariVCInfoView.swift     # SafariVC Info
+│   └── WebView/               # WebView 컨테이너
+│       └── WebViewContainer.swift
+├── Shared/
+│   ├── Components/            # 재사용 UI 컴포넌트
+│   │   ├── GlassIconButton.swift      # 원형 glass effect 버튼
+│   │   ├── ChipButton.swift           # 탭 가능한 칩 버튼
+│   │   ├── FlowLayout.swift           # 자동 줄바꿈 Layout
+│   │   ├── SettingToggleRow.swift     # 설정 토글 (info popover 포함)
+│   │   └── ColorPickerRow.swift       # 색상 선택기 (info popover 포함)
+│   └── Extensions/            # 공유 확장
+│       └── ColorExtensions.swift      # Color/UIColor hex 변환
 └── Resources/Icons/           # 앱 아이콘 원본
 ```
 
