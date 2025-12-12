@@ -2045,6 +2045,7 @@ struct DisplayFeaturesView: View {
                 Section("Screen") {
                     InfoRow(label: "Width", value: info.screenWidth)
                     InfoRow(label: "Height", value: info.screenHeight)
+                    InfoRow(label: "Aspect Ratio", value: info.aspectRatio, info: "Width to height ratio.\nCalculated using GCD for clean display.")
                     InfoRow(label: "Available Width", value: info.availWidth, info: "Screen width minus system UI elements.")
                     InfoRow(label: "Available Height", value: info.availHeight, info: "Screen height minus system UI elements.")
                     InfoRow(label: "Device Pixel Ratio", value: info.devicePixelRatio, info: "CSS pixels to device pixels ratio.")
@@ -2094,6 +2095,7 @@ private struct DisplayInfo: Sendable {
     // Screen
     let screenWidth: String
     let screenHeight: String
+    let aspectRatio: String
     let availWidth: String
     let availHeight: String
     let devicePixelRatio: String
@@ -2178,9 +2180,36 @@ private struct DisplayInfo: Sendable {
             return "N/A"
         }
 
+        func gcd(_ a: Int, _ b: Int) -> Int {
+            b == 0 ? a : gcd(b, a % b)
+        }
+
+        func calculateAspectRatio(width: Any?, height: Any?) -> String {
+            let w: Int
+            let h: Int
+            if let num = width as? Int {
+                w = num
+            } else if let num = width as? Double {
+                w = Int(num)
+            } else {
+                return "N/A"
+            }
+            if let num = height as? Int {
+                h = num
+            } else if let num = height as? Double {
+                h = Int(num)
+            } else {
+                return "N/A"
+            }
+            guard w > 0 && h > 0 else { return "N/A" }
+            let divisor = gcd(w, h)
+            return "\(w / divisor):\(h / divisor)"
+        }
+
         return DisplayInfo(
             screenWidth: formatPx(result["screenWidth"]),
             screenHeight: formatPx(result["screenHeight"]),
+            aspectRatio: calculateAspectRatio(width: result["screenWidth"], height: result["screenHeight"]),
             availWidth: formatPx(result["availWidth"]),
             availHeight: formatPx(result["availHeight"]),
             devicePixelRatio: "\(result["devicePixelRatio"] as? Double ?? 1.0)x",
@@ -2366,44 +2395,37 @@ private struct AccessibilityInfo: Sendable {
 struct ActiveSettingsView: View {
     @Binding var showSettings: Bool
 
-    // Core Settings
+    // Configuration Settings (require WebView reload)
     @AppStorage("enableJavaScript") private var enableJavaScript: Bool = true
     @AppStorage("allowsContentJavaScript") private var allowsContentJavaScript: Bool = true
-    @AppStorage("allowZoom") private var allowZoom: Bool = true
     @AppStorage("minimumFontSize") private var minimumFontSize: Double = 0
-
-    // Media Settings
     @AppStorage("mediaAutoplay") private var mediaAutoplay: Bool = false
     @AppStorage("inlineMediaPlayback") private var inlineMediaPlayback: Bool = true
     @AppStorage("allowsAirPlay") private var allowsAirPlay: Bool = true
     @AppStorage("allowsPictureInPicture") private var allowsPictureInPicture: Bool = true
-
-    // Navigation
-    @AppStorage("allowsBackForwardGestures") private var allowsBackForwardGestures: Bool = true
-    @AppStorage("allowsLinkPreview") private var allowsLinkPreview: Bool = true
-
-    // Behavior
-    @AppStorage("suppressesIncrementalRendering") private var suppressesIncrementalRendering: Bool = false
+    @AppStorage("preferredContentMode") private var preferredContentMode: Int = 0
     @AppStorage("javaScriptCanOpenWindows") private var javaScriptCanOpenWindows: Bool = false
     @AppStorage("fraudulentWebsiteWarning") private var fraudulentWebsiteWarning: Bool = true
-    @AppStorage("textInteractionEnabled") private var textInteractionEnabled: Bool = true
     @AppStorage("elementFullscreenEnabled") private var elementFullscreenEnabled: Bool = false
-
-    // Data Detectors
+    @AppStorage("suppressesIncrementalRendering") private var suppressesIncrementalRendering: Bool = false
     @AppStorage("detectPhoneNumbers") private var detectPhoneNumbers: Bool = false
     @AppStorage("detectLinks") private var detectLinks: Bool = false
     @AppStorage("detectAddresses") private var detectAddresses: Bool = false
     @AppStorage("detectCalendarEvents") private var detectCalendarEvents: Bool = false
-
-    // Privacy & Security
     @AppStorage("privateBrowsing") private var privateBrowsing: Bool = false
     @AppStorage("upgradeToHTTPS") private var upgradeToHTTPS: Bool = true
 
-    // Content Mode
-    @AppStorage("preferredContentMode") private var preferredContentMode: Int = 0
-
-    // User Agent
+    // Live Settings (instant apply)
+    @AppStorage("allowsBackForwardGestures") private var allowsBackForwardGestures: Bool = false
+    @AppStorage("allowsLinkPreview") private var allowsLinkPreview: Bool = true
+    @AppStorage("allowZoom") private var allowZoom: Bool = false
+    @AppStorage("textInteractionEnabled") private var textInteractionEnabled: Bool = true
+    @AppStorage("findInteractionEnabled") private var findInteractionEnabled: Bool = false
+    @AppStorage("pageZoom") private var pageZoom: Double = 1.0
+    @AppStorage("underPageBackgroundColor") private var underPageBackgroundColorHex: String = ""
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
+    @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
+    @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
 
     private var isIPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
@@ -2426,50 +2448,52 @@ struct ActiveSettingsView: View {
         return detectors.isEmpty ? "None" : detectors.joined(separator: ", ")
     }
 
+    private var screenSize: CGSize {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return CGSize(width: 393, height: 852)
+        }
+        return scene.screen.bounds.size
+    }
+
+    private var webViewSizeText: String {
+        let w = Int(screenSize.width * webViewWidthRatio)
+        let h = Int(screenSize.height * webViewHeightRatio)
+        return "\(w) × \(h)"
+    }
+
     var body: some View {
         List {
             Section {
-                Text("Current WebView configuration. Modify these in Settings.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .listSectionSpacing(0)
-
-            Section("Core") {
-                ActiveSettingRow(label: "JavaScript", enabled: enableJavaScript, info: "Enable/disable all JavaScript.\nOff = No scripts run at all.\nMost websites won't work.")
-                ActiveSettingRow(label: "Content JavaScript", enabled: allowsContentJavaScript, info: "Scripts from web pages.\nOff = Block page scripts only.\nApp features still work.")
-                ActiveSettingRow(label: "Ignore Viewport Scale Limits", enabled: allowZoom, info: "Force pinch-to-zoom.\nOverrides pages that disable zoom.\nBetter accessibility.")
-                InfoRow(label: "Minimum Font Size", value: minimumFontSize == 0 ? "Default" : "\(Int(minimumFontSize)) pt", info: "Minimum text size.\nMakes small text readable.\n0 = Use page's font sizes.")
-            }
-
-            Section("Media") {
-                ActiveSettingRow(label: "Auto-play Media", enabled: mediaAutoplay, info: "Videos play automatically.\nOff = Tap to play videos.\nSaves battery and data.")
-                ActiveSettingRow(label: "Inline Playback", enabled: inlineMediaPlayback, info: "Play videos in page.\nOff = Always fullscreen.\nNeeded for background videos.")
-                ActiveSettingRow(label: "AirPlay", enabled: allowsAirPlay, info: "Stream to Apple TV.\nOff = Hide AirPlay button.\nFor local-only playback.")
-                ActiveSettingRow(label: "Picture in Picture", enabled: allowsPictureInPicture, info: "Floating video window.\nWatch while using other apps.\nSwipe up or tap button.")
+                HStack {
+                    Spacer()
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Open Settings", systemImage: "gear")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
             }
 
-            Section("Navigation") {
+            // MARK: - Live Settings
+            Section {
                 ActiveSettingRow(label: "Back/Forward Gestures", enabled: allowsBackForwardGestures, info: "Swipe to go back/forward.\nOff = Use buttons only.\nAvoids conflicts with page gestures.")
                 ActiveSettingRow(label: "Link Preview", enabled: allowsLinkPreview, info: "Preview links before opening.\nLong-press or 3D Touch.\nSee page without leaving.")
-                InfoRow(label: "Content Mode", value: contentModeText, info: "Mobile or desktop sites.\nRecommended: Auto-detect.\nDesktop useful on iPad.")
-            }
-
-            Section("Behavior") {
-                ActiveSettingRow(label: "JS Can Open Windows", enabled: javaScriptCanOpenWindows, info: "Allow popup windows.\nOff = Block popups.\nSome sites need this on.")
-                ActiveSettingRow(label: "Fraudulent Website Warning", enabled: fraudulentWebsiteWarning, info: "Warn about dangerous sites.\nPhishing and malware alerts.\nKeep on for safety.")
+                ActiveSettingRow(label: "Ignore Viewport Scale Limits", enabled: allowZoom, info: "Force pinch-to-zoom.\nOverrides pages that disable zoom.\nBetter accessibility.")
                 ActiveSettingRow(label: "Text Interaction", enabled: textInteractionEnabled, info: "Select and copy text.\nOff = No text selection.\nDisable for game-like pages.")
-                ActiveSettingRow(label: "Element Fullscreen API", enabled: elementFullscreenEnabled, info: isIPad ? "iPad: Full fullscreen support.\nAny element can go fullscreen.\nVideos, games, presentations." : "iPhone: Video fullscreen only.\nFull API on iPad only.\nVideos still work normally.", unavailable: !isIPad)
-                ActiveSettingRow(label: "Suppress Incremental Rendering", enabled: suppressesIncrementalRendering, info: "Wait for full page load.\nCleaner appearance.\nFeels slower to load.")
+                ActiveSettingRow(label: "Find Interaction", enabled: findInteractionEnabled, info: "System find panel.\nCmd+F on iPad with keyboard.\nSearch text in page.")
+            } header: {
+                Label("Live Settings", systemImage: "bolt.fill")
+            } footer: {
+                Text("Changes apply instantly without reload")
             }
 
-            Section("Data Detectors") {
-                InfoRow(label: "Active", value: activeDataDetectors, info: "Auto-link special content.\nPhone numbers, addresses, dates.\nTap to call, map, or add event.")
-            }
-
-            Section("Privacy & Security") {
-                ActiveSettingRow(label: "Private Browsing", enabled: privateBrowsing, info: "No history saved.\nCookies cleared on exit.\nLike incognito mode.")
-                ActiveSettingRow(label: "Upgrade to HTTPS", enabled: upgradeToHTTPS, info: "Auto-secure connections.\nHTTP → HTTPS upgrade.\nProtects your data.")
+            Section("Display") {
+                InfoRow(label: "Page Zoom", value: "\(Int(pageZoom * 100))%", info: "Scale of page content.\n100% = Default size.\nUseful for small text.")
+                InfoRow(label: "Under Page Background", value: underPageBackgroundColorHex.isEmpty ? "Default" : underPageBackgroundColorHex, info: "Background color shown when scrolling beyond page bounds.")
             }
 
             Section("User-Agent") {
@@ -2485,18 +2509,53 @@ struct ActiveSettingsView: View {
                     }
                 }
             }
+
+            Section("WebView Size") {
+                InfoRow(label: "Width", value: "\(Int(webViewWidthRatio * 100))%", info: "WebView width ratio.\n100% = Full screen width.")
+                InfoRow(label: "Height", value: "\(Int(webViewHeightRatio * 100))%", info: "WebView height ratio.\n100% = Full screen height.")
+                InfoRow(label: "Dimensions", value: webViewSizeText, info: "Current WebView size in points.")
+            }
+
+            // MARK: - Configuration Settings
+            Section {
+                ActiveSettingRow(label: "JavaScript", enabled: enableJavaScript, info: "Enable/disable all JavaScript.\nOff = No scripts run at all.\nMost websites won't work.")
+                ActiveSettingRow(label: "Content JavaScript", enabled: allowsContentJavaScript, info: "Scripts from web pages.\nOff = Block page scripts only.\nApp features still work.")
+                InfoRow(label: "Minimum Font Size", value: minimumFontSize == 0 ? "Default" : "\(Int(minimumFontSize)) pt", info: "Minimum text size.\nMakes small text readable.\n0 = Use page's font sizes.")
+            } header: {
+                Label("Configuration", systemImage: "gearshape.fill")
+            } footer: {
+                Text("Changes require WebView reload")
+            }
+
+            Section("Media") {
+                ActiveSettingRow(label: "Auto-play Media", enabled: mediaAutoplay, info: "Videos play automatically.\nOff = Tap to play videos.\nSaves battery and data.")
+                ActiveSettingRow(label: "Inline Playback", enabled: inlineMediaPlayback, info: "Play videos in page.\nOff = Always fullscreen.\nNeeded for background videos.")
+                ActiveSettingRow(label: "AirPlay", enabled: allowsAirPlay, info: "Stream to Apple TV.\nOff = Hide AirPlay button.\nFor local-only playback.")
+                ActiveSettingRow(label: "Picture in Picture", enabled: allowsPictureInPicture, info: "Floating video window.\nWatch while using other apps.\nSwipe up or tap button.")
+            }
+
+            Section("Content Mode") {
+                InfoRow(label: "Mode", value: contentModeText, info: "Mobile or desktop sites.\nRecommended: Auto-detect.\nDesktop useful on iPad.")
+            }
+
+            Section("Behavior") {
+                ActiveSettingRow(label: "JS Can Open Windows", enabled: javaScriptCanOpenWindows, info: "Allow popup windows.\nOff = Block popups.\nSome sites need this on.")
+                ActiveSettingRow(label: "Fraudulent Website Warning", enabled: fraudulentWebsiteWarning, info: "Warn about dangerous sites.\nPhishing and malware alerts.\nKeep on for safety.")
+                ActiveSettingRow(label: "Element Fullscreen API", enabled: elementFullscreenEnabled, info: isIPad ? "iPad: Full fullscreen support.\nAny element can go fullscreen.\nVideos, games, presentations." : "iPhone: Video fullscreen only.\nFull API on iPad only.\nVideos still work normally.", unavailable: !isIPad)
+                ActiveSettingRow(label: "Suppress Incremental Rendering", enabled: suppressesIncrementalRendering, info: "Wait for full page load.\nCleaner appearance.\nFeels slower to load.")
+            }
+
+            Section("Data Detectors") {
+                InfoRow(label: "Active", value: activeDataDetectors, info: "Auto-link special content.\nPhone numbers, addresses, dates.\nTap to call, map, or add event.")
+            }
+
+            Section("Privacy & Security") {
+                ActiveSettingRow(label: "Private Browsing", enabled: privateBrowsing, info: "No history saved.\nCookies cleared on exit.\nLike incognito mode.")
+                ActiveSettingRow(label: "Upgrade to HTTPS", enabled: upgradeToHTTPS, info: "Auto-secure connections.\nHTTP → HTTPS upgrade.\nProtects your data.")
+            }
         }
         .navigationTitle("Active Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-            }
-        }
     }
 }
 

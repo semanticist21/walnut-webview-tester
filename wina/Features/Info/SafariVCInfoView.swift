@@ -290,19 +290,22 @@ private struct SafariActiveSettingsDetailView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section("Behavior") {
-                SafariInfoRow(
+            // MARK: - Configuration (all SafariVC settings require reload)
+            Section {
+                SafariActiveSettingRow(
                     label: "Reader Mode",
-                    value: entersReaderIfAvailable ? "Enabled" : "Disabled",
-                    valueColor: entersReaderIfAvailable ? .green : .secondary,
+                    enabled: entersReaderIfAvailable,
                     info: "Automatically enters Reader mode when available for the page."
                 )
-                SafariInfoRow(
+                SafariActiveSettingRow(
                     label: "Bar Collapsing",
-                    value: barCollapsingEnabled ? "Enabled" : "Disabled",
-                    valueColor: barCollapsingEnabled ? .green : .secondary,
+                    enabled: barCollapsingEnabled,
                     info: "Navigation bar collapses when scrolling down."
                 )
+            } header: {
+                Label("Configuration", systemImage: "gearshape.fill")
+            } footer: {
+                Text("All changes require SafariVC reload")
             }
 
             Section("UI Style") {
@@ -328,6 +331,41 @@ private struct SafariActiveSettingsDetailView: View {
         }
         .navigationTitle("Active Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Safari Active Setting Row
+
+private struct SafariActiveSettingRow: View {
+    let label: String
+    let enabled: Bool
+    var info: String? = nil
+
+    @State private var showingInfo = false
+
+    var body: some View {
+        HStack {
+            Text(label)
+            if let info {
+                Button {
+                    showingInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showingInfo) {
+                    Text(info)
+                        .font(.footnote)
+                        .padding()
+                        .presentationCompactAdaptation(.popover)
+                }
+            }
+            Spacer()
+            Image(systemName: enabled ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(enabled ? .green : .secondary)
+        }
     }
 }
 
