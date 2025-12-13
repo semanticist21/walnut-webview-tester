@@ -245,57 +245,7 @@ struct ContentView: View {
                     }
                 }
                 .animation(.easeOut(duration: 0.25), value: urlValidationState)
-                // Autocomplete dropdown as overlay
-                .overlay(alignment: .top) {
-                    if showDropdown && !filteredURLs.isEmpty {
-                        VStack(spacing: 0) {
-                            ForEach(filteredURLs.prefix(4), id: \.self) { url in
-                                Button {
-                                    urlText = url
-                                    textFieldFocused = false
-                                    showDropdown = false
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "clock.arrow.circlepath")
-                                            .foregroundStyle(.secondary)
-                                            .font(.system(size: 14))
-                                        Text(url)
-                                            .font(.system(size: 14))
-                                            .foregroundStyle(.primary)
-                                            .lineLimit(1)
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, 18)
-                                    .padding(.vertical, 10)
-                                    .contentShape(Rectangle()) // 전체 영역 터치 가능
-                                }
-                                .buttonStyle(.plain)
-                                .overlay(alignment: .trailing) {
-                                    Button {
-                                        removeURL(url)
-                                    } label: {
-                                        Image(systemName: "xmark")
-                                            .foregroundStyle(.tertiary)
-                                            .font(.system(size: 12))
-                                            .padding(8) // 터치 영역 확대
-                                            .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .padding(.trailing, 10)
-                                }
-
-                                if url != filteredURLs.prefix(4).last {
-                                    Divider()
-                                        .padding(.horizontal, 16)
-                                }
-                            }
-                        }
-                        .frame(width: inputWidth)
-                        .glassEffect(in: .rect(cornerRadius: 16))
-                        .offset(y: 60)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                }
+                .overlay(alignment: .top) { dropdownOverlay }
             }
             .position(x: geometry.size.width / 2, y: geometry.size.height * 0.32)
             .onChange(of: textFieldFocused) { _, newValue in
@@ -309,6 +259,66 @@ struct ContentView: View {
                         showDropdown = !newValue.isEmpty
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var dropdownOverlay: some View {
+        if showDropdown && !filteredURLs.isEmpty {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(filteredURLs.enumerated()), id: \.element) { index, url in
+                        dropdownRow(url: url, isLast: index == filteredURLs.count - 1)
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(width: inputWidth, height: min(CGFloat(filteredURLs.count) * 40, 160))
+            .glassEffect(in: .rect(cornerRadius: 16))
+            .offset(y: 60)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+    }
+
+    private func dropdownRow(url: String, isLast: Bool) -> some View {
+        Button {
+            urlText = url
+            textFieldFocused = false
+            showDropdown = false
+        } label: {
+            HStack {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14))
+                Text(url)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .trailing) {
+            Button {
+                removeURL(url)
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 12))
+                    .padding(8)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 10)
+        }
+        .overlay(alignment: .bottom) {
+            if !isLast {
+                Divider()
+                    .padding(.horizontal, 16)
             }
         }
     }

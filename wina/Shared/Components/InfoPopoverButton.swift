@@ -69,9 +69,11 @@ struct DeprecatedPopoverButton: View {
                 }
                 Text(text)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .font(.footnote)
             .padding()
+            .frame(maxWidth: 280)
             .presentationCompactAdaptation(.popover)
         }
     }

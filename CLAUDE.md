@@ -106,6 +106,7 @@ wina/
 - `@AppStorage` 사용하여 설정 값 UserDefaults 영속화
 - Sheet 기반 모달 (Settings, Info)
 - WKWebView JavaScript 평가로 브라우저 capability 감지
+- 최근 URL 기록: 최대 20개 저장, dropdown에 4개 표시 + 스크롤
 
 ## Design System
 
@@ -500,6 +501,31 @@ wina/
 - ❌ 깊은 중첩 (최대 3단계: `Features/Settings/Components/`)
 
 ## SwiftUI 레이아웃 주의사항
+
+### 컴파일러 타입 체크 문제
+
+복잡한 뷰 표현식은 컴파일러가 타입 체크하지 못함. **별도 computed property로 분리 필수**:
+
+```swift
+// ❌ 컴파일 에러: "unable to type-check this expression in reasonable time"
+var body: some View {
+    VStack {
+        // 중첩된 ForEach, overlay, 복잡한 조건문 등
+    }
+}
+
+// ✅ 해결: 복잡한 부분을 별도 property로 분리
+var body: some View {
+    VStack {
+        complexPart
+    }
+}
+
+@ViewBuilder
+private var complexPart: some View {
+    // 분리된 복잡한 뷰
+}
+```
 
 ### ZStack Overlay에서 터치 이벤트 처리
 
