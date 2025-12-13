@@ -231,22 +231,32 @@ SettingsFormatter.enabledStatus(enabled)          // true→"Enabled", false→"
 
 아이콘만 있는 버튼은 터치 영역이 불명확해져 터치가 안 되는 버그 발생:
 
+**왜 `.buttonStyle(.plain)`이 문제인가?**
+
+| ButtonStyle | 터치 영역 |
+|-------------|-----------|
+| `.automatic` (기본) | label 전체 영역 (`.frame()` 포함) |
+| `.plain` | **실제 콘텐츠 픽셀만** (`.frame()` 무시됨) |
+
+`.plain` 스타일은 탭 시 시각적 효과를 제거하지만, 동시에 터치 영역도 Image의 렌더링된 픽셀로 제한됨. 예: 18pt 아이콘 + 48x48 frame → 18pt 영역만 터치 가능.
+
 ```swift
 // ✅ 올바른 패턴
 Button {
     action()
 } label: {
     Image(systemName: "xmark.circle.fill")
-        .padding(8)                    // 터치 영역 확대
-        .contentShape(Rectangle())    // 터치 영역 명확화
+        .frame(width: 44, height: 44)
+        .contentShape(Circle())        // 44x44 원형 전체가 터치 영역
 }
 .buttonStyle(.plain)
 
-// ❌ 터치 안 되는 패턴
+// ❌ 터치 안 되는 패턴 (아이콘 픽셀만 터치 가능)
 Button {
     action()
 } label: {
     Image(systemName: "xmark.circle.fill")
+        .frame(width: 44, height: 44)  // 레이아웃만, 터치 영역 아님
 }
 .buttonStyle(.plain)
 ```
