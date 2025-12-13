@@ -262,9 +262,8 @@ struct ConfigurationSettingsView: View {
             SettingToggleRow(
                 title: "Element Fullscreen API",
                 isOn: $elementFullscreenEnabled,
-                info: isIPad ? "iPad: Full element fullscreen support." : "iPhone: Limited to video elements only.",
-                disabled: !isIPad,
-                disabledLabel: "(iPad only)"
+                info: "Allows elements to enter fullscreen mode. Full API available on iPad only; iPhone is limited to video elements.",
+                disabled: !isIPad
             )
             SettingToggleRow(
                 title: "Suppress Incremental Rendering",
