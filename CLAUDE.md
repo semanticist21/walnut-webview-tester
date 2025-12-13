@@ -645,6 +645,32 @@ struct OverlayMenuBars: View {
 }
 ```
 
+### Dropdown을 TextField 아래에 정확히 위치시키기
+
+`.overlay`로 dropdown을 만들 때 **alignmentGuide + zIndex 패턴** 사용:
+
+```swift
+// ❌ 문제: overlay가 VStack 중앙 기준으로 배치되어 input을 가림
+VStack {
+    urlInputField
+    quickOptions
+}
+.overlay { dropdown }
+
+// ✅ 해결: input에 직접 overlay 붙이고 alignmentGuide로 위치 지정
+urlInputField
+    .overlay(alignment: .bottom) {
+        dropdown
+            .alignmentGuide(.bottom) { $0[.top] }  // dropdown의 top을 input의 bottom에 맞춤
+    }
+    .zIndex(1)  // sibling 뷰(quickOptions) 위에 표시
+```
+
+**원리**:
+- `.overlay(alignment: .bottom)` - overlay 기본 anchor를 base view의 bottom에 맞춤
+- `.alignmentGuide(.bottom) { $0[.top] }` - overlay 내부에서 `.bottom`을 재정의해 overlay의 top edge를 사용
+- `.zIndex(1)` - 같은 VStack level에서 다른 sibling 뷰 위에 표시 (zIndex는 overlay 내부가 아닌 같은 stack level에 적용해야 함)
+
 ### contentShape와 터치 영역
 
 배경 탭으로 키보드/드롭다운을 닫을 때:
