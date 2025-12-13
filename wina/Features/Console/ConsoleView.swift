@@ -291,9 +291,11 @@ private struct LogRow: View {
         return formatter
     }()
 
-    // Check if message needs expansion (more than 3 lines or 200+ chars)
+    // Check if message needs expansion
+    // - 80+ chars (likely wraps to 2+ lines on screen)
+    // - 2+ newline chars (explicit multiline)
     private var needsExpansion: Bool {
-        log.message.count > 200 || log.message.filter { $0 == "\n" }.count >= 3
+        log.message.count > 80 || log.message.filter { $0 == "\n" }.count >= 2
     }
 
     // Extract JSON from message (returns original, formatted and minified versions)
