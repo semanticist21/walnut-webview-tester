@@ -308,15 +308,15 @@ struct ConsoleView: View {
                 .disabled(consoleManager.logs.isEmpty)
 
                 Button {
-                    shareItem = ShareContent(content: consoleManager.exportAsText())
+                    shareItem = ShareContent(content: ConsoleExporter.exportAsText(filteredLogs))
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
+                        .foregroundStyle(filteredLogs.isEmpty ? .tertiary : .primary)
                         .frame(width: 44, height: 44)
                         .contentShape(Circle())
                 }
-                .disabled(consoleManager.logs.isEmpty)
+                .disabled(filteredLogs.isEmpty)
             }
             .padding(.horizontal, 6)
             .glassEffect(in: .capsule)

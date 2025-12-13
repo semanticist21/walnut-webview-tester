@@ -150,7 +150,7 @@ enum ConsoleExporter {
 
     /// Export logs as formatted text
     /// - Parameter logs: Array of ConsoleLog
-    /// - Returns: Formatted text string
+    /// - Returns: Formatted text string with blank lines between entries
     static func exportAsText(_ logs: [ConsoleLog]) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -163,7 +163,7 @@ enum ConsoleExporter {
                 }
                 return line
             }
-            .joined(separator: "\n")
+            .joined(separator: "\n\n")
     }
 
     /// Export logs as JSON array
