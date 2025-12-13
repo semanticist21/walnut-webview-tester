@@ -23,15 +23,13 @@ struct ContentView: View {
     @State private var cachedRecentURLs: [String] = []
     @State private var validationTask: Task<Void, Never>?
     @State private var webViewNavigator = WebViewNavigator()
-    @State private var cleanStart: Bool = false
     @FocusState private var textFieldFocused: Bool
     @AppStorage("recentURLs") private var recentURLsData = Data()
     @AppStorage("bookmarkedURLs") private var bookmarkedURLsData = Data()
 
     // Quick options (synced with Settings)
+    @AppStorage("cleanStart") private var cleanStart = false
     @AppStorage("privateBrowsing") private var privateBrowsing = false
-    @AppStorage("enableJavaScript") private var enableJavaScript = true
-    @AppStorage("contentMode") private var contentMode: Int = 0
 
     // Cached NSDataDetector for URL validation (expensive to create)
     private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
@@ -309,9 +307,13 @@ struct ContentView: View {
                     }
                 }
                 .animation(.easeOut(duration: 0.25), value: urlValidationState)
-                .overlay(alignment: .top) { dropdownOverlay }
+                .overlay(alignment: .bottom) {
+                    dropdownOverlay
+                        .alignmentGuide(.bottom) { $0[.top] }
+                }
+                .zIndex(1)
 
-                // Quick options
+                // Quick options (WKWebView only)
                 if !useSafariWebView {
                     quickOptionsRow
                 }
@@ -345,7 +347,7 @@ struct ContentView: View {
             .scrollBounceBehavior(.basedOnSize)
             .frame(width: inputWidth, height: min(CGFloat(filteredURLs.count) * 40, 160))
             .glassEffect(in: .rect(cornerRadius: 16))
-            .offset(y: 60)
+            .padding(.top, 8)
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }
@@ -392,31 +394,13 @@ struct ContentView: View {
         }
     }
 
-    // Inverted binding for "No JS" toggle
-    private var noJavaScript: Binding<Bool> {
-        Binding(
-            get: { !enableJavaScript },
-            set: { enableJavaScript = !$0 }
-        )
-    }
-
-    // Desktop mode binding (contentMode: 0=Recommended, 1=Mobile, 2=Desktop)
-    private var desktopMode: Binding<Bool> {
-        Binding(
-            get: { contentMode == 2 },
-            set: { contentMode = $0 ? 2 : 0 }
-        )
-    }
-
     private var quickOptionsRow: some View {
-        FlowLayout(spacing: 8, alignment: .center) {
-            ToggleChipButton(isOn: $cleanStart, label: "Clean Start")
-            ToggleChipButton(isOn: $privateBrowsing, label: "Private")
-            ToggleChipButton(isOn: noJavaScript, label: "No JS")
-            ToggleChipButton(isOn: desktopMode, label: "Desktop")
+        VStack(spacing: 8) {
+            ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
+            ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")
         }
         .frame(width: inputWidth)
-        .padding(.top, 8)
+        .padding(.top, 12)
     }
 
     private var topBar: some View {
@@ -467,7 +451,6 @@ struct ContentView: View {
 
         // Clean Start: clear all website data before loading
         if cleanStart {
-            cleanStart = false  // Reset toggle (one-time action)
             Task {
                 let dataStore = WKWebsiteDataStore.default()
                 let allTypes = WKWebsiteDataStore.allWebsiteDataTypes()

@@ -87,6 +87,20 @@ struct OverlayMenuBars: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
         }
+        // URL 변경 alert - bottomBar 조건부 렌더링과 독립적으로 유지
+        .alert("Change URL", isPresented: $showURLInput) {
+            TextField("Enter URL", text: $urlInputText)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Cancel", role: .cancel) {}
+            Button("Go") {
+                if !urlInputText.isEmpty {
+                    onURLChange(urlInputText)
+                }
+            }
+        } message: {
+            Text("Enter a new URL to load")
+        }
     }
 
     // MARK: - Top Bar
@@ -174,19 +188,6 @@ struct OverlayMenuBars: View {
             .padding(.bottom, -(geometry.safeAreaInsets.bottom * 0.6))
             .offset(y: bottomOffset)
             .frame(maxHeight: .infinity, alignment: .bottom)
-            .alert("Change URL", isPresented: $showURLInput) {
-                TextField("Enter URL", text: $urlInputText)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                Button("Cancel", role: .cancel) {}
-                Button("Go") {
-                    if !urlInputText.isEmpty {
-                        onURLChange(urlInputText)
-                    }
-                }
-            } message: {
-                Text("Enter a new URL to load")
-            }
         }
     }
 
