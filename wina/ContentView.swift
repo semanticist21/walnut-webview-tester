@@ -183,6 +183,7 @@ struct ContentView: View {
             ConsoleView(consoleManager: webViewNavigator.consoleManager)
                 .presentationDetents([.fraction(0.35), .medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .presentationContentInteraction(.scrolls)
                 .presentationDragIndicator(.visible)
         }
         // Recreate SafariVC when configuration settings change
