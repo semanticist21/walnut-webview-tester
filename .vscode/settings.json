@@ -9,5 +9,20 @@
   "swiftlint.enable": true,
   "swiftlint.autoLintWorkspace": true,
   "apple-swift-format.path": "swift format",
-  "editor.rulers": [120]
+  "editor.rulers": [120],
+  "cSpell.words": [
+    "wina",
+    "wallnut",
+    "WKWebView",
+    "SafariVC",
+    "SFSafariViewController",
+    "xmark",
+    "checkmark",
+    "circlepath",
+    "subheadline",
+    "autocorrection",
+    "Autocapitalization",
+    "Contentful",
+    "WKURL"
+  ]
 }

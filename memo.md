@@ -120,16 +120,21 @@ webView.takeSnapshot(with: nil) { image, error in
 
 ## 제한사항
 
-1. **Safari Web Inspector 수준의 완전한 기능은 불가능**
+1. **JavaScript 비활성화 시 대부분 기능 불가**
+   - Console, DOM Tree, CSS 추출, Performance API 등 모두 `evaluateJavaScript` 필요
+   - JS Off 설정 시 스크린샷(`takeSnapshot`)만 가능 (네이티브 API)
+   - 디버깅 기능 구현 시 JS Off면 해당 탭 비활성화 + 경고 메시지 필요
+
+2. **Safari Web Inspector 수준의 완전한 기능은 불가능**
    - 소스 디버깅(breakpoint)은 Safari 연결 필요
    - 실시간 CSS 편집은 복잡한 구현 필요
 
-2. **Network 완전 인터셉트 불가**
+3. **Network 완전 인터셉트 불가**
    - WebSocket, 이미지 로딩 등 일부는 JS 후킹으로 캡처 어려움
    - `URLProtocol`은 WKWebView에서 작동 안 함
    - `WKURLSchemeHandler`는 커스텀 스킴만 처리 가능
 
-3. **외부 CSS 접근 제한**
+4. **외부 CSS 접근 제한**
    - CORS 정책으로 외부 도메인 스타일시트 규칙 읽기 불가
 
-4. **SafariVC: Clear Website Data** (iOS 16+) - `SFSafariViewController.DataStore.default.clearWebsiteData()` 추가 고려
+5. **SafariVC: Clear Website Data** (iOS 16+) - `SFSafariViewController.DataStore.default.clearWebsiteData()` 추가 고려
