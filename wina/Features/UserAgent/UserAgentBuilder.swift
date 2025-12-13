@@ -198,7 +198,8 @@ struct UserAgentParser {
 
         // Platform (in parentheses)
         if let openParen = userAgent.firstIndex(of: "("),
-           let closeParen = userAgent.firstIndex(of: ")") {
+           let closeParen = userAgent.firstIndex(of: ")"),
+           openParen < closeParen {
             let start = userAgent.index(after: openParen)
             result.platform = String(userAgent[start..<closeParen])
         }
