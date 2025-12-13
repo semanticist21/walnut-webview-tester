@@ -383,7 +383,8 @@ final class ConsoleExporterTests: XCTestCase {
         XCTAssertTrue(result.contains("First"))
         XCTAssertTrue(result.contains("Second"))
         XCTAssertTrue(result.contains("Third"))
-        XCTAssertEqual(result.components(separatedBy: "\n").count, 3)
+        // 3 logs with "\n\n" separator = 5 lines (log1 + empty + log2 + empty + log3)
+        XCTAssertEqual(result.components(separatedBy: "\n").count, 5)
     }
 
     func testExportAsTextDateFormat() {

@@ -1,4 +1,5 @@
 import Foundation
+import UAParserSwift
 
 // MARK: - User Agent Builder
 
@@ -163,15 +164,33 @@ struct UserAgentParser {
         var browserVersion: String = ""
         var extras: [String] = []
 
+        // Device info from UAParserSwift
+        var deviceType: String = ""
+        var deviceVendor: String = ""
+        var deviceModel: String = ""
+
+        // OS info from UAParserSwift
+        var osVersion: String = ""
+
         var isMobile: Bool {
-            platform.contains("iPhone") ||
-            platform.contains("Android") ||
-            platform.contains("Mobile")
+            // Use deviceType from UAParserSwift if available
+            if !deviceType.isEmpty {
+                return deviceType.lowercased() == "mobile"
+            }
+            // Fallback to platform string check
+            return platform.contains("iPhone") ||
+                platform.contains("Mobile") ||
+                (platform.contains("Android") && !platform.contains("Tablet"))
         }
 
         var isTablet: Bool {
-            platform.contains("iPad") ||
-            (platform.contains("Android") && !platform.contains("Mobile"))
+            // Use deviceType from UAParserSwift if available
+            if !deviceType.isEmpty {
+                return deviceType.lowercased() == "tablet"
+            }
+            // Fallback to platform string check
+            return platform.contains("iPad") ||
+                (platform.contains("Android") && platform.contains("Tablet"))
         }
 
         var osName: String {
@@ -185,10 +204,50 @@ struct UserAgentParser {
         }
     }
 
+    /// Parse user agent string using UAParserSwift library
     static func parse(_ userAgent: String) -> ParsedUserAgent {
         var result = ParsedUserAgent()
 
-        // Mozilla version
+        // Use UAParserSwift for primary parsing
+        let parser = UAParser(agent: userAgent)
+
+        // Browser info
+        if let browserName = parser.browser?.name {
+            result.browser = browserName
+        }
+        if let browserVersion = parser.browser?.version {
+            result.browserVersion = browserVersion
+        }
+
+        // Engine info
+        if let engineName = parser.engine?.name {
+            result.engine = engineName
+        }
+        if let engineVersion = parser.engine?.version {
+            result.engineVersion = engineVersion
+        }
+
+        // Device info
+        if let deviceType = parser.device?.type {
+            result.deviceType = deviceType
+        }
+        if let deviceVendor = parser.device?.vendor {
+            result.deviceVendor = deviceVendor
+        }
+        if let deviceModel = parser.device?.model {
+            result.deviceModel = deviceModel
+        }
+
+        // OS info
+        if let osName = parser.os?.name {
+            // Store in platform for backward compatibility
+            result.platform = osName
+        }
+        if let osVersion = parser.os?.version {
+            result.osVersion = osVersion
+        }
+
+        // Mozilla version (still parse manually for compatibility)
         if let mozRange = userAgent.range(of: "Mozilla/") {
             let start = mozRange.upperBound
             if let end = userAgent[start...].firstIndex(of: " ") {
@@ -196,66 +255,13 @@ struct UserAgentParser {
             }
         }
 
-        // Platform (in parentheses)
-        if let openParen = userAgent.firstIndex(of: "("),
-           let closeParen = userAgent.firstIndex(of: ")"),
-           openParen < closeParen {
-            let start = userAgent.index(after: openParen)
-            result.platform = String(userAgent[start..<closeParen])
-        }
-
-        // Engine
-        if userAgent.contains("AppleWebKit/") {
-            result.engine = "WebKit"
-            if let range = userAgent.range(of: "AppleWebKit/") {
-                let start = range.upperBound
-                if let end = userAgent[start...].firstIndex(of: " ") {
-                    result.engineVersion = String(userAgent[start..<end])
-                }
-            }
-        } else if userAgent.contains("Gecko/") {
-            result.engine = "Gecko"
-            if let range = userAgent.range(of: "rv:") {
-                let start = range.upperBound
-                if let end = userAgent[start...].firstIndex(where: { $0 == ")" || $0 == " " }) {
-                    result.engineVersion = String(userAgent[start..<end])
-                }
-            }
-        }
-
-        // Browser detection (order matters - most specific first)
-        let browserPatterns: [(pattern: String, name: String)] = [
-            ("Edg/", "Edge"),
-            ("EdgA/", "Edge Android"),
-            ("EdgiOS/", "Edge iOS"),
-            ("OPR/", "Opera"),
-            ("Brave", "Brave"),
-            ("CriOS/", "Chrome iOS"),
-            ("FxiOS/", "Firefox iOS"),
-            ("Firefox/", "Firefox"),
-            ("Chrome/", "Chrome"),
-            ("Safari/", "Safari"),
-        ]
-
-        for (pattern, name) in browserPatterns {
-            if let range = userAgent.range(of: pattern) {
-                result.browser = name
-                let start = range.upperBound
-                if let end = userAgent[start...].firstIndex(where: { $0 == " " || $0 == ")" }) {
-                    result.browserVersion = String(userAgent[start..<end])
-                } else {
-                    result.browserVersion = String(userAgent[start...])
-                }
-                break
-            }
-        }
-
-        // If Safari but also has Version/, use Version number
-        if result.browser == "Safari",
-           let versionRange = userAgent.range(of: "Version/") {
-            let start = versionRange.upperBound
-            if let end = userAgent[start...].firstIndex(of: " ") {
-                result.browserVersion = String(userAgent[start..<end])
+        // If UAParserSwift didn't find platform, extract from parentheses
+        if result.platform.isEmpty {
+            if let openParen = userAgent.firstIndex(of: "("),
+               let closeParen = userAgent.firstIndex(of: ")"),
+               openParen < closeParen {
+                let start = userAgent.index(after: openParen)
+                result.platform = String(userAgent[start..<closeParen])
             }
         }
 
