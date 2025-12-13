@@ -206,18 +206,18 @@ struct ContentView: View {
                                 }
                             }
 
-                        if !urlText.isEmpty {
-                            Button {
-                                urlText = ""
-                                textFieldFocused = false
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                                    .padding(8)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
+                        Button {
+                            urlText = ""
+                            textFieldFocused = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .padding(8)
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .opacity(urlText.isEmpty ? 0 : 1)
+                        .disabled(urlText.isEmpty)
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 14)
