@@ -98,6 +98,7 @@ JSON.stringify({
 ```
 
 ### Safari(WKWebView) 지원 여부
+
 - ✅ `navigation` - 페이지 로딩 타이밍
 - ✅ `resource` - 리소스별 로딩 타이밍
 - ✅ `paint` - First Paint, First Contentful Paint
@@ -130,3 +131,5 @@ webView.takeSnapshot(with: nil) { image, error in
 
 3. **외부 CSS 접근 제한**
    - CORS 정책으로 외부 도메인 스타일시트 규칙 읽기 불가
+
+4. **SafariVC: Clear Website Data** (iOS 16+) - `SFSafariViewController.DataStore.default.clearWebsiteData()` 추가 고려

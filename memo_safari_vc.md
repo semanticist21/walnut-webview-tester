@@ -16,6 +16,7 @@ URL Scheme 또는 `ASWebAuthenticationSession`을 활용하면 개발 도구로�
 | **SFAuthenticationSession** | iOS 11 전용 | Deprecated (iOS 12에서 대체됨) |
 
 ### 권장: ASWebAuthenticationSession
+
 - iOS 12+ 표준
 - Apple 권장 방식
 - 시스템이 브라우저 세션 관리

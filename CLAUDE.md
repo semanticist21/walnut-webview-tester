@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 WKWebView의 다양한 설정 옵션을 실시간으로 테스트하고 검증하기 위한 도구. 개발자가 WebView 동작을 빠르게 확인하고 디버깅할 수 있도록 지원.
 
 ### 주요 기능
+
 - WKWebView 설정 옵션 토글 (JavaScript, 쿠키, 줌, 미디어 자동재생 등)
 - User-Agent 커스터마이징
 - URL 입력 (실시간 유효성 검사) 및 웹페이지 로딩 테스트
@@ -33,6 +34,35 @@ xcodebuild -project wina.xcodeproj -scheme wina -sdk iphonesimulator build
 # 특정 시뮬레이터 지정 빌드
 xcodebuild -project wina.xcodeproj -scheme wina -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
+
+## Linting & Formatting
+
+### SwiftLint (필수)
+
+```bash
+# 린트 실행
+swiftlint lint
+
+# 자동 수정 가능한 이슈 수정
+swiftlint --fix
+```
+
+### swift-format (선택적 - Xcode 26 내장)
+
+```bash
+# 단일 파일 포맷
+swift format format --in-place wina/SomeFile.swift
+
+# 전체 프로젝트 포맷 (⚠️ SwiftUI 뷰 빌더에서 컴파일 문제 발생 가능)
+swift format format --in-place --recursive wina/
+```
+
+> **주의**: swift-format은 복잡한 SwiftUI 뷰 빌더에서 컴파일러 타입 체크 문제를 일으킬 수 있음. 개별 파일에만 선택적으로 사용 권장.
+
+### 설정 파일
+
+- `.swiftlint.yml` - SwiftLint 규칙 설정
+- `.swift-format` - swift-format 설정 (4칸 들여쓰기, 120자 줄 길이)
 
 ## Architecture
 
@@ -72,6 +102,7 @@ wina/
 ```
 
 ### 데이터 흐름
+
 - `@AppStorage` 사용하여 설정 값 UserDefaults 영속화
 - Sheet 기반 모달 (Settings, Info)
 - WKWebView JavaScript 평가로 브라우저 capability 감지
@@ -88,6 +119,7 @@ wina/
 ```
 
 ### 디자인 원칙
+
 - `.glassEffect()` modifier 사용 (Material 대신)
 - 시스템 기본 배경 유지 (임의 배경색 X)
 - `.secondary`, `.primary` 등 시스템 색상 활용
@@ -165,6 +197,7 @@ SettingsFormatter.enabledStatus(enabled)          // true→"Enabled", false→"
 ```
 
 ### 금지 사항
+
 - ❌ info 버튼 직접 구현 (반드시 `InfoPopoverButton` 사용)
 - ❌ `UIDevice.userInterfaceIdiom` 직접 체크 (`UIDevice.current.isIPad` 사용)
 - ❌ `UIScreen.main.bounds` 사용 (`ScreenUtility.screenSize` 사용)
@@ -196,6 +229,7 @@ Button {
 ```
 
 **필수 적용 상황**:
+
 - `.buttonStyle(.plain)` 사용하는 아이콘 버튼
 - overlay/dropdown 내부 또는 근처 버튼
 - HStack/VStack 내 다른 터치 요소와 인접한 버튼
@@ -209,17 +243,20 @@ Button {
 | 에셋 | kebab-case | `app-icon` |
 
 ### 파일 구성
+
 - 1파일 1컴포넌트 원칙 (public View 기준)
 - 150줄 이하 유지 권장
 - 해당 파일 전용 helper는 같은 파일에 `private`으로 선언
 
 ### 작업 규칙
+
 - 끝나면 항상 문법검사 수행
 - 빌드 검증은 통합적인 작업 이후에만 확인 (시간 소요)
 
 ## Swift 성능 최적화 (2025)
 
 ### 메모리 관리 & ARC
+
 - 앱 크래시의 약 90%가 메모리 문제 관련
 - `deinit`에서 observers 명시적 제거
 - 클로저에서 `[weak self]` 사용하여 retain cycle 방지
@@ -232,6 +269,7 @@ Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
 ```
 
 ### Value Types 우선
+
 - `struct` > `class` (스택 할당으로 최대 50% 메모리 절감)
 - 단순 데이터 모델은 반드시 `struct` 사용
 - Generics 활용으로 타입 안전성 + 재사용성 확보
@@ -248,6 +286,7 @@ class UserSettings { ... }
 ```
 
 ### Lazy Loading & 캐싱
+
 - `lazy var` 사용으로 초기 로드 시간 최대 30% 감소
 - 자주 접근하는 데이터는 캐싱
 - 불필요한 계산 최소화
@@ -258,12 +297,14 @@ lazy var expensiveObject = ExpensiveClass()
 ```
 
 ### 컬렉션 최적화
+
 - 정렬된 데이터: `Array` (O(1) 접근)
 - 키-값 조회: `Dictionary` (O(1) 조회)
 - 중복 제거: `Set`
 - 시간 복잡도 항상 고려
 
 ### 반복문 최적화
+
 ```swift
 // ✅ stride 사용
 for i in stride(from: 0, to: 100, by: 2) { }
@@ -277,6 +318,7 @@ for i in 0..<array.count { }
 ```
 
 ### SwiftUI 렌더링 최적화
+
 - 불필요한 렌더링 방지를 위해 `@State`, `@Binding` 범위 최소화
 - 1000개 이상 항목은 `LazyVStack`, `LazyHStack` 사용
 - `Equatable` 준수로 불필요한 뷰 업데이트 방지
@@ -292,6 +334,7 @@ struct ItemView: View, Equatable {
 ```
 
 ### 피해야 할 것
+
 - ❌ Reflection (런타임 오버헤드)
 - ❌ 강제 언래핑 (`!`) - `if let`, `guard let` 사용
 - ❌ 동기 네트워크 호출 - `async/await` 사용
@@ -299,10 +342,12 @@ struct ItemView: View, Equatable {
 ## Swift 코드 스타일 가이드 (2025)
 
 ### 기본 원칙 (Apple API Design Guidelines)
+
 - **명확성 우선**: 간결함보다 명확성이 중요
 - **사용 시점의 명확성**: 선언이 아닌 사용처에서 이해하기 쉽게
 
 ### 네이밍
+
 ```swift
 // ✅ 올바른 네이밍
 func removeItem(at index: Int)           // 명확한 파라미터 레이블
@@ -316,6 +361,7 @@ var enabled: Bool                         // is 접두사 누락
 ```
 
 ### self 사용
+
 ```swift
 // ✅ self 생략 (Swift 기본)
 func updateUI() {
@@ -333,6 +379,7 @@ Timer.scheduledTimer { [weak self] _ in
 ```
 
 ### let vs var
+
 ```swift
 // ✅ 항상 let으로 시작, 필요 시 var로 변경
 let configuration = URLSessionConfiguration.default
@@ -340,6 +387,7 @@ configuration.timeoutInterval = 30  // 컴파일러가 var 필요 시 알려줌
 ```
 
 ### 코드 구성
+
 - Extension으로 프로토콜 준수 분리
 - `// MARK: -` 로 섹션 구분
 - 관련 기능을 논리적으로 그룹화
@@ -357,6 +405,7 @@ private extension ContentView {
 ```
 
 ### Protocol-Oriented Programming
+
 ```swift
 // ✅ 프로토콜 + 기본 구현
 protocol Loadable {
@@ -377,6 +426,7 @@ class HomeViewController: BaseViewController { }
 ### 이 프로젝트의 구조 원칙
 
 **Feature-Based Organization** 채택:
+
 ```
 wina/
 ├── winaApp.swift              # 진입점 (루트 유지)
@@ -421,6 +471,7 @@ wina/
 | 에셋 | `Resources/` 또는 `Assets.xcassets/` | `Resources/Icons/app-icon.svg` |
 
 ### 금지 사항
+
 - ❌ `Utilities/`, `Helpers/`, `Misc/` 같은 모호한 폴더명
 - ❌ 빈 폴더 유지
 - ❌ 단일 파일을 위한 폴더 생성
@@ -490,11 +541,14 @@ magick input.svg output.png
 ## WKWebView API Capability 체크 주의사항
 
 ### Info.plist 권한이 필요한 API
+
 앱에 권한이 선언되지 않으면 WebKit이 API를 노출하지 않아 false 반환:
+
 - **Media Devices / WebRTC**: `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`
 - **Geolocation**: `NSLocationWhenInUseUsageDescription`
 
 **현재 등록된 권한** (`Info.plist` - 프로젝트 루트):
+
 - `NSCameraUsageDescription`: 카메라 (Media Devices, WebRTC 테스트용)
 - `NSMicrophoneUsageDescription`: 마이크 (Media Devices, WebRTC 테스트용)
 - `NSLocationWhenInUseUsageDescription`: 위치 (Geolocation 테스트용)
@@ -502,7 +556,9 @@ magick input.svg output.png
 > 실제 권한 요청 다이얼로그를 표시하려면 `WKUIDelegate`의 `requestMediaCapturePermission` 구현 필요
 
 ### WKWebView에서 항상 미지원 (WebKit 정책)
+
 Safari에서만 지원되거나 WebKit에서 구현하지 않은 API:
+
 - **Service Workers**: Safari/홈 화면 PWA 전용. WKWebView는 App-Bound Domains 필요
 - **Web Push Notifications**: Safari/홈 화면 PWA 전용 (iOS 16.4+)
 - **Vibration, Battery, Bluetooth, USB, NFC**: WebKit 보안/개인정보 정책으로 미구현
@@ -538,6 +594,7 @@ Safari에서만 지원되거나 WebKit에서 구현하지 않은 API:
 ## Info 검색 구조
 
 `InfoView`의 `allItems` computed property가 모든 검색 가능 항목을 통합:
+
 - Active Settings (20개): 현재 WebView 설정 상태 (항상 표시), Settings 바로가기 버튼 포함
 - Device, Browser, API, Codecs, Display, Accessibility: 데이터 로드 후 검색 가능
 - Performance: 항목만 노출 (`linkToPerformance: true`), 클릭 시 벤치마크 화면으로 이동
@@ -553,12 +610,14 @@ WebView 타입에 따라 다른 Settings 화면이 표시됨:
 3개 섹션으로 구분:
 
 **Static Settings (WebView 재로드 필요)**
+
 | 카테고리 | 설정 |
 |----------|------|
 | Configuration | JavaScript, Content JavaScript, Minimum Font Size, Auto-play Media, Inline Playback, AirPlay, PiP, Content Mode, JS Can Open Windows, Fraudulent Website Warning, Element Fullscreen API, Suppress Incremental Rendering, Data Detectors (Phone, Links, Address, Calendar) |
 | Privacy & Security | Private Browsing, Upgrade to HTTPS |
 
 **Live Settings (즉시 적용)**
+
 | 카테고리 | 설정 |
 |----------|------|
 | Navigation & Interaction | Back/Forward Gestures, Link Preview, Ignore Viewport Scale Limits, Text Interaction, Find Interaction |
@@ -566,6 +625,7 @@ WebView 타입에 따라 다른 Settings 화면이 표시됨:
 | WebView Size | Width/Height ratio sliders (25%~100%), presets (100%, App, 75%) |
 
 **System**
+
 | 카테고리 | 설정 |
 |----------|------|
 | Permissions | Camera, Microphone, Location (WebRTC, Geolocation용) |
@@ -583,6 +643,7 @@ SFSafariViewController는 설정 가능 항목이 제한적:
 > **WKWebView vs SafariVC 차이점**: SafariVC는 JavaScript 비활성화, Custom User-Agent, Content Mode, Data Detectors 등 대부분의 커스터마이징이 불가능. Safari의 쿠키/비밀번호를 공유하는 대신 앱에서 제어할 수 없음.
 
 ### Settings 표시 로직 (ContentView.swift)
+
 ```swift
 if useSafariWebView {
     SafariVCSettingsView()      // SafariVC 선택 시
@@ -626,16 +687,19 @@ private func resetToDefaults() {
 ```
 
 **적용 대상**:
+
 - `ConfigurationSettingsView`: Static settings (WebView 재생성 필요)
 - `LiveSettingsView`: Live settings (즉시 적용)
 - `SafariVCConfigurationSettingsView`: SafariVC 설정
 
 **UI 패턴**:
+
 - Toolbar: Apply 버튼 (`hasChanges` false면 disabled)
 - List 내부: Reset 버튼 (`GlassActionButton` destructive style)
 - 변경 시 경고 Section 표시
 
 ### UI 컴포넌트
+
 - `SettingsCategoryRow`: 아이콘, 제목, 부가설명이 포함된 NavigationLink 스타일
 - `SettingToggleRow`: info 버튼이 포함된 Toggle 스타일
 - `InfoCategoryRow`: Info 뷰에서 사용하는 동일 스타일의 카테고리 row
@@ -645,6 +709,7 @@ private func resetToDefaults() {
 ## Info 버튼 컴포넌트
 
 Info 뷰에서 사용되는 재사용 컴포넌트들 (모두 `InfoPopoverButton` 사용):
+
 - `InfoRow`: 라벨-값 쌍 표시, 선택적 info 버튼
 - `CapabilityRow`: 지원 여부 체크마크 표시, 선택적 info 버튼, unavailable 플래그
 - `ActiveSettingRow`: 설정 상태 표시 (enabled/disabled), 선택적 info 버튼

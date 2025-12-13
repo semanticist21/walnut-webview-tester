@@ -14,6 +14,7 @@ struct ColorPickerRow: View {
     let title: String
     @Binding var colorHex: String
     var info: String?
+    var deprecatedInfo: String?
 
     private var selectedColor: Binding<Color> {
         Binding(
@@ -27,6 +28,9 @@ struct ColorPickerRow: View {
     var body: some View {
         HStack {
             Text(title)
+            if let deprecatedInfo {
+                DeprecatedPopoverButton(text: deprecatedInfo)
+            }
             if let info {
                 InfoPopoverButton(text: info)
             }

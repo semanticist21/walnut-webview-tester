@@ -1,0 +1,155 @@
+# SwiftLint Configuration for Wallnut (wina)
+# SwiftLint 0.62.2 + Xcode 26.1.1 + swift-format 6.2.1
+
+# Paths to include
+included:
+  - wina
+
+# Paths to exclude
+excluded:
+  - .build
+  - DerivedData
+  - Pods
+  - Carthage
+  - vendor
+
+# Disabled rules (handled by swift-format or too noisy)
+disabled_rules:
+  - trailing_whitespace  # swift-format handles this
+  - trailing_comma  # swift-format adds trailing commas (conflict)
+  - opening_brace  # swift-format handles this
+  - colon  # swift-format handles this
+  - comma  # swift-format handles this
+  - line_length  # swift-format handles this with 120 limit
+  - multiline_arguments  # too strict for SwiftUI builders
+
+# Analyzer rules (run separately with `swiftlint analyze`)
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+# Opt-in rules (valuable additions)
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - toggle_bool
+  - first_where
+  - last_where
+  - sorted_first_last
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - flatmap_over_map_reduce
+  - reduce_boolean
+  - reduce_into
+  - closure_end_indentation
+  - collection_alignment
+  - literal_expression_end_indentation
+  - multiline_function_chains
+  - multiline_literal_brackets
+  - multiline_parameters
+  - operator_usage_whitespace
+  - vertical_parameter_alignment_on_call
+  - array_init
+  - discouraged_optional_boolean
+  - fallthrough
+  - fatal_error_message
+  - joined_default_parameter
+  - legacy_multiple
+  - legacy_random
+  - modifier_order
+  - overridden_super_call
+  - prohibited_super_call
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - static_operator
+  - unavailable_function
+  - unneeded_parentheses_in_closure_argument
+  - unowned_variable_capture
+  - yoda_condition
+  - private_action
+  - private_outlet
+  - weak_delegate
+
+# Rule configurations
+type_body_length:
+  warning: 500
+  error: 800  # InfoView struct is ~500 lines
+
+file_length:
+  warning: 1000
+  error: 3000  # InfoView.swift is ~2900 lines (project requirement)
+  ignore_comment_only_lines: true
+
+function_body_length:
+  warning: 100
+  error: 300  # Some JS evaluation functions are long
+
+function_parameter_count:
+  warning: 6
+  error: 8
+
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+  ignores_case_statements: true
+
+nesting:
+  type_level:
+    warning: 3
+  function_level:
+    warning: 4
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - id
+    - ok
+    - or
+    - i
+    - j
+    - k
+    - x
+    - y
+    - z
+    - r
+    - g
+    - b
+    - w
+    - h
+    - m
+    - d
+    - a
+    - to
+    - db
+    - vc
+    - vm
+    - ui
+
+type_name:
+  min_length:
+    warning: 3
+    error: 2
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - winaApp  # @main app entry point
+
+large_tuple:
+  warning: 4
+  error: 5
+
+# Custom rules
+custom_rules:
+  no_print_in_production:
+    name: "No print() in production code"
+    regex: '^\s*print\s*\('
+    message: "Use os_log or Logger instead of print()"
+    severity: warning

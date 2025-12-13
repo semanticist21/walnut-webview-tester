@@ -176,15 +176,19 @@ struct SafariVCConfigurationSettingsView: View {
             ColorPickerRow(
                 title: "Control Tint",
                 colorHex: $controlTintColorHex,
-                info: "Tint color for buttons and other controls."
+                info: "Tint color for buttons and other controls.",
+                deprecatedInfo: "Deprecated in iOS 26. Interferes with Liquid Glass background effects."
             )
             ColorPickerRow(
                 title: "Bar Tint",
                 colorHex: $barTintColorHex,
-                info: "Background color of the navigation bar."
+                info: "Background color of the navigation bar.",
+                deprecatedInfo: "Deprecated in iOS 26. Interferes with Liquid Glass background effects."
             )
         } header: {
             Text("Colors")
+        } footer: {
+            Text("These options are deprecated in iOS 26 and may not have visible effects.")
         }
     }
 
