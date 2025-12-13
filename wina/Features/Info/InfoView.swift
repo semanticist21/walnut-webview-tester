@@ -119,6 +119,7 @@ struct InfoView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
             .listRowBackground(Color.clear)
 
             Section {
@@ -210,6 +211,7 @@ struct InfoView: View {
             }
         }
         .listSectionSpacing(.compact)
+        .contentMargins(.top, 0, for: .scrollContent)
     }
 
     // MARK: - Search Results View
