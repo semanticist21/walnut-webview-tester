@@ -18,6 +18,10 @@ struct SafariVCInfoView: View {
     @AppStorage("safariControlTintColorHex") private var controlTintColorHex: String = ""
     @AppStorage("safariBarTintColorHex") private var barTintColorHex: String = ""
 
+    // Size settings
+    @AppStorage("safariWidthRatio") private var widthRatio: Double = 1.0
+    @AppStorage("safariHeightRatio") private var heightRatio: Double = 0.82
+
     private var allItems: [SafariInfoSearchItem] {
         var items: [SafariInfoSearchItem] = []
 
@@ -27,7 +31,9 @@ struct SafariVCInfoView: View {
             SafariInfoSearchItem(category: "Active Settings", label: "Bar Collapsing", value: barCollapsingEnabled ? "Enabled" : "Disabled"),
             SafariInfoSearchItem(category: "Active Settings", label: "Dismiss Button", value: SettingsFormatter.dismissButtonStyleText(dismissButtonStyle)),
             SafariInfoSearchItem(category: "Active Settings", label: "Control Tint", value: controlTintColorHex.isEmpty ? "System" : controlTintColorHex),
-            SafariInfoSearchItem(category: "Active Settings", label: "Bar Tint", value: barTintColorHex.isEmpty ? "System" : barTintColorHex)
+            SafariInfoSearchItem(category: "Active Settings", label: "Bar Tint", value: barTintColorHex.isEmpty ? "System" : barTintColorHex),
+            SafariInfoSearchItem(category: "Active Settings", label: "SafariVC Width", value: "\(Int(widthRatio * 100))%"),
+            SafariInfoSearchItem(category: "Active Settings", label: "SafariVC Height", value: "\(Int(heightRatio * 100))%")
         ])
 
         // Safari Features
@@ -257,6 +263,14 @@ private struct SafariActiveSettingsDetailView: View {
     @AppStorage("safariControlTintColorHex") private var controlTintColorHex: String = ""
     @AppStorage("safariBarTintColorHex") private var barTintColorHex: String = ""
 
+    // Size settings
+    @AppStorage("safariWidthRatio") private var widthRatio: Double = 1.0
+    @AppStorage("safariHeightRatio") private var heightRatio: Double = 0.82
+
+    private var screenSize: CGSize {
+        ScreenUtility.screenSize
+    }
+
     var body: some View {
         List {
             Section {
@@ -318,6 +332,33 @@ private struct SafariActiveSettingsDetailView: View {
                     value: barTintColorHex.isEmpty ? "System" : barTintColorHex,
                     info: "Background color of navigation bar."
                 )
+            }
+
+            Section {
+                let w = Int(screenSize.width * widthRatio)
+                let h = Int(screenSize.height * heightRatio)
+
+                SafariInfoRow(
+                    label: "Width",
+                    value: "\(Int(widthRatio * 100))%",
+                    info: "SafariVC width ratio.\n100% = Full screen width."
+                )
+                SafariInfoRow(
+                    label: "Height",
+                    value: "\(Int(heightRatio * 100))%",
+                    info: "SafariVC height ratio.\n100% = Full screen height."
+                )
+                SafariInfoRow(
+                    label: "Viewport",
+                    value: "\(w) × \(h) pt",
+                    info: "Current SafariVC viewport size in points."
+                )
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .foregroundStyle(.purple)
+                    Text("Size")
+                }
             }
         }
         .navigationTitle("Active Settings")

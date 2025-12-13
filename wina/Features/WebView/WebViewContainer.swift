@@ -56,18 +56,30 @@ struct WebViewContainer: View {
     // User Agent
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
 
-    // WebView Size
+    // WKWebView Size
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
 
+    // SafariVC Size (separate settings)
+    @AppStorage("safariWidthRatio") private var safariWidthRatio: Double = 1.0
+    @AppStorage("safariHeightRatio") private var safariHeightRatio: Double = 0.82
+
+    private var currentWidthRatio: Double {
+        useSafari ? safariWidthRatio : webViewWidthRatio
+    }
+
+    private var currentHeightRatio: Double {
+        useSafari ? safariHeightRatio : webViewHeightRatio
+    }
+
     private var isFullSize: Bool {
-        webViewWidthRatio >= 0.99 && webViewHeightRatio >= 0.99
+        currentWidthRatio >= 0.99 && currentHeightRatio >= 0.99
     }
 
     var body: some View {
         GeometryReader { geometry in
-            let webViewWidth = geometry.size.width * webViewWidthRatio
-            let webViewHeight = geometry.size.height * webViewHeightRatio
+            let webViewWidth = geometry.size.width * currentWidthRatio
+            let webViewHeight = geometry.size.height * currentHeightRatio
 
             ZStack {
                 // Background (only shown when size is less than 100%)
@@ -117,10 +129,16 @@ struct WebViewContainer: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onChange(of: webViewWidthRatio) { _, _ in
-                webViewID = UUID()
+                if !useSafari { webViewID = UUID() }
             }
             .onChange(of: webViewHeightRatio) { _, _ in
-                webViewID = UUID()
+                if !useSafari { webViewID = UUID() }
+            }
+            .onChange(of: safariWidthRatio) { _, _ in
+                if useSafari { webViewID = UUID() }
+            }
+            .onChange(of: safariHeightRatio) { _, _ in
+                if useSafari { webViewID = UUID() }
             }
         }
     }

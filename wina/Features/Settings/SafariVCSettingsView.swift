@@ -28,7 +28,7 @@ struct SafariVCSettingsView: View {
                             icon: "gearshape.fill",
                             iconColor: .orange,
                             title: "Configuration",
-                            description: "Behavior, Style, Colors"
+                            description: "All changes reload SafariVC"
                         )
                     }
                 }
@@ -200,6 +200,92 @@ struct SafariVCConfigurationSettingsView: View {
     }
 }
 
+// MARK: - SafariVC Size Settings
+
+struct SafariVCSizeSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var webViewID: UUID
+
+    // AppStorage (persistent)
+    @AppStorage("safariWidthRatio") private var storedWidthRatio: Double = 1.0
+    @AppStorage("safariHeightRatio") private var storedHeightRatio: Double = 0.82
+
+    // Local state (editable)
+    @State private var widthRatio: Double = 1.0
+    @State private var heightRatio: Double = 0.82
+
+    private var hasChanges: Bool {
+        abs(widthRatio - storedWidthRatio) > 0.001 ||
+        abs(heightRatio - storedHeightRatio) > 0.001
+    }
+
+    var body: some View {
+        List {
+            Section {
+                WebViewSizeControl(
+                    widthRatio: $widthRatio,
+                    heightRatio: $heightRatio
+                )
+            } header: {
+                Text("SafariVC Size")
+            }
+
+            Section {
+                HStack {
+                    Spacer()
+                    GlassActionButton("Reset", icon: "arrow.counterclockwise", style: .destructive) {
+                        resetToDefaults()
+                    }
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
+            }
+        }
+        .navigationTitle("Size")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Apply") { applyChanges() }
+                    .fontWeight(.semibold)
+                    .disabled(!hasChanges)
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if hasChanges {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Changes will reload SafariVC")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: hasChanges)
+        .onAppear { loadFromStorage() }
+    }
+
+    private func loadFromStorage() {
+        widthRatio = storedWidthRatio
+        heightRatio = storedHeightRatio
+    }
+
+    private func applyChanges() {
+        storedWidthRatio = widthRatio
+        storedHeightRatio = heightRatio
+        webViewID = UUID()
+        dismiss()
+    }
+
+    private func resetToDefaults() {
+        widthRatio = 1.0
+        heightRatio = 0.82
+    }
+}
+
 #Preview("SafariVC Settings") {
     SafariVCSettingsView()
 }
@@ -208,5 +294,12 @@ struct SafariVCConfigurationSettingsView: View {
     @Previewable @State var id = UUID()
     NavigationStack {
         SafariVCConfigurationSettingsView(webViewID: $id)
+    }
+}
+
+#Preview("SafariVC Size") {
+    @Previewable @State var id = UUID()
+    NavigationStack {
+        SafariVCSizeSettingsView(webViewID: $id)
     }
 }

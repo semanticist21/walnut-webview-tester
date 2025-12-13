@@ -524,6 +524,7 @@ struct InfoView: View {
                             Text("WebView Capabilities")
                         }
                     }
+                    .listSectionSpacing(.compact)
                 }
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search all info")
