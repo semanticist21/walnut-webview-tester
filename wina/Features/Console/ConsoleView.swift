@@ -13,6 +13,7 @@ struct ConsoleLog: Identifiable, Equatable {
     let id = UUID()
     let type: LogType
     let message: String
+    let source: String?  // e.g., "main.js:45"
     let timestamp: Date
 
     enum LogType: String, CaseIterable {
@@ -24,21 +25,31 @@ struct ConsoleLog: Identifiable, Equatable {
 
         var icon: String {
             switch self {
-            case .log: return "text.bubble"
-            case .info: return "info.circle"
-            case .warn: return "exclamationmark.triangle"
-            case .error: return "xmark.circle"
-            case .debug: return "ladybug"
+            case .log: return "chevron.right"
+            case .info: return "info.circle.fill"
+            case .warn: return "exclamationmark.triangle.fill"
+            case .error: return "xmark.circle.fill"
+            case .debug: return "ant.fill"
             }
         }
 
         var color: Color {
             switch self {
-            case .log: return .primary
+            case .log: return .secondary
             case .info: return .blue
             case .warn: return .orange
             case .error: return .red
             case .debug: return .purple
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .log: return "Log"
+            case .info: return "Info"
+            case .warn: return "Warnings"
+            case .error: return "Errors"
+            case .debug: return "Debug"
             }
         }
     }
@@ -51,10 +62,10 @@ class ConsoleManager {
     var logs: [ConsoleLog] = []
     var isCapturing: Bool = true
 
-    func addLog(type: String, message: String) {
+    func addLog(type: String, message: String, source: String? = nil) {
         guard isCapturing else { return }
         let logType = ConsoleLog.LogType(rawValue: type) ?? .log
-        let log = ConsoleLog(type: logType, message: message, timestamp: Date())
+        let log = ConsoleLog(type: logType, message: message, source: source, timestamp: Date())
         DispatchQueue.main.async {
             self.logs.append(log)
         }
@@ -64,30 +75,29 @@ class ConsoleManager {
         logs.removeAll()
     }
 
-    func toggleCapturing() {
-        isCapturing.toggle()
-    }
+    var errorCount: Int { logs.filter { $0.type == .error }.count }
+    var warnCount: Int { logs.filter { $0.type == .warn }.count }
 }
 
 // MARK: - Console View
 
 struct ConsoleView: View {
     let consoleManager: ConsoleManager
-    @Environment(\.dismiss) private var dismiss
     @State private var filterType: ConsoleLog.LogType?
     @State private var searchText: String = ""
 
     private var filteredLogs: [ConsoleLog] {
         var result = consoleManager.logs
 
-        // Filter by type
         if let filterType {
             result = result.filter { $0.type == filterType }
         }
 
-        // Filter by search text
         if !searchText.isEmpty {
-            result = result.filter { $0.message.localizedCaseInsensitiveContains(searchText) }
+            result = result.filter {
+                $0.message.localizedCaseInsensitiveContains(searchText)
+                || ($0.source?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
 
         return result
@@ -96,10 +106,8 @@ struct ConsoleView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Filter bar
-                filterBar
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
+                // Filter tabs (Chrome DevTools style)
+                filterTabs
 
                 Divider()
 
@@ -118,81 +126,93 @@ struct ConsoleView: View {
                         consoleManager.clear()
                     } label: {
                         Image(systemName: "trash")
+                            .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
                     }
                     .disabled(consoleManager.logs.isEmpty)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
-                        Button {
-                            consoleManager.toggleCapturing()
-                        } label: {
-                            Image(systemName: consoleManager.isCapturing ? "pause.fill" : "play.fill")
-                        }
-
-                        Button("Done") {
-                            dismiss()
-                        }
+                    Button {
+                        consoleManager.isCapturing.toggle()
+                    } label: {
+                        Image(systemName: consoleManager.isCapturing ? "pause.fill" : "play.fill")
+                            .foregroundStyle(consoleManager.isCapturing ? .red : .green)
                     }
                 }
             }
-            .searchable(text: $searchText, prompt: "Search logs")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Filter")
         }
     }
 
-    private var filterBar: some View {
+    // MARK: - Filter Tabs
+
+    private var filterTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(label: "All", isSelected: filterType == nil) {
+            HStack(spacing: 0) {
+                FilterTab(label: "All", count: consoleManager.logs.count, isSelected: filterType == nil) {
                     filterType = nil
                 }
 
-                ForEach(ConsoleLog.LogType.allCases, id: \.self) { type in
-                    FilterChip(
-                        label: type.rawValue.capitalized,
-                        icon: type.icon,
-                        color: type.color,
+                FilterTab(label: "Errors", count: consoleManager.errorCount, isSelected: filterType == .error, color: .red) {
+                    filterType = .error
+                }
+
+                FilterTab(label: "Warnings", count: consoleManager.warnCount, isSelected: filterType == .warn, color: .orange) {
+                    filterType = .warn
+                }
+
+                ForEach([ConsoleLog.LogType.info, .log, .debug], id: \.self) { type in
+                    FilterTab(
+                        label: type.label,
+                        count: consoleManager.logs.filter { $0.type == type }.count,
                         isSelected: filterType == type
                     ) {
                         filterType = type
                     }
                 }
             }
+            .padding(.horizontal, 12)
         }
+        .frame(height: 36)
+        .background(Color(uiColor: .secondarySystemBackground))
     }
 
+    // MARK: - Empty State
+
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             Spacer()
             Image(systemName: "terminal")
-                .font(.system(size: 48))
+                .font(.system(size: 36))
                 .foregroundStyle(.tertiary)
-            Text(consoleManager.logs.isEmpty ? "No logs captured" : "No matching logs")
-                .font(.headline)
+            Text(consoleManager.logs.isEmpty ? "No logs" : "No matches")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             if !consoleManager.isCapturing {
-                Text("Capturing is paused")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                Label("Paused", systemImage: "pause.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
             Spacer()
         }
     }
+
+    // MARK: - Log List
 
     private var logList: some View {
         ScrollViewReader { proxy in
-            List {
-                ForEach(filteredLogs) { log in
-                    LogRow(log: log)
-                        .id(log.id)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(filteredLogs) { log in
+                        LogRow(log: log)
+                            .id(log.id)
+                    }
                 }
             }
-            .listStyle(.plain)
+            .background(Color(uiColor: .systemBackground))
             .onChange(of: consoleManager.logs.count) { _, _ in
-                // Auto-scroll to bottom on new log
                 if let lastLog = filteredLogs.last {
-                    withAnimation(.easeOut(duration: 0.2)) {
+                    withAnimation(.easeOut(duration: 0.15)) {
                         proxy.scrollTo(lastLog.id, anchor: .bottom)
                     }
                 }
@@ -201,77 +221,157 @@ struct ConsoleView: View {
     }
 }
 
-// MARK: - Log Row
+// MARK: - Filter Tab
 
-private struct LogRow: View {
-    let log: ConsoleLog
-
-    private var formattedTime: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        return formatter.string(from: log.timestamp)
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: log.type.icon)
-                .font(.system(size: 12))
-                .foregroundStyle(log.type.color)
-                .frame(width: 16)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(log.message)
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-
-                Text(formattedTime)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-    }
-}
-
-// MARK: - Filter Chip
-
-private struct FilterChip: View {
+private struct FilterTab: View {
     let label: String
-    var icon: String?
-    var color: Color = .primary
+    let count: Int
     let isSelected: Bool
+    var color: Color = .primary
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11))
-                }
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(isSelected ? color.opacity(0.2) : Color.secondary.opacity(0.15), in: Capsule())
+                }
             }
-            .foregroundStyle(isSelected ? .white : color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(isSelected ? color : Color.clear, in: Capsule())
-            .overlay {
-                Capsule()
-                    .strokeBorder(color.opacity(0.3), lineWidth: 1)
+            .foregroundStyle(isSelected ? color : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .overlay(alignment: .bottom) {
+                if isSelected {
+                    Rectangle()
+                        .fill(color)
+                        .frame(height: 2)
+                }
             }
         }
         .buttonStyle(.plain)
     }
 }
 
+// MARK: - Log Row
+
+private struct LogRow: View {
+    let log: ConsoleLog
+    @State private var isExpanded: Bool = false
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss.SSS"
+        return f
+    }()
+
+    // Check if message needs expansion (more than 3 lines or 200+ chars)
+    private var needsExpansion: Bool {
+        log.message.count > 200 || log.message.filter { $0 == "\n" }.count >= 3
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 8) {
+                // Expand indicator (only if expandable)
+                if needsExpansion {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 10)
+                        .padding(.top, 4)
+                } else {
+                    // Type icon
+                    Image(systemName: log.type.icon)
+                        .font(.system(size: 10))
+                        .foregroundStyle(log.type.color)
+                        .frame(width: 10)
+                        .padding(.top, 3)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    // Message
+                    Text(log.message)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(log.type == .error ? .red : .primary)
+                        .lineLimit(isExpanded ? nil : 3)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // Source location (if available)
+                    if let source = log.source {
+                        Text(source)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.blue)
+                    }
+                }
+
+                // Right side: type icon (if expandable) + timestamp
+                VStack(alignment: .trailing, spacing: 2) {
+                    if needsExpansion {
+                        Image(systemName: log.type.icon)
+                            .font(.system(size: 10))
+                            .foregroundStyle(log.type.color)
+                    }
+                    Text(Self.timeFormatter.string(from: log.timestamp))
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(log.type == .error ? Color.red.opacity(0.08) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if needsExpansion {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Divider()
+                .padding(.leading, 30)
+        }
+    }
+}
+
 #Preview {
     let manager = ConsoleManager()
-    manager.addLog(type: "log", message: "Hello, world!")
-    manager.addLog(type: "info", message: "Page loaded successfully")
-    manager.addLog(type: "warn", message: "Deprecated API usage detected")
-    manager.addLog(type: "error", message: "Failed to fetch resource: 404 Not Found")
-    manager.addLog(type: "debug", message: "User clicked button #submit")
+    manager.addLog(type: "log", message: "Application started", source: "app.js:1")
+    manager.addLog(type: "info", message: "User session initialized", source: "auth.js:45")
+    manager.addLog(type: "log", message: "Fetching data from API...", source: "api.js:23")
+    manager.addLog(type: "warn", message: "Deprecated API usage: navigator.userAgent", source: "utils.js:78")
+    manager.addLog(type: "error", message: "Failed to fetch: 404 Not Found", source: "api.js:31")
+    manager.addLog(type: "debug", message: "onClick event fired: #submit-btn", source: "button.js:12")
+    // Long message to test expansion
+    manager.addLog(
+        type: "log",
+        message: """
+            Response: {
+              "status": "ok",
+              "data": [1, 2, 3, 4, 5],
+              "metadata": {
+                "page": 1,
+                "total": 100,
+                "hasMore": true
+              }
+            }
+            """,
+        source: "api.js:45"
+    )
+    manager.addLog(
+        type: "error",
+        message: "Uncaught TypeError: Cannot read property 'map' of undefined\n    at processData (main.js:123)\n    at handleResponse (api.js:45)\n    at XMLHttpRequest.onload (fetch.js:89)",
+        source: "main.js:123"
+    )
 
     return ConsoleView(consoleManager: manager)
+        .presentationDetents([.fraction(0.35), .medium, .large])
 }

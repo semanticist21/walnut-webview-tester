@@ -316,10 +316,43 @@ struct WKWebViewRepresentable: UIViewRepresentable {
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
 
     // Console hooking script - intercepts console methods and forwards to native
+    // swiftlint:disable:next line_length
     private static let consoleHookScript = """
         (function() {
             if (window.__consoleHooked) return;
             window.__consoleHooked = true;
+
+            // Parse stack trace to get caller location
+            function getCallerSource() {
+                try {
+                    const stack = new Error().stack;
+                    if (!stack) return null;
+                    const lines = stack.split('\\n');
+                    // Skip: Error, our hook function, console.method wrapper
+                    // Find the first line that's not our code
+                    for (let i = 3; i < lines.length; i++) {
+                        const line = lines[i];
+                        if (!line) continue;
+                        // Match patterns like "at func (url:line:col)" or "url:line:col"
+                        const match = line.match(/(?:at\\s+)?(?:[^(]+\\s+\\()?([^)\\s]+):(\\d+)(?::\\d+)?\\)?/);
+                        if (match) {
+                            let url = match[1];
+                            const lineNum = match[2];
+                            // Simplify URL: extract filename or hostname+path
+                            try {
+                                const parsed = new URL(url);
+                                const path = parsed.pathname;
+                                url = path.split('/').pop() || parsed.hostname + path;
+                            } catch(e) {
+                                // Use as-is if not a valid URL
+                                url = url.split('/').pop() || url;
+                            }
+                            return url + ':' + lineNum;
+                        }
+                    }
+                } catch(e) {}
+                return null;
+            }
 
             const methods = ['log', 'info', 'warn', 'error', 'debug'];
             methods.forEach(function(method) {
@@ -335,9 +368,11 @@ struct WKWebViewRepresentable: UIViewRepresentable {
                             }
                             return String(arg);
                         }).join(' ');
+                        const source = getCallerSource();
                         window.webkit.messageHandlers.consoleLog.postMessage({
                             type: method,
-                            message: message
+                            message: message,
+                            source: source
                         });
                     } catch(e) {}
                     original.apply(console, args);
@@ -346,9 +381,20 @@ struct WKWebViewRepresentable: UIViewRepresentable {
 
             // Capture uncaught errors
             window.addEventListener('error', function(e) {
+                let source = null;
+                if (e.filename) {
+                    try {
+                        const parsed = new URL(e.filename);
+                        const path = parsed.pathname;
+                        source = (path.split('/').pop() || parsed.hostname + path) + ':' + e.lineno;
+                    } catch(err) {
+                        source = e.filename + ':' + e.lineno;
+                    }
+                }
                 window.webkit.messageHandlers.consoleLog.postMessage({
                     type: 'error',
-                    message: 'Uncaught: ' + e.message + ' at ' + e.filename + ':' + e.lineno
+                    message: 'Uncaught: ' + e.message,
+                    source: source
                 });
             });
 
@@ -356,11 +402,13 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             window.addEventListener('unhandledrejection', function(e) {
                 window.webkit.messageHandlers.consoleLog.postMessage({
                     type: 'error',
-                    message: 'Unhandled Promise: ' + String(e.reason)
+                    message: 'Unhandled Promise: ' + String(e.reason),
+                    source: null
                 });
             });
         })();
         """
+    // swiftlint:enable:next line_length
 
     func makeCoordinator() -> Coordinator {
         Coordinator(isLoading: $isLoading, navigator: navigator)
@@ -471,12 +519,13 @@ struct WKWebViewRepresentable: UIViewRepresentable {
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.name == "consoleLog",
-                  let body = message.body as? [String: String],
-                  let type = body["type"],
-                  let msg = body["message"] else {
+                  let body = message.body as? [String: Any],
+                  let type = body["type"] as? String,
+                  let msg = body["message"] as? String else {
                 return
             }
-            navigator?.consoleManager.addLog(type: type, message: msg)
+            let source = body["source"] as? String
+            navigator?.consoleManager.addLog(type: type, message: msg, source: source)
         }
 
         func observeWebView(_ webView: WKWebView) {
