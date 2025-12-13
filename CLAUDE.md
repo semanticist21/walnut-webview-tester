@@ -89,6 +89,8 @@ wina/
 │   │   ├── UserAgentPickerView.swift  # UA 선택 UI
 │   │   ├── UserAgentPresets.swift     # 프리셋 정의
 │   │   └── UserAgentBuilder.swift     # UA 문자열 빌더
+│   ├── Console/               # JavaScript 콘솔 로그 뷰어
+│   │   └── ConsoleView.swift        # 콘솔 UI + ConsoleManager
 │   ├── Info/                  # WKWebView 정보 표시
 │   │   ├── InfoView.swift             # 메인 뷰 + 검색
 │   │   ├── SharedInfoWebView.swift    # WebView 싱글톤 + 캐싱
@@ -165,6 +167,27 @@ SharedInfoWebView.shared.currentURL          // Live 모드에서 현재 URL
 ```
 
 Info 시트 열 때 `navigator` 전달하면 실제 페이지 기준으로 capability 감지.
+
+### Console 로그 캡처
+
+**ConsoleManager** (`ConsoleView.swift`): JavaScript console.log/warn/error 등을 캡처하는 @Observable 클래스
+
+```swift
+// WebViewNavigator에 포함
+webViewNavigator.consoleManager
+
+// 로그 타입: log, info, warn, error, debug
+// 각 로그에 source location 포함 (예: "main.js:45")
+```
+
+**JavaScript 인젝션**: WKWebView에 userScript로 console 메서드를 오버라이드하여 `window.webkit.messageHandlers`로 로그 전달.
+
+**UI 특징**:
+- Chrome DevTools 스타일 필터 탭 (All, Errors, Warnings, Info, Log, Debug)
+- 검색 기능 (메시지 + source location)
+- 긴 메시지 확장/축소 (3줄 이상)
+- 실시간 캡처 일시정지/재개
+- `.presentationContentInteraction(.scrolls)` - sheet 내 스크롤 제스처 우선
 
 ## Design System
 

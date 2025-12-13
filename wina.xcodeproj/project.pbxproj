@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		4097EB142EEDBAFA00E9A0D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406E0D432EE4093D00D6F9C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 406E0D4A2EE4093D00D6F9C6;
+			remoteInfo = wina;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		406E0D4B2EE4093D00D6F9C6 /* wina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = wina.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4097EB102EEDBAFA00E9A0D9 /* winaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = winaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = wina;
 			sourceTree = "<group>";
 		};
+		4097EB112EEDBAFA00E9A0D9 /* winaTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = winaTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		406E0D482EE4093D00D6F9C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4097EB0D2EEDBAFA00E9A0D9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				406E0D4D2EE4093D00D6F9C6 /* wina */,
+				4097EB112EEDBAFA00E9A0D9 /* winaTests */,
 				406E0D4C2EE4093D00D6F9C6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				406E0D4B2EE4093D00D6F9C6 /* wina.app */,
+				4097EB102EEDBAFA00E9A0D9 /* winaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = 406E0D4B2EE4093D00D6F9C6 /* wina.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4097EB0F2EEDBAFA00E9A0D9 /* winaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4097EB162EEDBAFA00E9A0D9 /* Build configuration list for PBXNativeTarget "winaTests" */;
+			buildPhases = (
+				4097EB0C2EEDBAFA00E9A0D9 /* Sources */,
+				4097EB0D2EEDBAFA00E9A0D9 /* Frameworks */,
+				4097EB0E2EEDBAFA00E9A0D9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4097EB152EEDBAFA00E9A0D9 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4097EB112EEDBAFA00E9A0D9 /* winaTests */,
+			);
+			name = winaTests;
+			packageProductDependencies = (
+			);
+			productName = winaTests;
+			productReference = 4097EB102EEDBAFA00E9A0D9 /* winaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					406E0D4A2EE4093D00D6F9C6 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					4097EB0F2EEDBAFA00E9A0D9 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 406E0D4A2EE4093D00D6F9C6;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				406E0D4A2EE4093D00D6F9C6 /* wina */,
+				4097EB0F2EEDBAFA00E9A0D9 /* winaTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		406E0D492EE4093D00D6F9C6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4097EB0E2EEDBAFA00E9A0D9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4097EB0C2EEDBAFA00E9A0D9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4097EB152EEDBAFA00E9A0D9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 406E0D4A2EE4093D00D6F9C6 /* wina */;
+			targetProxy = 4097EB142EEDBAFA00E9A0D9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		406E0D542EE4093E00D6F9C6 /* Debug */ = {
@@ -314,6 +389,48 @@
 			};
 			name = Release;
 		};
+		4097EB172EEDBAFA00E9A0D9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X6M5USK89L;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kobbokkom.winaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/wina.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/wina";
+			};
+			name = Debug;
+		};
+		4097EB182EEDBAFA00E9A0D9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X6M5USK89L;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kobbokkom.winaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/wina.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/wina";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -331,6 +448,15 @@
 			buildConfigurations = (
 				406E0D572EE4093E00D6F9C6 /* Debug */,
 				406E0D582EE4093E00D6F9C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4097EB162EEDBAFA00E9A0D9 /* Build configuration list for PBXNativeTarget "winaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4097EB172EEDBAFA00E9A0D9 /* Debug */,
+				4097EB182EEDBAFA00E9A0D9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

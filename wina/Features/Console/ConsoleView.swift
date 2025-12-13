@@ -87,6 +87,11 @@ struct ConsoleLog: Identifiable, Equatable {
         static var filterTypes: [LogType] {
             [.error, .warn, .info, .log, .debug]
         }
+
+        // Types that can be displayed (excludes internal types like groupEnd)
+        static var displayableTypes: [LogType] {
+            [.log, .info, .warn, .error, .debug, .group, .groupCollapsed, .table]
+        }
     }
 
     static func == (lhs: ConsoleLog, rhs: ConsoleLog) -> Bool {
@@ -178,52 +183,32 @@ class ConsoleManager {
 
     // Export logs as formatted text
     func exportAsText() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-
-        return logs
-            .map { log in
-                var line = "[\(dateFormatter.string(from: log.timestamp))] [\(log.type.shortLabel)] \(log.message)"
-                if let source = log.source {
-                    line += " (\(source))"
-                }
-                return line
-            }
-            .joined(separator: "\n")
+        ConsoleExporter.exportAsText(logs)
     }
 
     // Export logs as JSON
     func exportAsJSON() -> String {
-        let dateFormatter = ISO8601DateFormatter()
-        let logDicts: [[String: Any]] = logs.map { log in
-            var dict: [String: Any] = [
-                "timestamp": dateFormatter.string(from: log.timestamp),
-                "type": log.type.rawValue,
-                "message": log.message
-            ]
-            if let source = log.source {
-                dict["source"] = source
-            }
-            return dict
-        }
-
-        if let data = try? JSONSerialization.data(withJSONObject: logDicts, options: .prettyPrinted),
-           let jsonString = String(data: data, encoding: .utf8) {
-            return jsonString
-        }
-        return "[]"
+        ConsoleExporter.exportAsJSON(logs)
     }
 }
 
 // MARK: - Console View
+
+// Identifiable wrapper for share content to fix sheet timing issue
+struct ShareContent: Identifiable {
+    let id = UUID()
+    let content: String
+}
 
 struct ConsoleView: View {
     let consoleManager: ConsoleManager
     @State private var filterType: ConsoleLog.LogType?
     @State private var searchText: String = ""
     @State private var useRegex: Bool = false
-    @State private var showShareSheet: Bool = false
-    @State private var shareContent: String = ""
+    @State private var shareItem: ShareContent?
+    @State private var showSettings: Bool = false
+    // Log types to show in "All" tab (user configurable)
+    @State private var enabledLogTypes: Set<ConsoleLog.LogType> = Set(ConsoleLog.LogType.displayableTypes)
 
     private var filteredLogs: [ConsoleLog] {
         var result = consoleManager.logs
@@ -242,22 +227,17 @@ struct ConsoleView: View {
 
         if let filterType {
             result = result.filter { $0.type == filterType }
+        } else {
+            // "All" tab - filter by user-selected log types
+            result = result.filter { enabledLogTypes.contains($0.type) }
         }
 
         if !searchText.isEmpty {
-            if useRegex, let regex = try? NSRegularExpression(pattern: searchText, options: .caseInsensitive) {
+            if useRegex, case .success(let regex) = RegexFilter.compile(searchText) {
                 result = result.filter { log in
-                    let messageRange = NSRange(log.message.startIndex..., in: log.message)
-                    if regex.firstMatch(in: log.message, range: messageRange) != nil {
-                        return true
-                    }
-                    if let source = log.source {
-                        let sourceRange = NSRange(source.startIndex..., in: source)
-                        return regex.firstMatch(in: source, range: sourceRange) != nil
-                    }
-                    return false
+                    RegexFilter.matchesLog(message: log.message, source: log.source, regex: regex)
                 }
-            } else {
+            } else if !useRegex {
                 result = result.filter {
                     $0.message.localizedCaseInsensitiveContains(searchText)
                     || ($0.source?.localizedCaseInsensitiveContains(searchText) ?? false)
@@ -266,6 +246,11 @@ struct ConsoleView: View {
         }
 
         return result
+    }
+
+    // Settings button highlight when any setting is active
+    private var settingsActive: Bool {
+        useRegex || consoleManager.preserveLog || enabledLogTypes.count != ConsoleLog.LogType.displayableTypes.count
     }
 
     var body: some View {
@@ -283,19 +268,69 @@ struct ConsoleView: View {
                     logList
                 }
             }
-            .navigationTitle("Console")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    leftToolbarItems
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    rightToolbarItems
+                ToolbarItem(placement: .principal) {
+                    HStack {
+                        // Left buttons
+                        HStack(spacing: 24) {
+                            Button {
+                                shareItem = ShareContent(content: consoleManager.exportAsText())
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
+                            }
+                            .disabled(consoleManager.logs.isEmpty)
+
+                            Button {
+                                consoleManager.clear()
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
+                            }
+                            .disabled(consoleManager.logs.isEmpty)
+                        }
+
+                        Spacer()
+
+                        Text("Console")
+                            .font(.headline)
+
+                        Spacer()
+
+                        // Right buttons
+                        HStack(spacing: 24) {
+                            Button {
+                                consoleManager.isCapturing.toggle()
+                            } label: {
+                                Image(systemName: consoleManager.isCapturing ? "pause.fill" : "play.fill")
+                                    .foregroundStyle(consoleManager.isCapturing ? .red : .green)
+                            }
+
+                            Button {
+                                showSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .foregroundStyle(settingsActive ? .blue : .secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: useRegex ? "Regex" : "Filter")
-            .sheet(isPresented: $showShareSheet) {
-                ShareSheet(content: shareContent)
+            .sheet(item: $shareItem) { item in
+                ShareSheet(content: item.content)
+            }
+            .sheet(isPresented: $showSettings) {
+                ConsoleSettingsSheet(
+                    useRegex: $useRegex,
+                    preserveLog: Binding(
+                        get: { consoleManager.preserveLog },
+                        set: { consoleManager.preserveLog = $0 }
+                    ),
+                    enabledLogTypes: $enabledLogTypes
+                )
             }
         }
     }
@@ -316,69 +351,6 @@ private struct ShareSheet: UIViewControllerRepresentable {
 // MARK: - Console View Extensions
 
 extension ConsoleView {
-    // MARK: - Console Toolbar
-
-    private var leftToolbarItems: some View {
-        HStack(spacing: 16) {
-            // Clear
-            Button {
-                consoleManager.clear()
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
-            }
-            .disabled(consoleManager.logs.isEmpty)
-
-            // Export menu
-            Menu {
-                Button {
-                    shareContent = consoleManager.exportAsText()
-                    showShareSheet = true
-                } label: {
-                    Label("Export as Text", systemImage: "doc.text")
-                }
-                Button {
-                    shareContent = consoleManager.exportAsJSON()
-                    showShareSheet = true
-                } label: {
-                    Label("Export as JSON", systemImage: "curlybraces")
-                }
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .foregroundStyle(consoleManager.logs.isEmpty ? .tertiary : .primary)
-            }
-            .disabled(consoleManager.logs.isEmpty)
-        }
-    }
-
-    private var rightToolbarItems: some View {
-        HStack(spacing: 16) {
-            // Settings menu (regex, preserve log)
-            Menu {
-                Toggle(isOn: $useRegex) {
-                    Label("Regex Filter", systemImage: "asterisk")
-                }
-                Toggle(isOn: Binding(
-                    get: { consoleManager.preserveLog },
-                    set: { consoleManager.preserveLog = $0 }
-                )) {
-                    Label("Preserve Log", systemImage: "pin")
-                }
-            } label: {
-                Image(systemName: "gearshape")
-                    .foregroundStyle((useRegex || consoleManager.preserveLog) ? .blue : .secondary)
-            }
-
-            // Pause/Resume
-            Button {
-                consoleManager.isCapturing.toggle()
-            } label: {
-                Image(systemName: consoleManager.isCapturing ? "pause.fill" : "play.fill")
-                    .foregroundStyle(consoleManager.isCapturing ? .red : .green)
-            }
-        }
-    }
-
     // MARK: - Filter Tabs
 
     var filterTabs: some View {
@@ -538,60 +510,13 @@ private struct LogRow: View {
     private var parsedTableData: [[String: String]]? {
         guard log.type == .table else { return nil }
         if let tableData = log.tableData { return tableData }
-
-        // Try parsing from message JSON
-        guard let data = log.message.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            return nil
-        }
-        return json.map { row in
-            row.mapValues { String(describing: $0) }
-        }
+        return JSONParser.parseTableData(from: log.message)
     }
 
     // Extract JSON from message (returns original, formatted and minified versions)
-    // Uses regex for safe extraction to avoid String.Index issues
-    private var extractedJSON: (original: String, formatted: String, minified: String)? {
+    private var extractedJSON: JSONParser.ParsedJSON? {
         guard log.type != .table else { return nil }
-        let trimmed = log.message.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Check if entire message is JSON
-        if let result = tryParseJSON(trimmed) {
-            return result
-        }
-
-        // Try to find JSON object or array using regex (safe extraction)
-        // Pattern matches {...} or [...] including nested structures
-        let patterns = [
-            "\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}",  // Simple nested objects
-            "\\[[^\\[\\]]*(?:\\[[^\\[\\]]*\\][^\\[\\]]*)*\\]"  // Simple nested arrays
-        ]
-
-        for pattern in patterns {
-            if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-               let match = regex.firstMatch(in: trimmed, options: [], range: NSRange(trimmed.startIndex..., in: trimmed)),
-               let range = Range(match.range, in: trimmed) {
-                let jsonPart = String(trimmed[range])
-                if let result = tryParseJSON(jsonPart) {
-                    return result
-                }
-            }
-        }
-
-        return nil
-    }
-
-    // Helper to parse and format JSON
-    private func tryParseJSON(_ str: String) -> (original: String, formatted: String, minified: String)? {
-        guard let data = str.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let formatted = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
-              let minified = try? JSONSerialization.data(withJSONObject: json),
-              let formattedStr = String(data: formatted, encoding: .utf8),
-              let minifiedStr = String(data: minified, encoding: .utf8) else {
-            return nil
-        }
-        return (str, formattedStr, minifiedStr)
+        return JSONParser.extract(from: log.message)
     }
 
     var body: some View {
@@ -806,6 +731,60 @@ private struct TypeBadge: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .background(type.color.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+    }
+}
+
+// MARK: - Console Settings Sheet
+
+private struct ConsoleSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var useRegex: Bool
+    @Binding var preserveLog: Bool
+    @Binding var enabledLogTypes: Set<ConsoleLog.LogType>
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Search") {
+                    Toggle("Regex Filter", isOn: $useRegex)
+                }
+
+                Section("Logging") {
+                    Toggle("Preserve Log on Navigation", isOn: $preserveLog)
+                }
+
+                Section("Log Types in 'All' Tab") {
+                    ForEach(ConsoleLog.LogType.displayableTypes, id: \.self) { type in
+                        Toggle(isOn: Binding(
+                            get: { enabledLogTypes.contains(type) },
+                            set: { isEnabled in
+                                if isEnabled {
+                                    enabledLogTypes.insert(type)
+                                } else {
+                                    enabledLogTypes.remove(type)
+                                }
+                            }
+                        )) {
+                            HStack(spacing: 8) {
+                                Image(systemName: type.icon)
+                                    .foregroundStyle(type.color)
+                                    .frame(width: 20)
+                                Text(type.label)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Console Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
