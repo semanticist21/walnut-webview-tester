@@ -15,6 +15,7 @@ struct GlassIconButton: View {
                 .font(.system(size: 18))
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
+                .contentShape(Circle())
                 .glassEffect(in: .circle)
         }
         .buttonStyle(.plain)

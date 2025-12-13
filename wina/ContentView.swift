@@ -220,8 +220,12 @@ struct ContentView: View {
                         .disabled(urlText.isEmpty)
                     }
                     .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 10)
                     .frame(width: urlValidationState == .valid ? inputWidth - 60 : inputWidth)
+                    .contentShape(Capsule())
+                    .onTapGesture {
+                        textFieldFocused = true
+                    }
                     .glassEffect(in: .capsule)
 
                     if urlValidationState == .valid {

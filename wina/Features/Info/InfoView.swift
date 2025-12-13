@@ -430,6 +430,13 @@ struct InfoView: View {
                     // Default menu view
                     List {
                         Section {
+                            Text("Tested with temporary WebView (example.com). Actual results may vary.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .listRowBackground(Color.clear)
+
+                        Section {
                             NavigationLink {
                                 ActiveSettingsView(showSettings: $showSettings)
                             } label: {
