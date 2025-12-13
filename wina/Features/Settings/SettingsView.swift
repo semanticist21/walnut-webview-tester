@@ -83,7 +83,6 @@ struct ConfigurationSettingsView: View {
 
     var body: some View {
         List {
-            changesWarningSection
             configCoreSection
             configMediaSection
             configContentModeSection
@@ -101,6 +100,21 @@ struct ConfigurationSettingsView: View {
                     .disabled(!hasChanges)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if hasChanges {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Changes will reload WebView")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: hasChanges)
         .onAppear { loadFromStorage() }
     }
 
@@ -163,21 +177,6 @@ struct ConfigurationSettingsView: View {
     }
 
     // MARK: - Configuration Sections
-
-    @ViewBuilder
-    private var changesWarningSection: some View {
-        if hasChanges {
-            Section {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Text("Changes will reload WebView")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
 
     @ViewBuilder
     private var configCoreSection: some View {
@@ -403,18 +402,6 @@ struct LiveSettingsView: View {
 
     var body: some View {
         List {
-            if hasChanges {
-                Section {
-                    HStack {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundStyle(.blue)
-                        Text("Changes will apply to WebView")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
             Section {
                 SettingToggleRow(
                     title: "Back/Forward Gestures",
@@ -510,6 +497,21 @@ struct LiveSettingsView: View {
                     .disabled(!hasChanges)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if hasChanges {
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(.blue)
+                    Text("Changes will apply to WebView")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: hasChanges)
         .onAppear { loadFromStorage() }
     }
 

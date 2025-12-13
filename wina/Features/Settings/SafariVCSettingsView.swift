@@ -76,7 +76,6 @@ struct SafariVCConfigurationSettingsView: View {
 
     var body: some View {
         List {
-            changesWarningSection
             behaviorSection
             uiStyleSection
             colorsSection
@@ -91,6 +90,21 @@ struct SafariVCConfigurationSettingsView: View {
                     .disabled(!hasChanges)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if hasChanges {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Changes will reload SafariVC")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: hasChanges)
         .onAppear { loadFromStorage() }
     }
 
@@ -113,21 +127,6 @@ struct SafariVCConfigurationSettingsView: View {
     }
 
     // MARK: - Sections
-
-    @ViewBuilder
-    private var changesWarningSection: some View {
-        if hasChanges {
-            Section {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Text("Changes will reload SafariVC")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
 
     @ViewBuilder
     private var behaviorSection: some View {
