@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4097EBA02EEDC4B500E9A0D9 /* UAParserSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4097EB262EEDC3C000E9A0D9 /* UAParserSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4097EB142EEDBAFA00E9A0D9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4097EBA02EEDC4B500E9A0D9 /* UAParserSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +95,7 @@
 			);
 			name = wina;
 			packageProductDependencies = (
+				4097EB262EEDC3C000E9A0D9 /* UAParserSwift */,
 			);
 			productName = wina;
 			productReference = 406E0D4B2EE4093D00D6F9C6 /* wina.app */;
@@ -146,6 +152,9 @@
 			);
 			mainGroup = 406E0D422EE4093D00D6F9C6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4097EB252EEDC3C000E9A0D9 /* XCRemoteSwiftPackageReference "UAParserSwift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 406E0D4C2EE4093D00D6F9C6 /* Products */;
 			projectDirPath = "";
@@ -462,6 +471,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4097EB252EEDC3C000E9A0D9 /* XCRemoteSwiftPackageReference "UAParserSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/malcommac/UAParserSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4097EB262EEDC3C000E9A0D9 /* UAParserSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4097EB252EEDC3C000E9A0D9 /* XCRemoteSwiftPackageReference "UAParserSwift" */;
+			productName = UAParserSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 406E0D432EE4093D00D6F9C6 /* Project object */;
 }

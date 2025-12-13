@@ -19,6 +19,7 @@ struct OverlayMenuBars: View {
     @Binding var showBookmarks: Bool
     @Binding var showInfo: Bool
     @Binding var showConsole: Bool
+    @Binding var showNetwork: Bool
 
     @State private var isExpanded: Bool = false
     @State private var dragOffset: CGFloat = 0
@@ -173,12 +174,24 @@ struct OverlayMenuBars: View {
                     }
                     .buttonStyle(.plain)
 
-                    // Console button (adjacent to URL, only for WKWebView)
+                    // Console and Network buttons (only for WKWebView)
                     if !useSafariVC {
                         Button {
                             showConsole = true
                         } label: {
                             Image(systemName: "terminal")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            showNetwork = true
+                        } label: {
+                            Image(systemName: "network")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
                                 .padding(8)
@@ -345,7 +358,8 @@ struct OverlayMenuBars: View {
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),
-            showConsole: .constant(false)
+            showConsole: .constant(false),
+            showNetwork: .constant(false)
         )
     }
 }
@@ -366,7 +380,8 @@ struct OverlayMenuBars: View {
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),
-            showConsole: .constant(false)
+            showConsole: .constant(false),
+            showNetwork: .constant(false)
         )
     }
 }

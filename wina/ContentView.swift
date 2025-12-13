@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var showBookmarks: Bool = false
     @State private var showInfo: Bool = false
     @State private var showConsole: Bool = false
+    @State private var showNetwork: Bool = false
     @State private var urlValidationState: URLValidationState = .empty
     @State private var useSafariWebView: Bool = false
     @State private var showWebView: Bool = false
@@ -136,7 +137,8 @@ struct ContentView: View {
                     showSettings: $showSettings,
                     showBookmarks: $showBookmarks,
                     showInfo: $showInfo,
-                    showConsole: $showConsole
+                    showConsole: $showConsole,
+                    showNetwork: $showNetwork
                 )
             } else {
                 topBar
@@ -178,6 +180,13 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showConsole) {
             ConsoleView(consoleManager: webViewNavigator.consoleManager)
+                .presentationDetents([.fraction(0.35), .medium, .large])
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .presentationContentInteraction(.scrolls)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showNetwork) {
+            NetworkView(networkManager: webViewNavigator.networkManager)
                 .presentationDetents([.fraction(0.35), .medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                 .presentationContentInteraction(.scrolls)
