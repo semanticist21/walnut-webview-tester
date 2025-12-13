@@ -92,7 +92,7 @@ wina/
 │   │   ├── GlassIconButton.swift      # 원형 glass effect 버튼
 │   │   ├── ChipButton.swift           # 탭 가능한 칩 버튼
 │   │   ├── FlowLayout.swift           # 자동 줄바꿈 Layout
-│   │   ├── InfoPopoverButton.swift    # info 버튼 + popover (Generic ShapeStyle)
+│   │   ├── InfoPopoverButton.swift    # info/deprecated 버튼 + popover
 │   │   ├── SettingToggleRow.swift     # 설정 토글 (InfoPopoverButton 사용)
 │   │   └── ColorPickerRow.swift       # 색상 선택기 (InfoPopoverButton 사용)
 │   └── Extensions/            # 공유 확장
@@ -136,8 +136,9 @@ wina/
 | 액션 버튼 | `GlassActionButton` | Reset/Apply/Done (capsule glass) |
 | 칩/태그 버튼 | `ChipButton` | 프리셋 선택, 태그 |
 | info 버튼 | `InfoPopoverButton` | 모든 info 버튼 (Generic ShapeStyle 지원) |
+| deprecated 경고 | `DeprecatedPopoverButton` | iOS 26에서 deprecated된 설정 (SafariVC Colors) |
 | 설정 토글 | `SettingToggleRow` | SettingsView 전체 |
-| 색상 선택 | `ColorPickerRow` | 색상 설정 |
+| 색상 선택 | `ColorPickerRow` | 색상 설정 (deprecatedInfo 파라미터 지원) |
 | 자동 줄바꿈 | `FlowLayout` | 칩 그룹, 태그 목록 |
 
 ### Info 뷰 전용 컴포넌트 (`InfoView.swift` 내 private)
@@ -161,6 +162,27 @@ InfoPopoverButton(text: "설명 텍스트")
 // ✅ 색상 지정 (ShapeStyle 지원)
 InfoPopoverButton(text: "설명 텍스트", iconColor: .tertiary)
 InfoPopoverButton(text: "설명 텍스트", iconColor: Color.blue)
+```
+
+### deprecated 경고 버튼 사용법
+
+iOS 26에서 deprecated된 API에 경고를 표시할 때 `DeprecatedPopoverButton` 사용:
+
+```swift
+// ✅ 오렌지색 exclamationmark.triangle.fill 아이콘 + "Deprecated" 헤더 popover
+DeprecatedPopoverButton(text: "Deprecated in iOS 26. Interferes with Liquid Glass effects.")
+```
+
+ColorPickerRow에서 deprecated 설정 표시:
+
+```swift
+// ✅ deprecatedInfo 파라미터로 deprecated 경고 추가
+ColorPickerRow(
+    title: "Control Tint",
+    colorHex: $controlTintColorHex,
+    info: "Tint color for buttons and controls.",
+    deprecatedInfo: "Deprecated in iOS 26. Interferes with Liquid Glass effects."
+)
 ```
 
 ### 액션 버튼 사용법
@@ -634,11 +656,13 @@ WebView 타입에 따라 다른 Settings 화면이 표시됨:
 
 SFSafariViewController는 설정 가능 항목이 제한적:
 
-| 카테고리 | 설정 |
-|----------|------|
-| Behavior | Reader Mode (자동 진입), Bar Collapsing (스크롤 시 축소) |
-| UI Style | Dismiss Button Style (Done/Close/Cancel) |
-| Colors | Control Tint, Bar Tint |
+| 카테고리 | 설정 | 비고 |
+|----------|------|------|
+| Behavior | Reader Mode, Bar Collapsing | |
+| UI Style | Dismiss Button Style | Done/Close/Cancel |
+| Colors | Control Tint, Bar Tint | ⚠️ iOS 26 deprecated (Liquid Glass 호환성) |
+
+> **Deprecated 경고**: Colors 섹션의 `preferredControlTintColor`, `preferredBarTintColor`는 iOS 26에서 deprecated. Liquid Glass 배경 효과와 충돌하므로 사용 권장하지 않음.
 
 > **WKWebView vs SafariVC 차이점**: SafariVC는 JavaScript 비활성화, Custom User-Agent, Content Mode, Data Detectors 등 대부분의 커스터마이징이 불가능. Safari의 쿠키/비밀번호를 공유하는 대신 앱에서 제어할 수 없음.
 
