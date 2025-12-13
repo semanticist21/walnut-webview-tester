@@ -1,0 +1,15 @@
+{
+  "originHash" : "add248f4c86d2b7e0974707a1cbdd524f1ca6ffe4cf1471e606ed9792bfe1b62",
+  "pins" : [
+    {
+      "identity" : "uaparserswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/malcommac/UAParserSwift.git",
+      "state" : {
+        "revision" : "a8057c7cff60db2cdf31d0a0a68ce430754ab64e",
+        "version" : "1.2.1"
+      }
+    }
+  ],
+  "version" : 3
+}
