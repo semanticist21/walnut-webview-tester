@@ -8,6 +8,9 @@ import SwiftUI
 // MARK: - InfoView
 
 struct InfoView: View {
+    /// External navigator for live page testing (nil = use test WebView with example.com)
+    var navigator: WebViewNavigator?
+
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var webViewInfo: WebViewInfo?
@@ -90,6 +93,8 @@ struct InfoView: View {
             }
         }
         .task {
+            // Set navigator for live page testing (or nil for test WebView)
+            SharedInfoWebView.shared.setNavigator(navigator)
             await loadAllInfo()
         }
         .sheet(isPresented: $showSettings) {
@@ -115,9 +120,15 @@ struct InfoView: View {
     private var defaultMenuView: some View {
         List {
             Section {
-                Text("Tested with temporary WebView (example.com). Actual results may vary.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if let url = navigator?.currentURL {
+                    Text("Tested with loaded page (\(url.host() ?? url.absoluteString)).")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Tested with temporary WebView (example.com). Actual results may vary.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
             .listRowBackground(Color.clear)

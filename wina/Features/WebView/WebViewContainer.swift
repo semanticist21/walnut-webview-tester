@@ -15,10 +15,16 @@ import SafariServices
 class WebViewNavigator {
     var canGoBack: Bool = false
     var canGoForward: Bool = false
+    var currentURL: URL?
 
     private weak var webView: WKWebView?
     private var canGoBackObservation: NSKeyValueObservation?
     private var canGoForwardObservation: NSKeyValueObservation?
+    private var urlObservation: NSKeyValueObservation?
+
+    var isAttached: Bool {
+        webView != nil
+    }
 
     func attach(to webView: WKWebView) {
         self.webView = webView
@@ -26,6 +32,7 @@ class WebViewNavigator {
         // Initial state
         canGoBack = webView.canGoBack
         canGoForward = webView.canGoForward
+        currentURL = webView.url
 
         // Observe changes
         canGoBackObservation = webView.observe(\.canGoBack, options: .new) { [weak self] webView, _ in
@@ -38,16 +45,24 @@ class WebViewNavigator {
                 self?.canGoForward = webView.canGoForward
             }
         }
+        urlObservation = webView.observe(\.url, options: .new) { [weak self] webView, _ in
+            DispatchQueue.main.async {
+                self?.currentURL = webView.url
+            }
+        }
     }
 
     func detach() {
         canGoBackObservation?.invalidate()
         canGoForwardObservation?.invalidate()
+        urlObservation?.invalidate()
         canGoBackObservation = nil
         canGoForwardObservation = nil
+        urlObservation = nil
         webView = nil
         canGoBack = false
         canGoForward = false
+        currentURL = nil
     }
 
     func goBack() {
@@ -64,6 +79,12 @@ class WebViewNavigator {
 
     func stopLoading() {
         webView?.stopLoading()
+    }
+
+    /// Evaluate JavaScript on the attached WebView
+    func evaluateJavaScript(_ script: String) async -> Any? {
+        guard let webView else { return nil }
+        return try? await webView.evaluateJavaScript(script)
     }
 }
 

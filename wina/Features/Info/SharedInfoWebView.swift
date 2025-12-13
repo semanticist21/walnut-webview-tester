@@ -17,6 +17,9 @@ final class SharedInfoWebView {
     var isReady = false
     private var initTask: Task<Void, Never>?
 
+    // External WebView navigator (for live page testing)
+    private(set) var navigator: WebViewNavigator?
+
     // Cache
     var cachedWebViewInfo: WebViewInfo?
     var cachedCodecInfo: MediaCodecInfo?
@@ -25,7 +28,35 @@ final class SharedInfoWebView {
 
     private init() {}
 
+    /// Whether using live WebView from the loaded page
+    var isUsingLiveWebView: Bool {
+        navigator?.isAttached == true
+    }
+
+    /// Current URL when using live WebView
+    var currentURL: URL? {
+        navigator?.currentURL
+    }
+
+    /// Set external navigator for live page testing
+    func setNavigator(_ navigator: WebViewNavigator?) {
+        let wasUsingLive = isUsingLiveWebView
+        self.navigator = navigator
+        let nowUsingLive = isUsingLiveWebView
+
+        // Clear cache when switching between live/test mode or changing pages
+        if wasUsingLive != nowUsingLive {
+            clearCache()
+        }
+    }
+
     func initialize(onStatusUpdate: @escaping (String) -> Void) async {
+        // If using live WebView, skip internal WebView initialization
+        if isUsingLiveWebView {
+            onStatusUpdate("Using loaded page WebView...")
+            return
+        }
+
         // Already initialized
         if isReady, webView != nil { return }
 
@@ -52,6 +83,11 @@ final class SharedInfoWebView {
     }
 
     func evaluateJavaScript(_ script: String) async -> Any? {
+        // Use live WebView if available
+        if let navigator, navigator.isAttached {
+            return await navigator.evaluateJavaScript(script)
+        }
+        // Fallback to internal test WebView
         guard let webView, isReady else { return nil }
         return await webView.evaluateJavaScriptAsync(script)
     }

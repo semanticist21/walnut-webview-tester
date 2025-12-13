@@ -154,7 +154,8 @@ struct ContentView: View {
             if useSafariWebView {
                 SafariVCInfoView()
             } else {
-                InfoView()
+                // Pass navigator only when WebView is loaded (for live page testing)
+                InfoView(navigator: showWebView ? webViewNavigator : nil)
             }
         }
         // Recreate SafariVC when configuration settings change
