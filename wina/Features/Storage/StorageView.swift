@@ -722,11 +722,12 @@ private struct StorageItemRow: View {
             return Text(text)
         }
 
-        let before = String(text[..<range.lowerBound])
-        let match = String(text[range])
-        let after = String(text[range.upperBound...])
-
-        return Text("\(before)\(Text(match).bold().foregroundColor(.yellow))\(after)")
+        var attributed = AttributedString(text)
+        if let attrRange = Range(range, in: attributed) {
+            attributed[attrRange].font = .body.bold()
+            attributed[attrRange].foregroundColor = .yellow
+        }
+        return Text(attributed)
     }
 }
 
@@ -829,13 +830,11 @@ private struct StorageEditSheet: View {
 
                         if let expires = metadata.expiresDate {
                             LabeledContent("Expires") {
-                                Text(expires, style: .date)
-                                    .foregroundStyle(.secondary)
-                                +
-                                Text(" ")
-                                +
-                                Text(expires, style: .time)
-                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 4) {
+                                    Text(expires, style: .date)
+                                    Text(expires, style: .time)
+                                }
+                                .foregroundStyle(.secondary)
                             }
                         } else {
                             LabeledContent("Expires", value: "Session")

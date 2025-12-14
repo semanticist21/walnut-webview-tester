@@ -397,13 +397,11 @@ struct SourcesView: View {
 
         let query = debouncedSearchText.lowercased()
 
-        // Run search on background thread
-        Task.detached(priority: .userInitiated) {
+        // Run search on MainActor (DOMNode properties are MainActor-isolated)
+        Task {
             let paths = SourcesSearchHelper.collectMatchingPaths(node: root, currentPath: [], query: query)
-            await MainActor.run {
-                matchingNodePaths = paths
-                currentMatchIndex = paths.isEmpty ? 0 : min(currentMatchIndex, paths.count - 1)
-            }
+            matchingNodePaths = paths
+            currentMatchIndex = paths.isEmpty ? 0 : min(currentMatchIndex, paths.count - 1)
         }
     }
 
@@ -427,13 +425,11 @@ struct SourcesView: View {
         let query = debouncedSearchText
         let lines = cachedRawHTMLLines
 
-        // Run search on background thread
-        Task.detached(priority: .userInitiated) {
+        // Run search (simple string operations, no actor isolation needed)
+        Task {
             let indices = SourcesSearchHelper.findMatchingLineIndices(lines: lines, query: query)
-            await MainActor.run {
-                rawMatchLineIndices = indices
-                currentRawMatchIndex = indices.isEmpty ? 0 : min(currentRawMatchIndex, indices.count - 1)
-            }
+            rawMatchLineIndices = indices
+            currentRawMatchIndex = indices.isEmpty ? 0 : min(currentRawMatchIndex, indices.count - 1)
         }
     }
 

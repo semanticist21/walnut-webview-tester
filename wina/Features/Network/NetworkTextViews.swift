@@ -117,8 +117,8 @@ struct SearchableTextView: UIViewRepresentable {
 
         // Start new search task in background
         coordinator.searchTask = Task.detached(priority: .userInitiated) {
-            // Find matches in background
-            var matchRanges: [NSRange] = []
+            // Find matches in background (local variable only used within this task)
+            var localMatchRanges: [NSRange] = []
             if !searchText.isEmpty {
                 let nsText = text as NSString
                 var searchRange = NSRange(location: 0, length: nsText.length)
@@ -132,7 +132,7 @@ struct SearchableTextView: UIViewRepresentable {
                         range: searchRange
                     )
                     if foundRange.location != NSNotFound {
-                        matchRanges.append(foundRange)
+                        localMatchRanges.append(foundRange)
                         searchRange.location = foundRange.location + foundRange.length
                         searchRange.length = nsText.length - searchRange.location
                     } else {
@@ -143,29 +143,28 @@ struct SearchableTextView: UIViewRepresentable {
 
             if Task.isCancelled { return }
 
-            // Build attributed string in background
-            let attributedText = NSMutableAttributedString(
-                string: text,
-                attributes: [
-                    .font: font,
-                    .foregroundColor: textColor
-                ]
-            )
+            // Capture final match ranges for MainActor
+            let matchRanges = localMatchRanges
 
-            for (index, range) in matchRanges.enumerated() {
-                if Task.isCancelled { return }
-                let isCurrentMatch = index == currentMatchIndex
-                attributedText.addAttributes([
-                    .backgroundColor: isCurrentMatch
-                        ? UIColor.systemYellow
-                        : UIColor.systemYellow.withAlphaComponent(0.3)
-                ], range: range)
-            }
-
-            if Task.isCancelled { return }
-
-            // Update UI on main thread
+            // Update UI on main thread (build attributed string here to avoid Sendable issues)
             await MainActor.run {
+                let attributedText = NSMutableAttributedString(
+                    string: text,
+                    attributes: [
+                        .font: font,
+                        .foregroundColor: textColor
+                    ]
+                )
+
+                for (index, range) in matchRanges.enumerated() {
+                    let isCurrentMatch = index == currentMatchIndex
+                    attributedText.addAttributes([
+                        .backgroundColor: isCurrentMatch
+                            ? UIColor.systemYellow
+                            : UIColor.systemYellow.withAlphaComponent(0.3)
+                    ], range: range)
+                }
+
                 textView.attributedText = attributedText
 
                 // Update layout

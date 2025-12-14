@@ -11,6 +11,7 @@ import Foundation
 
 enum SourcesSearchHelper {
     /// Collect paths to all matching nodes in the DOM tree
+    @MainActor
     static func collectMatchingPaths(node: DOMNode, currentPath: [String], query: String) -> [[String]] {
         let nodePath = currentPath + [node.id.uuidString]
         var paths: [[String]] = []

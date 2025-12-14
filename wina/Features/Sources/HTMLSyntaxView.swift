@@ -99,11 +99,11 @@ struct HTMLTextView: UIViewRepresentable {
 
         func setupTextView(_ textView: TextView, with text: String) {
             // Create state with HTML language for syntax highlighting
-            DispatchQueue.global(qos: .userInitiated).async {
-                let state = TextViewState(text: text, theme: HTMLViewerTheme(), language: .html)
-                DispatchQueue.main.async {
-                    textView.setState(state)
-                }
+            // Theme must be created on MainActor since HTMLViewerTheme conforms to @MainActor Theme protocol
+            Task { @MainActor in
+                let theme = HTMLViewerTheme()
+                let state = TextViewState(text: text, theme: theme, language: .html)
+                textView.setState(state)
             }
         }
 
