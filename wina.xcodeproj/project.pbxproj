@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		407EB1142EEEDC8D00625A22 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 407EB1132EEEDC8D00625A22 /* GoogleMobileAds */; };
 		4097EBA02EEDC4B500E9A0D9 /* UAParserSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4097EB262EEDC3C000E9A0D9 /* UAParserSwift */; };
 		4097EBA32EEDC4B600E9A0D9 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 4097EBA22EEDC4B600E9A0D9 /* SwiftSoup */; };
 		4097F5642EEEB96E00E9A0D9 /* Runestone in Frameworks */ = {isa = PBXBuildFile; productRef = 40A1B0032F0E000000000003 /* Runestone */; };
@@ -48,6 +49,7 @@
 			files = (
 				4097F5652EEEB96E00E9A0D9 /* TreeSitterHTMLRunestone in Frameworks */,
 				4097F5642EEEB96E00E9A0D9 /* Runestone in Frameworks */,
+				407EB1142EEEDC8D00625A22 /* GoogleMobileAds in Frameworks */,
 				4097EBA02EEDC4B500E9A0D9 /* UAParserSwift in Frameworks */,
 				4097EBA32EEDC4B600E9A0D9 /* SwiftSoup in Frameworks */,
 			);
@@ -68,6 +70,7 @@
 			children = (
 				406E0D4D2EE4093D00D6F9C6 /* wina */,
 				4097EB112EEDBAFA00E9A0D9 /* winaTests */,
+				407EB1122EEEDC8800625A22 /* Frameworks */,
 				406E0D4C2EE4093D00D6F9C6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +82,13 @@
 				4097EB102EEDBAFA00E9A0D9 /* winaTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		407EB1122EEEDC8800625A22 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -105,6 +115,7 @@
 				4097EBA22EEDC4B600E9A0D9 /* SwiftSoup */,
 				40A1B0032F0E000000000003 /* Runestone */,
 				40A1B0042F0E000000000004 /* TreeSitterHTMLRunestone */,
+				407EB1132EEEDC8D00625A22 /* GoogleMobileAds */,
 			);
 			productName = wina;
 			productReference = 406E0D4B2EE4093D00D6F9C6 /* wina.app */;
@@ -166,6 +177,7 @@
 				4097EBA12EEDC4B600E9A0D9 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				40A1B0012F0E000000000001 /* XCRemoteSwiftPackageReference "Runestone" */,
 				40A1B0022F0E000000000002 /* XCRemoteSwiftPackageReference "TreeSitterLanguages" */,
+				4097F6F42EEEDB3600E9A0D9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 406E0D4C2EE4093D00D6F9C6 /* Products */;
@@ -356,7 +368,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Walnut;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -390,7 +402,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Walnut;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -501,6 +513,14 @@
 				minimumVersion = 2.7.0;
 			};
 		};
+		4097F6F42EEEDB3600E9A0D9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.14.0;
+			};
+		};
 		40A1B0012F0E000000000001 /* XCRemoteSwiftPackageReference "Runestone" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/simonbs/Runestone.git";
@@ -520,6 +540,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		407EB1132EEEDC8D00625A22 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4097F6F42EEEDB3600E9A0D9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
 		4097EB262EEDC3C000E9A0D9 /* UAParserSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4097EB252EEDC3C000E9A0D9 /* XCRemoteSwiftPackageReference "UAParserSwift" */;

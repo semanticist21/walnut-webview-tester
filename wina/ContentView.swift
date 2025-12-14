@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var showPerformance: Bool = false
     @State private var showEditor: Bool = false
     @State private var showAccessibility: Bool = false
+    @State private var showAbout: Bool = false
     @State private var urlValidationState: URLValidationState = .empty
     @State private var useSafariWebView: Bool = false
     @State private var showWebView: Bool = false
@@ -242,6 +243,9 @@ struct ContentView: View {
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                 .presentationContentInteraction(.scrolls)
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
         }
         // Recreate SafariVC when configuration settings change
         .onChange(of: safariEntersReaderIfAvailable) { _, _ in
@@ -487,6 +491,7 @@ struct ContentView: View {
                 } else {
                     ThemeToggleButton()
                     BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarks.isEmpty)
+                    AboutButton(showAbout: $showAbout)
                 }
             }
 

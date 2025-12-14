@@ -17,6 +17,9 @@ struct winaApp: App {
 
         // Initialize Google Mobile Ads SDK
         AdManager.shared.initialize()
+
+        // Initialize StoreKit (starts transaction listener, checks entitlements)
+        _ = StoreManager.shared
     }
 
     var body: some Scene {

@@ -230,6 +230,12 @@ struct WKWebViewRepresentable: UIViewRepresentable {
     // User Agent
     @AppStorage("customUserAgent") private var customUserAgent: String = ""
 
+    // Emulation
+    @AppStorage("emulationColorScheme") private var emulationColorScheme: String = "system"
+    @AppStorage("emulationReducedMotion") private var emulationReducedMotion: Bool = false
+    @AppStorage("emulationHighContrast") private var emulationHighContrast: Bool = false
+    @AppStorage("emulationReducedTransparency") private var emulationReducedTransparency: Bool = false
+
     func makeCoordinator() -> Coordinator {
         Coordinator(isLoading: $isLoading, navigator: navigator)
     }
@@ -263,6 +269,26 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             forMainFrameOnly: true
         )
         userContentController.addUserScript(performanceScript)
+
+        // Emulation: config script first, then bootstrap (order matters)
+        let emulationConfigScript = WKUserScript(
+            source: WebViewScripts.emulationConfigScript(
+                colorScheme: emulationColorScheme,
+                reducedMotion: emulationReducedMotion,
+                highContrast: emulationHighContrast,
+                reducedTransparency: emulationReducedTransparency
+            ),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        userContentController.addUserScript(emulationConfigScript)
+
+        let emulationBootstrapScript = WKUserScript(
+            source: WebViewScripts.emulationBootstrap,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        userContentController.addUserScript(emulationBootstrapScript)
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
