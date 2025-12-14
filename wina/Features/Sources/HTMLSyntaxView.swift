@@ -17,14 +17,62 @@ struct HTMLSyntaxView: View {
     let currentMatchLineIndex: Int?
     let matchingLineIndices: [Int]
 
+    @AppStorage("htmlViewerFontSize") private var fontSize: Double = 12
+
+    private let minFontSize: Double = 8
+    private let maxFontSize: Double = 24
+
     var body: some View {
-        HTMLTextView(
-            text: html,
-            searchText: searchText,
-            currentMatchIndex: currentMatchLineIndex,
-            matchingLineIndices: matchingLineIndices
-        )
+        ZStack(alignment: .bottomTrailing) {
+            HTMLTextView(
+                text: html,
+                searchText: searchText,
+                currentMatchIndex: currentMatchLineIndex,
+                matchingLineIndices: matchingLineIndices,
+                fontSize: fontSize
+            )
+
+            // Font size controls
+            fontSizeControls
+                .padding(12)
+        }
         .background(Color(uiColor: .systemBackground))
+    }
+
+    private var fontSizeControls: some View {
+        HStack(spacing: 0) {
+            Button {
+                if fontSize > minFontSize {
+                    fontSize = max(minFontSize, fontSize - 2)
+                }
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(fontSize <= minFontSize)
+
+            Text("\(Int(fontSize))")
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .frame(width: 24)
+
+            Button {
+                if fontSize < maxFontSize {
+                    fontSize = min(maxFontSize, fontSize + 2)
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(fontSize >= maxFontSize)
+        }
+        .foregroundStyle(.secondary)
+        .background(.ultraThinMaterial, in: Capsule())
     }
 }
 
@@ -35,6 +83,7 @@ struct HTMLTextView: UIViewRepresentable {
     let searchText: String
     let currentMatchIndex: Int?
     let matchingLineIndices: [Int]
+    let fontSize: Double
 
     /// Calculate character offset for the start of a given line (0-based)
     private func lineStartOffset(for lineIndex: Int) -> Int {
@@ -62,7 +111,8 @@ struct HTMLTextView: UIViewRepresentable {
         textView.lineHeightMultiplier = 1.2
 
         // Set up theme and state
-        context.coordinator.setupTextView(textView, with: text)
+        context.coordinator.lastFontSize = fontSize
+        context.coordinator.setupTextView(textView, with: text, fontSize: fontSize)
 
         return textView
     }
@@ -70,10 +120,11 @@ struct HTMLTextView: UIViewRepresentable {
     func updateUIView(_ textView: TextView, context: Context) {
         let coordinator = context.coordinator
 
-        // Update text if changed
-        if coordinator.lastText != text {
+        // Update text or font size if changed
+        if coordinator.lastText != text || coordinator.lastFontSize != fontSize {
             coordinator.lastText = text
-            coordinator.setupTextView(textView, with: text)
+            coordinator.lastFontSize = fontSize
+            coordinator.setupTextView(textView, with: text, fontSize: fontSize)
         }
 
         // Handle search - Runestone has built-in search support
@@ -112,13 +163,14 @@ struct HTMLTextView: UIViewRepresentable {
         var lastText: String = ""
         var lastSearchText: String = ""
         var lastMatchIndex: Int?
+        var lastFontSize: Double = 12
         var searchResultRanges: [NSRange] = []
 
-        func setupTextView(_ textView: TextView, with text: String) {
+        func setupTextView(_ textView: TextView, with text: String, fontSize: Double) {
             // Create state with HTML language for syntax highlighting
             // Theme must be created on MainActor since HTMLViewerTheme conforms to @MainActor Theme protocol
             Task { @MainActor in
-                let theme = HTMLViewerTheme()
+                let theme = HTMLViewerTheme(fontSize: fontSize)
                 let state = TextViewState(text: text, theme: theme, language: .html)
                 textView.setState(state)
             }
@@ -147,14 +199,14 @@ final class HTMLViewerTheme: Runestone.Theme {
     let backgroundColor: UIColor = .systemBackground
     let userInterfaceStyle: UIUserInterfaceStyle = .unspecified
 
-    let font: UIFont = .monospacedSystemFont(ofSize: 12, weight: .regular)
+    let font: UIFont
     let textColor: UIColor = .label
 
     let gutterBackgroundColor: UIColor = .secondarySystemBackground
     let gutterHairlineColor: UIColor = .separator
 
     let lineNumberColor: UIColor = .tertiaryLabel
-    let lineNumberFont: UIFont = .monospacedSystemFont(ofSize: 10, weight: .regular)
+    let lineNumberFont: UIFont
 
     let selectedLineBackgroundColor: UIColor = .systemGray6
     let selectedLinesLineNumberColor: UIColor = .secondaryLabel
@@ -166,6 +218,11 @@ final class HTMLViewerTheme: Runestone.Theme {
     let pageGuideBackgroundColor: UIColor = .secondarySystemBackground
 
     let markedTextBackgroundColor: UIColor = .systemYellow.withAlphaComponent(0.2)
+
+    init(fontSize: Double = 12) {
+        self.font = .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        self.lineNumberFont = .monospacedSystemFont(ofSize: max(8, fontSize - 2), weight: .regular)
+    }
 
     func textColor(for highlightName: String) -> UIColor? {
         switch highlightName {
