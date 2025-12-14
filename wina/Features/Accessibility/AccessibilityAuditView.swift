@@ -280,61 +280,76 @@ struct AccessibilityAuditView: View {
     // MARK: - States
 
     private var initialState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "accessibility")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            Text("Accessibility Audit")
-                .font(.headline)
-            Text("Scan the current page for accessibility issues")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Spacer(minLength: 0)
+                    Image(systemName: "accessibility")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.tertiary)
+                    Text("Accessibility Audit")
+                        .font(.headline)
+                    Text("Scan the current page for accessibility issues")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
 
-            GlassActionButton("Run Audit", icon: "play.fill", style: .primary) {
-                Task { await runAudit() }
+                    GlassActionButton("Run Audit", icon: "play.fill", style: .primary) {
+                        Task { await runAudit() }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
-            Spacer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
     }
 
     private var scanningState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            ProgressView()
-                .scaleEffect(1.2)
-            Text("Scanning...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Spacer(minLength: 0)
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Scanning...")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                }
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.green)
-            Text(issues.isEmpty ? "No issues found" : "No matching issues")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            if issues.isEmpty {
-                Text("Great! This page passes basic accessibility checks.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.green)
+                    Text(issues.isEmpty ? "No issues found" : "No matching issues")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if issues.isEmpty {
+                        Text("Great! This page passes basic accessibility checks.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
-            Spacer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
     }
 
