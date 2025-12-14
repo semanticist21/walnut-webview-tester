@@ -266,6 +266,7 @@ struct StorageShareContent: Identifiable {
 struct StorageView: View {
     let storageManager: StorageManager
     let navigator: WebViewNavigator?
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedType: StorageItem.StorageType = .localStorage
     @State private var searchText: String = ""
     @State private var shareItem: StorageShareContent?
@@ -338,6 +339,9 @@ struct StorageView: View {
         DevToolsHeader(
             title: "Storage",
             leftButtons: [
+                .init(icon: "xmark.circle.fill", color: .secondary) {
+                    dismiss()
+                },
                 .init(
                     icon: "trash",
                     isDisabled: filteredItems.isEmpty

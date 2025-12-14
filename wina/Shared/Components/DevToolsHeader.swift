@@ -51,28 +51,30 @@ struct DevToolsHeader: View {
             if isActive, let activeColor {
                 return activeColor
             }
-            return isDisabled ? .tertiary : color
+            return isDisabled ? Color.secondary.opacity(0.5) : color
         }
     }
 
     var body: some View {
-        HStack(spacing: 16) {
-            // Left button group
-            if !leftButtons.isEmpty {
-                buttonGroup(leftButtons)
-            }
-
-            Spacer()
-
+        VStack(spacing: 12) {
+            // Row 1: Title
             Text(title)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.primary)
 
-            Spacer()
+            // Row 2: Button groups
+            HStack(spacing: 16) {
+                // Left button group
+                if !leftButtons.isEmpty {
+                    buttonGroup(leftButtons)
+                }
 
-            // Right button group
-            if !rightButtons.isEmpty {
-                buttonGroup(rightButtons)
+                Spacer()
+
+                // Right button group
+                if !rightButtons.isEmpty {
+                    buttonGroup(rightButtons)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -106,6 +108,7 @@ struct DevToolsHeader: View {
         DevToolsHeader(
             title: "Console",
             leftButtons: [
+                .init(icon: "xmark.circle.fill", color: .secondary) {},
                 .init(icon: "trash", isDisabled: true) {},
                 .init(icon: "square.and.arrow.up") {}
             ],

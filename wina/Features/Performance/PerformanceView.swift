@@ -364,6 +364,7 @@ struct PerformanceView: View {
     let performanceManager: PerformanceManager
     let onRefresh: () -> Void
 
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0
 
     var body: some View {
@@ -417,17 +418,23 @@ struct PerformanceView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        onRefresh()
-                    } label: {
-                        if performanceManager.isLoading {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "play.fill")
+                    HStack(spacing: 16) {
+                        Button {
+                            onRefresh()
+                        } label: {
+                            if performanceManager.isLoading {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "play.fill")
+                            }
+                        }
+                        .disabled(performanceManager.isLoading)
+
+                        Button("Done") {
+                            dismiss()
                         }
                     }
-                    .disabled(performanceManager.isLoading)
                 }
             }
         }

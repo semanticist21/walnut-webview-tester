@@ -206,6 +206,7 @@ struct ShareContent: Identifiable {
 
 struct ConsoleView: View {
     let consoleManager: ConsoleManager
+    @Environment(\.dismiss) private var dismiss
     @State private var filterType: ConsoleLog.LogType?
     @State private var searchText: String = ""
     @State private var useRegex: Bool = false
@@ -296,6 +297,9 @@ struct ConsoleView: View {
         DevToolsHeader(
             title: "Console",
             leftButtons: [
+                .init(icon: "xmark.circle.fill", color: .secondary) {
+                    dismiss()
+                },
                 .init(
                     icon: "trash",
                     isDisabled: consoleManager.logs.isEmpty

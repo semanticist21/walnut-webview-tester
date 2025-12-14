@@ -254,7 +254,9 @@ struct NetworkShareContent: Identifiable {
 
 struct NetworkView: View {
     let networkManager: NetworkManager
+    @Environment(\.dismiss) private var dismiss
     @State private var filterType: NetworkRequest.RequestType?
+    @State private var showErrorsOnly: Bool = false
     @State private var searchText: String = ""
     @State private var shareItem: NetworkShareContent?
     @State private var showSettings: Bool = false
@@ -264,7 +266,9 @@ struct NetworkView: View {
     private var filteredRequests: [NetworkRequest] {
         var result = networkManager.requests
 
-        if let filterType {
+        if showErrorsOnly {
+            result = result.filter { $0.error != nil || ($0.status ?? 0) >= 400 }
+        } else if let filterType {
             result = result.filter { $0.requestType == filterType }
         }
 
@@ -314,6 +318,9 @@ struct NetworkView: View {
         DevToolsHeader(
             title: "Network",
             leftButtons: [
+                .init(icon: "xmark.circle.fill", color: .secondary) {
+                    dismiss()
+                },
                 .init(
                     icon: "trash",
                     isDisabled: networkManager.requests.isEmpty
@@ -374,28 +381,31 @@ struct NetworkView: View {
                 NetworkFilterTab(
                     label: "All",
                     count: networkManager.requests.count,
-                    isSelected: filterType == nil
+                    isSelected: filterType == nil && !showErrorsOnly
                 ) {
                     filterType = nil
+                    showErrorsOnly = false
                 }
 
                 ForEach(NetworkRequest.RequestType.allCases, id: \.self) { type in
                     NetworkFilterTab(
                         label: type.label,
                         count: networkManager.requests.filter { $0.requestType == type }.count,
-                        isSelected: filterType == type
+                        isSelected: filterType == type && !showErrorsOnly
                     ) {
                         filterType = type
+                        showErrorsOnly = false
                     }
                 }
 
                 NetworkFilterTab(
                     label: "Errors",
                     count: networkManager.errorCount,
-                    isSelected: false,
+                    isSelected: showErrorsOnly,
                     color: .red
                 ) {
-                    // Filter by error status
+                    filterType = nil
+                    showErrorsOnly = true
                 }
             }
             .padding(.horizontal, 12)
@@ -757,17 +767,9 @@ private struct NetworkDetailView: View {
                 Spacer()
 
                 // Quick copy URL button
-                Button {
+                GlassIconButton(icon: "doc.on.doc", size: .small) {
                     copyToClipboard(request.url, label: "URL")
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.primary)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
-                .glassEffect(in: .circle)
             }
 
             Text(request.url)
@@ -1165,17 +1167,9 @@ private struct DetailSection<Content: View>: View {
                     .glassEffect(in: .capsule)
 
                     // Copy button
-                    Button {
+                    GlassIconButton(icon: "doc.on.doc", size: .small) {
                         onCopy?(rawText, title)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.primary)
-                            .frame(width: 28, height: 28)
-                            .contentShape(Circle())
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(in: .circle)
                 }
             }
 
