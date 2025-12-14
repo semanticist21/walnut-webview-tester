@@ -22,6 +22,7 @@ struct OverlayMenuBars: View {
     @Binding var showInfo: Bool
     @Binding var showConsole: Bool
     @Binding var showNetwork: Bool
+    @Binding var showResources: Bool
     @Binding var showStorage: Bool
     @Binding var showPerformance: Bool
     @Binding var showEditor: Bool
@@ -210,6 +211,18 @@ struct OverlayMenuBars: View {
                             showNetwork = true
                         } label: {
                             Image(systemName: "network")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            showResources = true
+                        } label: {
+                            Image(systemName: "photo.stack")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
                                 .padding(8)
@@ -467,6 +480,7 @@ struct OverlayMenuBars: View {
             showInfo: .constant(false),
             showConsole: .constant(false),
             showNetwork: .constant(false),
+            showResources: .constant(false),
             showStorage: .constant(false),
             showPerformance: .constant(false),
             showEditor: .constant(false),
@@ -493,6 +507,7 @@ struct OverlayMenuBars: View {
             showInfo: .constant(false),
             showConsole: .constant(false),
             showNetwork: .constant(false),
+            showResources: .constant(false),
             showStorage: .constant(false),
             showPerformance: .constant(false),
             showEditor: .constant(false),

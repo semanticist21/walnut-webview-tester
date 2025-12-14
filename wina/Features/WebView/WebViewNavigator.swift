@@ -19,6 +19,7 @@ class WebViewNavigator {
     let consoleManager = ConsoleManager()
     let networkManager = NetworkManager()
     let performanceManager = PerformanceManager()
+    let resourceManager = ResourceManager()
 
     private weak var webView: WKWebView?
     private var canGoBackObservation: NSKeyValueObservation?

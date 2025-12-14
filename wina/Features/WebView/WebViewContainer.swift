@@ -269,6 +269,15 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         )
         userContentController.addUserScript(networkScript)
 
+        // Resource timing hook
+        userContentController.add(context.coordinator, name: "resourceTiming")
+        let resourceScript = WKUserScript(
+            source: WebViewScripts.resourceTimingHook,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        userContentController.addUserScript(resourceScript)
+
         // Performance observer hook (for LCP, CLS)
         let performanceScript = WKUserScript(
             source: WebViewScripts.performanceObserver,
@@ -395,6 +404,8 @@ struct WKWebViewRepresentable: UIViewRepresentable {
                 handleConsoleMessage(message)
             } else if message.name == "networkRequest" {
                 handleNetworkMessage(message)
+            } else if message.name == "resourceTiming" {
+                handleResourceTimingMessage(message)
             }
         }
 
@@ -458,6 +469,17 @@ struct WKWebViewRepresentable: UIViewRepresentable {
 
             default:
                 break
+            }
+        }
+
+        private func handleResourceTimingMessage(_ message: WKScriptMessage) {
+            guard let body = message.body as? [String: Any],
+                  let action = body["action"] as? String else {
+                return
+            }
+
+            if action == "entries", let entries = body["entries"] as? [[String: Any]] {
+                navigator?.resourceManager.addResources(from: entries)
             }
         }
 
