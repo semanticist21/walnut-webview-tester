@@ -21,6 +21,15 @@ swiftlint lint && swiftlint --fix
 
 # swift-format (선택적 - SwiftUI 복잡 뷰에서 문제 발생 가능)
 swift format format --in-place wina/SomeFile.swift
+
+# Tests
+xcodebuild test -project wina.xcodeproj -scheme wina -destination 'platform=iOS Simulator,name=iPhone 16'
+
+# Single test file
+xcodebuild test -project wina.xcodeproj -scheme wina -only-testing:winaTests/URLValidatorTests
+
+# SwiftLint Analyzer (unused imports/declarations)
+swiftlint analyze --compiler-log-path /tmp/xcodebuild.log
 ```
 
 ## Architecture
@@ -690,3 +699,50 @@ rsvg-convert -w 1024 -h 1024 input.svg -o output.png
 # ❌ ImageMagick (색상 왜곡)
 magick input.svg output.png
 ```
+
+---
+
+## App Store 배포
+
+### 빌드 및 업로드
+
+```bash
+# Archive
+xcodebuild -project wina.xcodeproj -scheme wina -configuration Release \
+  -archivePath /tmp/wina.xcarchive archive -destination 'generic/platform=iOS'
+
+# App Store Connect 업로드 (API Key 사용)
+xcodebuild -exportArchive -archivePath /tmp/wina.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath /tmp/export \
+  -authenticationKeyPath /path/to/AuthKey.p8 \
+  -authenticationKeyID <KEY_ID> \
+  -authenticationKeyIssuerID <ISSUER_ID> \
+  -allowProvisioningUpdates
+```
+
+### ExportOptions.plist
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store-connect</string>
+    <key>teamID</key>
+    <string>X6M5USK89L</string>
+    <key>destination</key>
+    <string>upload</string>
+</dict>
+</plist>
+```
+
+### 앱 아이콘 요구사항
+
+- ❌ **Alpha channel 금지** (App Store 거부됨)
+- 확인: `sips -g hasAlpha wina/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png`
+- 제거: `magick input.png -background white -alpha remove -alpha off output.png`
+
+### Export Compliance
+
+`ITSAppUsesNonExemptEncryption = NO` 설정됨 → 수출 규정 질문 자동 스킵 (HTTPS만 사용, 자체 암호화 없음)
