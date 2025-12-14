@@ -9,16 +9,77 @@ import SwiftUI
 
 // MARK: - Element Detail View
 
+/// Represents a matched CSS rule with its source
+struct MatchedCSSRule: Identifiable {
+    let id: Int
+    let selector: String
+    let source: CSSSource
+    let properties: [(property: String, value: String)]
+    let specificity: Int  // For sorting
+    let isCORSBlocked: Bool  // True if stylesheet couldn't be accessed due to CORS
+
+    init(
+        id: Int,
+        selector: String,
+        source: CSSSource,
+        properties: [(property: String, value: String)],
+        specificity: Int,
+        isCORSBlocked: Bool = false
+    ) {
+        self.id = id
+        self.selector = selector
+        self.source = source
+        self.properties = properties
+        self.specificity = specificity
+        self.isCORSBlocked = isCORSBlocked
+    }
+
+    enum CSSSource: Equatable {
+        case inline              // element.style
+        case styleTag(Int)       // <style> tag (index)
+        case stylesheet(String)  // External file (href)
+        case unknown
+
+        var displayName: String {
+            switch self {
+            case .inline: return "element.style"
+            case .styleTag(let idx): return "<style> #\(idx + 1)"
+            case .stylesheet(let href):
+                if let url = URL(string: href) {
+                    // Show host + filename for external
+                    if let host = url.host, host != url.lastPathComponent {
+                        return "\(host)/\(url.lastPathComponent)"
+                    }
+                    return url.lastPathComponent
+                }
+                return href
+            case .unknown: return "unknown"
+            }
+        }
+
+        var sortOrder: Int {
+            switch self {
+            case .inline: return 0
+            case .styleTag: return 1
+            case .stylesheet: return 2
+            case .unknown: return 3
+            }
+        }
+    }
+}
+
 struct ElementDetailView: View {
     let node: DOMNode
     let navigator: WebViewNavigator?
 
     @Environment(\.dismiss) private var dismiss
     @State private var computedStyles: [String: String] = [:]
+    @State private var matchedRules: [MatchedCSSRule] = []
     @State private var innerHTML: String = ""
     @State private var outerHTML: String = ""
     @State private var isLoading: Bool = true
     @State private var selectedSection: ElementSection = .attributes
+    @State private var showMatchedRules: Bool = true  // Toggle between matched/computed
 
     enum ElementSection: String, CaseIterable {
         case attributes = "Attributes"
@@ -130,6 +191,96 @@ struct ElementDetailView: View {
 
     private var stylesContent: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Toggle between matched rules and computed styles
+            stylesModeToggle
+
+            if showMatchedRules {
+                matchedRulesContent
+            } else {
+                computedStylesContent
+            }
+        }
+    }
+
+    private var stylesModeToggle: some View {
+        HStack(spacing: 0) {
+            Button {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    showMatchedRules = true
+                }
+            } label: {
+                Text("Matched")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(showMatchedRules ? .primary : .secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background {
+                        if showMatchedRules {
+                            Capsule().fill(.ultraThinMaterial)
+                        }
+                    }
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    showMatchedRules = false
+                }
+            } label: {
+                Text("Computed")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(!showMatchedRules ? .primary : .secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background {
+                        if !showMatchedRules {
+                            Capsule().fill(.ultraThinMaterial)
+                        }
+                    }
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .padding(.bottom, 4)
+    }
+
+    private var matchedRulesContent: some View {
+        Group {
+            if matchedRules.isEmpty {
+                Text("No matched rules")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 20)
+            } else {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(groupedMatchedRules, id: \.source.displayName) { group in
+                        MatchedRulesGroupView(
+                            source: group.source,
+                            rules: group.rules
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// Group matched rules by source for display
+    private var groupedMatchedRules: [(source: MatchedCSSRule.CSSSource, rules: [MatchedCSSRule])] {
+        let grouped = Dictionary(grouping: matchedRules) { $0.source.displayName }
+        return grouped
+            .compactMap { _, rules -> (source: MatchedCSSRule.CSSSource, rules: [MatchedCSSRule])? in
+                guard let firstRule = rules.first else { return nil }
+                return (firstRule.source, rules)
+            }
+            .sorted { $0.source.sortOrder < $1.source.sortOrder }
+    }
+
+    private var computedStylesContent: some View {
+        Group {
             if computedStyles.isEmpty {
                 Text("No computed styles")
                     .font(.subheadline)
@@ -230,8 +381,116 @@ struct ElementDetailView: View {
         })();
         """
 
+        // Fetch matched CSS rules
+        let matchedRulesScript = """
+        (function() {
+            const el = document.querySelector('\(selector)');
+            if (!el) return '[]';
+
+            const rules = [];
+            let ruleId = 0;
+
+            // Helper: calculate specificity (simplified)
+            function calcSpecificity(sel) {
+                if (!sel) return 0;
+                const ids = (sel.match(/#/g) || []).length;
+                const classes = (sel.match(/\\./g) || []).length + (sel.match(/\\[/g) || []).length;
+                const tags = (sel.match(/^[a-z]/gi) || []).length;
+                return ids * 100 + classes * 10 + tags;
+            }
+
+            // Helper: parse CSS text to properties
+            function parseProps(cssText) {
+                const props = [];
+                const match = cssText.match(/\\{([^}]*)\\}/);
+                if (!match) return props;
+                const decls = match[1].split(';');
+                for (const decl of decls) {
+                    const parts = decl.split(':');
+                    if (parts.length >= 2) {
+                        const prop = parts[0].trim();
+                        const val = parts.slice(1).join(':').trim();
+                        if (prop && val) props.push({p: prop, v: val});
+                    }
+                }
+                return props;
+            }
+
+            // 1. Inline styles (element.style)
+            if (el.style.length > 0) {
+                const inlineProps = [];
+                for (let i = 0; i < el.style.length; i++) {
+                    const prop = el.style[i];
+                    const val = el.style.getPropertyValue(prop);
+                    if (val) inlineProps.push({p: prop, v: val});
+                }
+                if (inlineProps.length > 0) {
+                    rules.push({
+                        id: ruleId++,
+                        selector: 'element.style',
+                        source: {type: 'inline'},
+                        properties: inlineProps,
+                        specificity: 1000
+                    });
+                }
+            }
+
+            // 2. Iterate stylesheets
+            let styleTagIndex = 0;
+            for (let i = 0; i < document.styleSheets.length; i++) {
+                const sheet = document.styleSheets[i];
+                let sourceInfo;
+
+                if (sheet.href) {
+                    sourceInfo = {type: 'external', href: sheet.href};
+                } else {
+                    sourceInfo = {type: 'styleTag', index: styleTagIndex++};
+                }
+
+                try {
+                    const cssRules = sheet.cssRules || sheet.rules;
+                    if (!cssRules) continue;
+
+                    for (const rule of cssRules) {
+                        if (rule.type !== 1) continue; // CSSStyleRule only
+
+                        try {
+                            if (el.matches(rule.selectorText)) {
+                                const props = parseProps(rule.cssText);
+                                if (props.length > 0) {
+                                    rules.push({
+                                        id: ruleId++,
+                                        selector: rule.selectorText,
+                                        source: sourceInfo,
+                                        properties: props,
+                                        specificity: calcSpecificity(rule.selectorText)
+                                    });
+                                }
+                            }
+                        } catch(e) { /* selector may be invalid */ }
+                    }
+                } catch(e) {
+                    // CORS: cannot access cssRules - add blocked entry
+                    if (sheet.href) {
+                        rules.push({
+                            id: ruleId++,
+                            selector: '',
+                            source: sourceInfo,
+                            properties: [],
+                            specificity: 0,
+                            corsBlocked: true
+                        });
+                    }
+                }
+            }
+
+            return JSON.stringify(rules.slice(0, 50)); // Limit to 50 rules
+        })();
+        """
+
         async let stylesResult = navigator.evaluateJavaScript(stylesScript)
         async let htmlResult = navigator.evaluateJavaScript(htmlScript)
+        async let matchedResult = navigator.evaluateJavaScript(matchedRulesScript)
 
         if let stylesJSON = await stylesResult as? String,
            let data = stylesJSON.data(using: .utf8),
@@ -246,7 +505,62 @@ struct ElementDetailView: View {
             innerHTML = parsed["inner"] ?? ""
         }
 
+        if let matchedJSON = await matchedResult as? String,
+           let data = matchedJSON.data(using: .utf8),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+            matchedRules = parseMatchedRules(from: parsed)
+        }
+
         isLoading = false
+    }
+
+    /// Parse matched rules from JavaScript result
+    private func parseMatchedRules(from jsonArray: [[String: Any]]) -> [MatchedCSSRule] {
+        return jsonArray.compactMap { item -> MatchedCSSRule? in
+            guard let id = item["id"] as? Int,
+                  let sourceDict = item["source"] as? [String: Any] else {
+                return nil
+            }
+
+            let selector = item["selector"] as? String ?? ""
+            let propsArray = item["properties"] as? [[String: String]] ?? []
+            let specificity = item["specificity"] as? Int ?? 0
+            let corsBlocked = item["corsBlocked"] as? Bool ?? false
+
+            // Parse source
+            let source: MatchedCSSRule.CSSSource
+            if let type = sourceDict["type"] as? String {
+                switch type {
+                case "inline":
+                    source = .inline
+                case "styleTag":
+                    let index = sourceDict["index"] as? Int ?? 0
+                    source = .styleTag(index)
+                case "external":
+                    let href = sourceDict["href"] as? String ?? ""
+                    source = .stylesheet(href)
+                default:
+                    source = .unknown
+                }
+            } else {
+                source = .unknown
+            }
+
+            // Parse properties
+            let properties = propsArray.compactMap { propDict -> (String, String)? in
+                guard let prop = propDict["p"], let val = propDict["v"] else { return nil }
+                return (prop, val)
+            }
+
+            return MatchedCSSRule(
+                id: id,
+                selector: selector,
+                source: source,
+                properties: properties,
+                specificity: specificity,
+                isCORSBlocked: corsBlocked
+            )
+        }
     }
 
     private func buildSelector() -> String {
@@ -266,6 +580,134 @@ struct ElementDetailView: View {
             UIPasteboard.general.string = text
         case .html:
             UIPasteboard.general.string = outerHTML
+        }
+    }
+}
+
+// MARK: - Matched Rules Group View
+
+/// Displays a group of matched CSS rules from a single source
+private struct MatchedRulesGroupView: View {
+    let source: MatchedCSSRule.CSSSource
+    let rules: [MatchedCSSRule]
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Check if this group is CORS blocked
+    private var isCORSBlocked: Bool {
+        rules.first?.isCORSBlocked ?? false
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Source header
+            HStack {
+                sourceIcon
+                Text(source.displayName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            // Rules or CORS warning
+            if isCORSBlocked {
+                corsBlockedView
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(rules) { rule in
+                        MatchedRuleRowView(rule: rule)
+                    }
+                }
+                .padding(.leading, 8)
+            }
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var corsBlockedView: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.orange)
+            Text("Cross-origin: rules not accessible")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.leading, 8)
+    }
+
+    @ViewBuilder
+    private var sourceIcon: some View {
+        switch source {
+        case .inline:
+            Image(systemName: "tag")
+                .font(.system(size: 10))
+                .foregroundStyle(.orange)
+        case .styleTag:
+            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                .font(.system(size: 10))
+                .foregroundStyle(.purple)
+        case .stylesheet:
+            Image(systemName: isCORSBlocked ? "lock.doc" : "doc.text")
+                .font(.system(size: 10))
+                .foregroundStyle(isCORSBlocked ? .orange : .blue)
+        case .unknown:
+            Image(systemName: "questionmark")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Displays a single matched rule with selector and properties
+private struct MatchedRuleRowView: View {
+    let rule: MatchedCSSRule
+    @State private var isExpanded: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+
+                    Text(rule.selector)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(CSSSyntaxColors.keyword(for: colorScheme))
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(rule.properties.count)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.1), in: Capsule())
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(rule.properties.enumerated()), id: \.offset) { _, prop in
+                        FormattedCSSPropertyRow(property: prop.0, value: prop.1)
+                    }
+                }
+                .padding(.leading, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 2)
+            }
         }
     }
 }

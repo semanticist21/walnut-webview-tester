@@ -472,16 +472,37 @@ struct StorageView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(filteredItems) { item in
-                    StorageItemRow(item: item, keyColumnWidth: keyColumnWidth)
-                        .onTapGesture {
-                            selectedItem = item
-                        }
+                    StorageItemRow(
+                        item: item,
+                        keyColumnWidth: keyColumnWidth,
+                        searchText: searchText,
+                        onEdit: { selectedItem = $0 },
+                        onDelete: { deleteItem($0) },
+                        onCopy: { copyToClipboard($0) },
+                        onCopyKeyValue: { copyKeyValue($0) }
+                    )
                 }
             }
             .frame(maxWidth: .infinity)
         }
         .background(Color(uiColor: .systemBackground))
         .scrollContentBackground(.hidden)
+    }
+
+    private func deleteItem(_ item: StorageItem) {
+        Task {
+            if await storageManager.removeItem(key: item.key, type: item.storageType) {
+                await storageManager.refresh()
+            }
+        }
+    }
+
+    private func copyToClipboard(_ text: String) {
+        UIPasteboard.general.string = text
+    }
+
+    private func copyKeyValue(_ item: StorageItem) {
+        UIPasteboard.general.string = "\(item.key)=\(item.value)"
     }
 
     // MARK: - Export
@@ -503,35 +524,144 @@ struct StorageView: View {
 private struct StorageItemRow: View {
     let item: StorageItem
     let keyColumnWidth: CGFloat
+    let searchText: String
+    let onEdit: (StorageItem) -> Void
+    let onDelete: (StorageItem) -> Void
+    let onCopy: (String) -> Void
+    let onCopyKeyValue: (StorageItem) -> Void
 
-    // Check if value needs truncation
-    private var needsTruncation: Bool {
-        item.value.count > 50 || item.value.contains("\n")
+    // MARK: - Value Analysis
+
+    private var isEmpty: Bool {
+        item.value.isEmpty
+    }
+
+    private var isJson: Bool {
+        JsonParser.isValidJson(item.value)
+    }
+
+    private var isNumber: Bool {
+        Double(item.value) != nil
+    }
+
+    private var isBool: Bool {
+        item.value.lowercased() == "true" || item.value.lowercased() == "false"
+    }
+
+    private var valueType: ValueType {
+        if isEmpty { return .empty }
+        if isJson { return .json }
+        if isBool { return .bool }
+        if isNumber { return .number }
+        return .string
+    }
+
+    private var valueSize: String {
+        let bytes = item.value.utf8.count
+        if bytes < 1024 {
+            return "\(bytes)B"
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1fKB", Double(bytes) / 1024)
+        } else {
+            return String(format: "%.1fMB", Double(bytes) / (1024 * 1024))
+        }
     }
 
     private var displayValue: String {
-        if needsTruncation {
-            let truncated = item.value.replacingOccurrences(of: "\n", with: " ")
+        if isEmpty { return "(empty)" }
+        let truncated = item.value.replacingOccurrences(of: "\n", with: " ")
+        if truncated.count > 50 {
             return String(truncated.prefix(50)) + "…"
         }
-        return item.value
+        return truncated
     }
 
+    // MARK: - Body
+
     var body: some View {
-        HStack(spacing: 12) {
-            // Key column
-            Text(item.key)
+        Button {
+            onEdit(item)
+        } label: {
+            rowContent
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onDelete(item)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                onCopy(item.value)
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            .tint(.blue)
+        }
+        .contextMenu {
+            Button {
+                onEdit(item)
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+
+            Divider()
+
+            Button {
+                onCopy(item.key)
+            } label: {
+                Label("Copy Key", systemImage: "doc.on.doc")
+            }
+
+            Button {
+                onCopy(item.value)
+            } label: {
+                Label("Copy Value", systemImage: "doc.on.doc.fill")
+            }
+
+            Button {
+                onCopyKeyValue(item)
+            } label: {
+                Label("Copy Key=Value", systemImage: "equal.circle")
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                onDelete(item)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Row Content
+
+    private var rowContent: some View {
+        HStack(spacing: 8) {
+            // Key column with highlight
+            highlightedText(item.key, searchText: searchText)
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .frame(width: keyColumnWidth, alignment: .leading)
 
-            // Value column
-            Text(displayValue)
+            // Value column with highlight
+            highlightedText(displayValue, searchText: searchText)
                 .font(.system(size: 13, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(isEmpty ? .tertiary : .secondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Type badge + Size
+            HStack(spacing: 6) {
+                typeBadge
+                Text(valueSize)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
 
             // Chevron indicator
             Image(systemName: "chevron.right")
@@ -545,6 +675,57 @@ private struct StorageItemRow: View {
             Divider()
                 .padding(.leading, 16)
         }
+    }
+
+    // MARK: - Type Badge
+
+    @ViewBuilder
+    private var typeBadge: some View {
+        switch valueType {
+        case .json:
+            Text("JSON")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(.orange, in: Capsule())
+        case .number:
+            Text("#")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(.blue)
+        case .bool:
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 10))
+                .foregroundStyle(.green)
+        case .empty:
+            Image(systemName: "circle.dashed")
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+        case .string:
+            EmptyView()
+        }
+    }
+
+    // MARK: - Search Highlight
+
+    private func highlightedText(_ text: String, searchText: String) -> Text {
+        guard !searchText.isEmpty,
+              let range = text.range(of: searchText, options: .caseInsensitive)
+        else {
+            return Text(text)
+        }
+
+        let before = String(text[..<range.lowerBound])
+        let match = String(text[range])
+        let after = String(text[range.upperBound...])
+
+        return Text("\(before)\(Text(match).bold().foregroundColor(.yellow))\(after)")
+    }
+
+    // MARK: - Value Type
+
+    private enum ValueType {
+        case json, number, bool, string, empty
     }
 }
 
@@ -579,6 +760,10 @@ private struct StorageEditSheet: View {
         JsonParser.isValidJson(editedValue)
     }
 
+    private var isCookie: Bool {
+        item.storageType == .cookies
+    }
+
     private var keyChanged: Bool {
         editedKey != item.key
     }
@@ -604,7 +789,11 @@ private struct StorageEditSheet: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 } header: {
-                    Text("Key")
+                    HStack {
+                        Text("Key")
+                        Spacer()
+                        copyButton(text: editedKey)
+                    }
                 } footer: {
                     if isDuplicateKey {
                         Text("Key '\(editedKey)' already exists")
@@ -616,10 +805,36 @@ private struct StorageEditSheet: View {
                     TextEditor(text: $editedValue)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(minHeight: 120)
+
+                    if isCookie {
+                        HStack(spacing: 12) {
+                            Button {
+                                if let encoded = editedValue.addingPercentEncoding(
+                                    withAllowedCharacters: .urlQueryAllowed
+                                ) {
+                                    editedValue = encoded
+                                }
+                            } label: {
+                                Label("Encode", systemImage: "arrow.right.circle")
+                                    .font(.caption.weight(.medium))
+                            }
+
+                            Button {
+                                if let decoded = editedValue.removingPercentEncoding {
+                                    editedValue = decoded
+                                }
+                            } label: {
+                                Label("Decode", systemImage: "arrow.left.circle")
+                                    .font(.caption.weight(.medium))
+                            }
+                        }
+                        .foregroundStyle(.blue)
+                    }
                 } header: {
                     HStack {
                         Text("Value")
                         Spacer()
+                        copyButton(text: editedValue)
                         if isValueJson {
                             Button {
                                 showJsonEditor = true
@@ -736,6 +951,23 @@ private struct StorageEditSheet: View {
             }
             isDeleting = false
         }
+    }
+
+    private func copyButton(text: String) -> some View {
+        Button {
+            UIPasteboard.general.string = text
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "doc.on.doc")
+                Text("Copy")
+            }
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.fill.tertiary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(text.isEmpty)
     }
 
     private func countJsonElements(_ jsonString: String) -> Int {
