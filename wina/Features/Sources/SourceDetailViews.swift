@@ -84,6 +84,7 @@ struct ElementDetailView: View {
     @State private var showMatchedRules: Bool = true  // Toggle between matched/computed
     @State private var computedStylesFilter: String = ""
     @State private var copiedFeedback: String?
+    @State private var corsBlockedCount: Int = 0
 
     enum ElementSection: String, CaseIterable {
         case attributes = "Attributes"
@@ -257,13 +258,38 @@ struct ElementDetailView: View {
     }
 
     private var matchedRulesContent: some View {
-        Group {
-            if matchedRules.isEmpty {
-                Text("No matched rules")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
+        VStack(alignment: .leading, spacing: 12) {
+            // CORS warning banner if applicable
+            if corsBlockedCount > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                    Text("\(corsBlockedCount) external stylesheet\(corsBlockedCount > 1 ? "s" : "") blocked by CORS")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+            }
+
+            // Rules content
+            if accessibleMatchedRules.isEmpty {
+                VStack(spacing: 8) {
+                    Text("No matched rules found")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if corsBlockedCount > 0 {
+                        Text("Styles from CDN (Tailwind, Bootstrap, etc.) cannot be inspected due to browser security")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 20)
             } else {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(groupedMatchedRules, id: \.source.displayName) { group in
@@ -277,9 +303,15 @@ struct ElementDetailView: View {
         }
     }
 
-    /// Group matched rules by source for display
+    /// Matched rules excluding CORS-blocked entries
+    private var accessibleMatchedRules: [MatchedCSSRule] {
+        matchedRules.filter { !$0.isCORSBlocked }
+    }
+
+    /// Group matched rules by source for display (excluding CORS-blocked)
     private var groupedMatchedRules: [(source: MatchedCSSRule.CSSSource, rules: [MatchedCSSRule])] {
-        let grouped = Dictionary(grouping: matchedRules) { $0.source.displayName }
+        let accessible = accessibleMatchedRules
+        let grouped = Dictionary(grouping: accessible) { $0.source.displayName }
         return grouped
             .compactMap { _, rules -> (source: MatchedCSSRule.CSSSource, rules: [MatchedCSSRule])? in
                 guard let firstRule = rules.first else { return nil }
@@ -423,7 +455,9 @@ struct ElementDetailView: View {
         if let matchedJSON = await matchedResult as? String,
            let data = matchedJSON.data(using: .utf8),
            let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
-            matchedRules = parseMatchedRules(from: parsed)
+            let rules = parseMatchedRules(from: parsed)
+            matchedRules = rules
+            corsBlockedCount = rules.filter { $0.isCORSBlocked }.count
         }
 
         isLoading = false
@@ -518,22 +552,40 @@ struct ElementDetailView: View {
 
 /// JavaScript scripts for element detail fetching
 private enum ElementDetailScripts {
-    /// Script to fetch all computed styles
+    /// Script to fetch computed styles that differ from defaults
     static func computedStyles(selector: String) -> String {
         """
         (function() {
             const el = document.querySelector('\(selector)');
             if (!el) return '{}';
+
+            // Create a reference element of the same tag to compare defaults
+            const tagName = el.tagName.toLowerCase();
+            const ref = document.createElement(tagName);
+            ref.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
+            document.body.appendChild(ref);
+
             const styles = window.getComputedStyle(el);
+            const refStyles = window.getComputedStyle(ref);
             const result = {};
-            // Get all CSS properties
+
+            // Compare and keep only non-default values
             for (let i = 0; i < styles.length; i++) {
                 const prop = styles[i];
                 const val = styles.getPropertyValue(prop);
-                if (val && val.trim()) {
-                    result[prop] = val;
+                const refVal = refStyles.getPropertyValue(prop);
+
+                // Keep if different from default or is a custom property
+                if (val !== refVal || prop.startsWith('--')) {
+                    if (val && val.trim()) {
+                        result[prop] = val;
+                    }
                 }
             }
+
+            // Cleanup
+            document.body.removeChild(ref);
+
             return JSON.stringify(result);
         })();
         """
