@@ -16,6 +16,7 @@ class WebViewNavigator {
     var canGoBack: Bool = false
     var canGoForward: Bool = false
     var currentURL: URL?
+    var showScreenshotFlash: Bool = false
     let consoleManager = ConsoleManager()
     let networkManager = NetworkManager()
     let performanceManager = PerformanceManager()
@@ -118,6 +119,33 @@ class WebViewNavigator {
                 continuation.resume(returning: true)
             }
         }
+    }
+
+    /// Delete a specific cookie by name using native WKHTTPCookieStore
+    func deleteCookie(name: String) async {
+        guard let webView else { return }
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+        let cookies = await cookieStore.allCookies()
+        for cookie in cookies where cookie.name == name {
+            await cookieStore.deleteCookie(cookie)
+        }
+    }
+
+    /// Delete all cookies using native WKHTTPCookieStore
+    func deleteAllCookies() async {
+        guard let webView else { return }
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+        let cookies = await cookieStore.allCookies()
+        for cookie in cookies {
+            await cookieStore.deleteCookie(cookie)
+        }
+    }
+
+    /// Get all cookies with full metadata using native WKHTTPCookieStore
+    func getAllCookies() async -> [HTTPCookie] {
+        guard let webView else { return [] }
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+        return await cookieStore.allCookies()
     }
 }
 
@@ -229,6 +257,15 @@ struct WebViewContainer: View {
                         // Subtle top loading bar
                         if isLoading {
                             LoadingProgressBar()
+                        }
+                    }
+                    .overlay {
+                        // Screenshot flash effect
+                        if navigator?.showScreenshotFlash == true {
+                            Color.white
+                                .opacity(0.7)
+                                .clipShape(RoundedRectangle(cornerRadius: isFullSize ? 0 : 12))
+                                .allowsHitTesting(false)
                         }
                     }
                 }

@@ -5,6 +5,7 @@
 //  Created by Claude on 12/13/25.
 //
 
+import AudioToolbox
 import SwiftUI
 
 struct OverlayMenuBars: View {
@@ -240,9 +241,7 @@ struct OverlayMenuBars: View {
                         .buttonStyle(.plain)
 
                         Button {
-                            Task {
-                                await navigator?.takeScreenshot()
-                            }
+                            takeScreenshotWithFeedback()
                         } label: {
                             Image(systemName: "camera")
                                 .font(.system(size: 15))
@@ -355,6 +354,30 @@ struct OverlayMenuBars: View {
         }
         .onAppear {
             urlInputFocused = true
+        }
+    }
+
+    // MARK: - Screenshot
+
+    private func takeScreenshotWithFeedback() {
+        // Play shutter sound
+        AudioServicesPlaySystemSound(1108)
+
+        // Flash effect on WebView
+        withAnimation(.easeIn(duration: 0.05)) {
+            navigator?.showScreenshotFlash = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                navigator?.showScreenshotFlash = false
+            }
+        }
+
+        // Take screenshot (after flash starts)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task {
+                await navigator?.takeScreenshot()
+            }
         }
     }
 

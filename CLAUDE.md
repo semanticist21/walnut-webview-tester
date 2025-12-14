@@ -6,7 +6,7 @@
 
 WKWebView 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 26.1+ (Tahoe)
 
-**주요 기능**: WKWebView/SafariVC 토글, 설정 옵션 테스트, DevTools (Console/Network/Storage/Performance), API Capability 감지, 북마크, 반응형 크기 조절
+**주요 기능**: WKWebView/SafariVC 토글, 설정 옵션 테스트, DevTools (Console/Network/Storage/Performance), API Capability 감지, 북마크, 반응형 크기 조절, 스크린샷 (WKWebView 전용)
 
 ## Quick Reference
 
@@ -76,6 +76,29 @@ func resetToDefaults() { localValue = false }  // 저장 X
 ### DevTools Manager 패턴
 
 `ConsoleManager`, `NetworkManager`, `StorageManager` 모두 `WebViewNavigator`에 포함. JavaScript 인젝션으로 캡처.
+
+### 스크린샷 패턴
+
+WKWebView 전용 (`SFSafariViewController`는 내부 웹뷰 접근 불가).
+
+```swift
+// WebViewNavigator에서 스크린샷 + 사진앱 저장
+func takeScreenshot() async -> Bool {
+    guard let webView else { return false }
+    return await withCheckedContinuation { continuation in
+        webView.takeSnapshot(with: nil) { image, _ in
+            guard let image else { return continuation.resume(returning: false) }
+            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+            continuation.resume(returning: true)
+        }
+    }
+}
+
+// 플래시 효과: navigator.showScreenshotFlash 상태로 WebViewContainer에서 오버레이 표시
+// 사운드: AudioServicesPlaySystemSound(1108) - 시스템 카메라 셔터
+```
+
+**권한**: `Info.plist`에 `NSPhotoLibraryAddUsageDescription` 필요
 
 ### JavaScript 문자열 Escape
 
