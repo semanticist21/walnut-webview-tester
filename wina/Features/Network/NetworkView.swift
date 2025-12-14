@@ -1938,13 +1938,13 @@ private struct JSONNodeView: View {
                 .foregroundStyle(stringColor)
                 .lineLimit(isExpanded ? nil : 1)
         case .array(_, let values):
-            Text(isExpanded ? "Array(\(values.count))" : "[\(values.count)]")
+            Text("Array[\(values.count)]")
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.5))
         case .object(_, let pairs):
-            Text(isExpanded ? "Object" : "{\(pairs.count)}")
+            Text("Object{\(pairs.count)}")
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.5))
         }
     }
 
