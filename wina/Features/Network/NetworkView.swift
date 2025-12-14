@@ -1434,6 +1434,10 @@ private enum ContentType: String {
         case .formUrlEncoded: return "list.bullet.rectangle"
         }
     }
+
+    var badge: TypeBadge {
+        TypeBadge(text: rawValue, color: color, icon: icon)
+    }
 }
 
 // MARK: - Detail Section
@@ -1610,25 +1614,6 @@ private struct CopiedFeedbackToast: View {
     }
 }
 
-// MARK: - Content Type Badge
-
-private struct ContentTypeBadge: View {
-    let contentType: ContentType
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: contentType.icon)
-                .font(.system(size: 9, weight: .semibold))
-            Text(contentType.rawValue)
-                .font(.system(size: 10, weight: .semibold))
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(contentType.color, in: RoundedRectangle(cornerRadius: 4))
-    }
-}
-
 // MARK: - Body Header View
 
 private struct BodyHeaderView: View {
@@ -1647,7 +1632,7 @@ private struct BodyHeaderView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ContentTypeBadge(contentType: contentType)
+            contentType.badge
 
             Text(formatBytes(size))
                 .font(.system(size: 12, weight: .medium, design: .monospaced))

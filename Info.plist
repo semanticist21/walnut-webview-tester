@@ -8,5 +8,7 @@
 	<string>This app uses the microphone to test WKWebView media device and WebRTC capabilities.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app accesses your location to test WKWebView geolocation capabilities.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app saves screenshots to your photo library.</string>
 </dict>
 </plist>

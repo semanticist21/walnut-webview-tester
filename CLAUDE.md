@@ -373,6 +373,26 @@ JSONSerialization.data(withJSONObject: "string")
 JSONSerialization.data(withJSONObject: "string", options: .fragmentsAllowed)
 ```
 
+### 17. Color.secondary/tertiary는 Color가 아님
+
+`Color.secondary`, `Color.tertiary`는 `some ShapeStyle`을 반환, `Color` 타입 필요 시 사용 불가
+
+```swift
+// ❌ Color 타입 반환해야 하는 곳에서 컴파일 에러
+var color: Color {
+    case .string: return .secondary  // ShapeStyle 반환
+    case .empty: return .tertiary    // ShapeStyle 반환
+}
+
+// ✅ 명시적 Color 사용
+var color: Color {
+    case .string: return .gray
+    case .empty: return .gray.opacity(0.5)
+}
+```
+
+**참고**: `.foregroundStyle(.secondary)` 처럼 ShapeStyle 받는 곳에서는 OK
+
 ---
 
 ## Design System

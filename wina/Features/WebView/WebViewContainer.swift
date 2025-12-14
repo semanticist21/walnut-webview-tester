@@ -103,6 +103,22 @@ class WebViewNavigator {
         guard let webView else { return nil }
         return try? await webView.evaluateJavaScript(script)
     }
+
+    /// Take a screenshot of the WebView and save to Photos
+    func takeScreenshot() async -> Bool {
+        guard let webView else { return false }
+
+        return await withCheckedContinuation { continuation in
+            webView.takeSnapshot(with: nil) { image, _ in
+                guard let image else {
+                    continuation.resume(returning: false)
+                    return
+                }
+                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                continuation.resume(returning: true)
+            }
+        }
+    }
 }
 
 // MARK: - WebView Container

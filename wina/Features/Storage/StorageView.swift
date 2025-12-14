@@ -43,6 +43,53 @@ struct StorageItem: Identifiable, Equatable {
     }
 }
 
+// MARK: - Storage Value Type
+
+enum StorageValueType {
+    case json, number, bool, string, empty
+
+    static func detect(from value: String) -> StorageValueType {
+        if value.isEmpty { return .empty }
+        if JsonParser.isValidJson(value) { return .json }
+        if value.lowercased() == "true" || value.lowercased() == "false" { return .bool }
+        if Double(value) != nil { return .number }
+        return .string
+    }
+
+    var color: Color {
+        switch self {
+        case .json: return .purple
+        case .number: return .blue
+        case .bool: return .green
+        case .string: return .gray
+        case .empty: return .gray.opacity(0.5)
+        }
+    }
+
+    var badge: TypeBadge? {
+        switch self {
+        case .json:
+            return TypeBadge(text: "JSON", color: .purple, icon: "curlybraces")
+        case .number:
+            return TypeBadge(text: "Number", color: .blue, icon: "number")
+        case .bool:
+            return TypeBadge(text: "Boolean", color: .green, icon: "checkmark")
+        case .empty, .string:
+            return nil
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .json: return "JSON"
+        case .number: return "Number"
+        case .bool: return "Boolean"
+        case .string: return "String"
+        case .empty: return "Empty"
+        }
+    }
+}
+
 // MARK: - Storage Manager
 
 @Observable
@@ -220,7 +267,7 @@ class StorageManager {
         case .sessionStorage:
             script = "sessionStorage.removeItem('\(escapedKey)'); true;"
         case .cookies:
-            script = "document.cookie = '\(escapedKey)=; expires=Thu, 01 Jan 1970 00:00:00 GMT'; true;"
+            script = "document.cookie = '\(escapedKey)=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; true;"
         }
 
         let result = await navigator.evaluateJavaScript(script)
@@ -244,7 +291,7 @@ class StorageManager {
                 (function() {
                     document.cookie.split(';').forEach(function(c) {
                         var key = c.trim().split('=')[0];
-                        document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
                     });
                     return true;
                 })();
@@ -536,35 +583,8 @@ private struct StorageItemRow: View {
         item.value.isEmpty
     }
 
-    private var isJson: Bool {
-        JsonParser.isValidJson(item.value)
-    }
-
-    private var isNumber: Bool {
-        Double(item.value) != nil
-    }
-
-    private var isBool: Bool {
-        item.value.lowercased() == "true" || item.value.lowercased() == "false"
-    }
-
-    private var valueType: ValueType {
-        if isEmpty { return .empty }
-        if isJson { return .json }
-        if isBool { return .bool }
-        if isNumber { return .number }
-        return .string
-    }
-
-    private var valueSize: String {
-        let bytes = item.value.utf8.count
-        if bytes < 1024 {
-            return "\(bytes)B"
-        } else if bytes < 1024 * 1024 {
-            return String(format: "%.1fKB", Double(bytes) / 1024)
-        } else {
-            return String(format: "%.1fMB", Double(bytes) / (1024 * 1024))
-        }
+    private var valueType: StorageValueType {
+        StorageValueType.detect(from: item.value)
     }
 
     private var displayValue: String {
@@ -655,12 +675,11 @@ private struct StorageItemRow: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Type badge + Size
-            HStack(spacing: 6) {
-                typeBadge
-                Text(valueSize)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+            // Type label (colored text only in list)
+            if valueType != .string && valueType != .empty {
+                Text(valueType.label)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(valueType.color)
             }
 
             // Chevron indicator
@@ -674,35 +693,6 @@ private struct StorageItemRow: View {
         .overlay(alignment: .bottom) {
             Divider()
                 .padding(.leading, 16)
-        }
-    }
-
-    // MARK: - Type Badge
-
-    @ViewBuilder
-    private var typeBadge: some View {
-        switch valueType {
-        case .json:
-            Text("JSON")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(.orange, in: Capsule())
-        case .number:
-            Text("#")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundStyle(.blue)
-        case .bool:
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 10))
-                .foregroundStyle(.green)
-        case .empty:
-            Image(systemName: "circle.dashed")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
-        case .string:
-            EmptyView()
         }
     }
 
@@ -720,12 +710,6 @@ private struct StorageItemRow: View {
         let after = String(text[range.upperBound...])
 
         return Text("\(before)\(Text(match).bold().foregroundColor(.yellow))\(after)")
-    }
-
-    // MARK: - Value Type
-
-    private enum ValueType {
-        case json, number, bool, string, empty
     }
 }
 
@@ -780,9 +764,45 @@ private struct StorageEditSheet: View {
         return existingKeys.contains(editedKey)
     }
 
+    private var valueType: StorageValueType {
+        StorageValueType.detect(from: editedValue)
+    }
+
+    private var formattedSize: String {
+        let bytes = editedValue.utf8.count
+        if bytes < 1024 {
+            return "\(bytes) B"
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(bytes) / 1024)
+        } else {
+            return String(format: "%.1f MB", Double(bytes) / (1024 * 1024))
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
+                // Info section (Type + Size)
+                Section("Info") {
+                    HStack {
+                        Text("Type")
+                        Spacer()
+                        if let badge = valueType.badge {
+                            badge
+                        } else {
+                            Text(valueType.label)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    HStack {
+                        Text("Size")
+                        Spacer()
+                        Text(formattedSize)
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section {
                     TextField("Key", text: $editedKey)
                         .font(.system(size: 14, design: .monospaced))
@@ -792,7 +812,7 @@ private struct StorageEditSheet: View {
                     HStack {
                         Text("Key")
                         Spacer()
-                        copyButton(text: editedKey)
+                        CopyButton(text: editedKey)
                     }
                 } footer: {
                     if isDuplicateKey {
@@ -834,7 +854,7 @@ private struct StorageEditSheet: View {
                     HStack {
                         Text("Value")
                         Spacer()
-                        copyButton(text: editedValue)
+                        CopyButton(text: editedValue)
                         if isValueJson {
                             Button {
                                 showJsonEditor = true
@@ -951,23 +971,6 @@ private struct StorageEditSheet: View {
             }
             isDeleting = false
         }
-    }
-
-    private func copyButton(text: String) -> some View {
-        Button {
-            UIPasteboard.general.string = text
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "doc.on.doc")
-                Text("Copy")
-            }
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.fill.tertiary, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .disabled(text.isEmpty)
     }
 
     private func countJsonElements(_ jsonString: String) -> Int {

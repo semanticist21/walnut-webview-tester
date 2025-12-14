@@ -238,6 +238,20 @@ struct OverlayMenuBars: View {
                                 .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
+
+                        Button {
+                            Task {
+                                await navigator?.takeScreenshot()
+                            }
+                        } label: {
+                            Image(systemName: "camera")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     Spacer()

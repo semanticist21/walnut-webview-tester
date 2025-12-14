@@ -620,7 +620,7 @@ private struct LogRow: View {
             // Right side: Type badge + timestamp
             VStack(alignment: .trailing, spacing: 4) {
                 // Type badge (icon + label)
-                TypeBadge(type: log.type)
+                ConsoleTypeBadge(type: log.type)
 
                 Text(Self.timeFormatter.string(from: log.timestamp))
                     .font(.system(size: 9, design: .monospaced))
@@ -732,9 +732,9 @@ private struct LogRow: View {
     }
 }
 
-// MARK: - Type Badge
+// MARK: - Console Type Badge
 
-private struct TypeBadge: View {
+private struct ConsoleTypeBadge: View {
     let type: ConsoleLog.LogType
 
     var body: some View {
