@@ -342,6 +342,37 @@ var contentList: some View {
 }
 ```
 
+### 15. Sheet 내부 스크롤 우선순위
+
+Sheet 내부에 ScrollView가 있을 때, sheet resize 제스처가 스크롤보다 우선됨
+
+```swift
+// ❌ sheet resize가 스크롤보다 우선 (리스트 스크롤 안 됨)
+.sheet(item: $item) {
+    ScrollView { content }
+        .presentationDetents([.medium, .large])
+}
+
+// ✅ 스크롤이 sheet resize보다 우선
+.sheet(item: $item) {
+    ScrollView { content }
+        .presentationDetents([.medium, .large])
+        .presentationContentInteraction(.scrolls)
+}
+```
+
+### 16. JSONSerialization String 크래시
+
+`JSONSerialization.data(withJSONObject:)`는 top-level이 Array/Dictionary여야 함
+
+```swift
+// ❌ String을 직접 넣으면 크래시
+JSONSerialization.data(withJSONObject: "string")
+
+// ✅ fragmentsAllowed 옵션 필요
+JSONSerialization.data(withJSONObject: "string", options: .fragmentsAllowed)
+```
+
 ---
 
 ## Design System

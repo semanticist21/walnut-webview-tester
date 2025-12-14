@@ -339,16 +339,19 @@ struct SourcesView: View {
         .sheet(item: $selectedNode) { node in
             ElementDetailView(node: node, navigator: navigator)
                 .presentationDetents([.medium, .large])
+                .presentationContentInteraction(.scrolls)
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedStylesheet) { sheet in
             StylesheetDetailView(sheet: sheet, index: sheet.index, navigator: navigator)
                 .presentationDetents([.medium, .large])
+                .presentationContentInteraction(.scrolls)
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedScript) { script in
             ScriptDetailView(script: script, index: script.index, navigator: navigator)
                 .presentationDetents([.medium, .large])
+                .presentationContentInteraction(.scrolls)
                 .presentationDragIndicator(.visible)
         }
     }

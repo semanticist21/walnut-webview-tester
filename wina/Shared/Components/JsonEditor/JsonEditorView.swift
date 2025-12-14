@@ -521,12 +521,15 @@ private struct AddNodeSheet: View {
                 }
 
                 Section("Type") {
-                    Picker("Value Type", selection: $selectedType) {
+                    Picker(selection: $selectedType) {
                         ForEach(ValueType.allCases, id: \.self) { type in
                             Text(type.rawValue)
                                 .tag(type)
                         }
+                    } label: {
+                        EmptyView()
                     }
+                    .labelsHidden()
                     .onChange(of: selectedType) { _, newType in
                         newValue = newType.defaultValue
                     }

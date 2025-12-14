@@ -514,50 +514,26 @@ struct ScriptDetailView: View {
 
     /// View explaining CORS limitation for external scripts
     private var corsLimitationView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.shield")
-                .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
+        ScrollView {
+            VStack(spacing: 16) {
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.tertiary)
 
-            Text("External Script")
-                .font(.headline)
+                Text("External Script")
+                    .font(.headline)
 
-            Text("Cross-origin scripts cannot be viewed due to browser security restrictions (CORS policy).")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Content unavailable due to CORS policy.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-            if let src = script.src {
-                VStack(spacing: 8) {
-                    Text("Source URL:")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    Text(src)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .textSelection(.enabled)
-
-                    Button {
-                        UIPasteboard.general.string = src
-                    } label: {
-                        Label("Copy URL", systemImage: "doc.on.doc")
-                            .font(.subheadline)
-                    }
-                    .buttonStyle(.bordered)
-                    .padding(.top, 8)
+                if let src = script.src {
+                    ExpandableURLView(url: src)
                 }
-                .padding()
-                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
             }
-
-            Text("Only inline <script> content can be viewed in WKWebView.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
         .background(Color(uiColor: .systemBackground))
     }
 
@@ -607,7 +583,7 @@ private struct SourceInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -615,6 +591,7 @@ private struct SourceInfoRow: View {
             Text(value)
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer()
             Button {
                 UIPasteboard.general.string = value
@@ -668,19 +645,61 @@ struct CSSPropertyRow: View {
     let property: String
     let value: String
 
+    @State private var isExpanded: Bool = false
+
+    /// Threshold for showing expand/collapse
+    private var isLongValue: Bool {
+        value.count > 40
+    }
+
+    /// Parsed color from value (if any)
+    private var parsedColor: Color? {
+        CSSColorParser.parse(value)
+    }
+
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .top, spacing: 4) {
+            // Color preview swatch
+            if let color = parsedColor {
+                ColorSwatchView(color: color)
+            }
+
             Text(property)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.primary)
             Text(":")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.tertiary)
-            Text(value)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Spacer()
+
+            if isLongValue && !isExpanded {
+                Text(value.prefix(35) + "...")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            } else {
+                Text(value)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 4)
+
+            if isLongValue {
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+
             Button {
                 UIPasteboard.general.string = "\(property): \(value);"
             } label: {
@@ -692,7 +711,119 @@ struct CSSPropertyRow: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
+    }
+}
+
+/// Expandable URL view with collapse/expand for long URLs
+private struct ExpandableURLView: View {
+    let url: String
+    @State private var isExpanded: Bool = false
+
+    private var isLongURL: Bool {
+        url.count > 60
+    }
+
+    private var displayURL: String {
+        if isLongURL && !isExpanded {
+            // Show domain + truncated path
+            if let urlObj = URL(string: url) {
+                let host = urlObj.host ?? ""
+                let path = urlObj.path
+                let truncatedPath = path.count > 20 ? String(path.prefix(20)) + "..." : path
+                return host + truncatedPath
+            }
+            return String(url.prefix(50)) + "..."
+        }
+        return url
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Source URL:")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+            Button {
+                if isLongURL {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isExpanded.toggle()
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    if isLongURL {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    Text(displayURL)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(isExpanded ? .leading : .center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .textSelection(.enabled)
+
+            GlassActionButton("Copy URL", icon: "doc.on.doc") {
+                UIPasteboard.general.string = url
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+/// Small color swatch for CSS color preview
+private struct ColorSwatchView: View {
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            // Checkerboard for transparent colors
+            CheckerboardPattern()
+                .frame(width: 14, height: 14)
+
+            RoundedRectangle(cornerRadius: 3)
+                .fill(color)
+                .frame(width: 14, height: 14)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 3))
+        .overlay(
+            RoundedRectangle(cornerRadius: 3)
+                .stroke(Color.primary.opacity(0.2), lineWidth: 0.5)
+        )
+    }
+}
+
+/// Checkerboard pattern for showing transparency
+private struct CheckerboardPattern: View {
+    var body: some View {
+        Canvas { context, size in
+            let cellSize: CGFloat = 4
+            let rows = Int(ceil(size.height / cellSize))
+            let cols = Int(ceil(size.width / cellSize))
+
+            for row in 0..<rows {
+                for col in 0..<cols {
+                    let isLight = (row + col).isMultiple(of: 2)
+                    let rect = CGRect(
+                        x: CGFloat(col) * cellSize,
+                        y: CGFloat(row) * cellSize,
+                        width: cellSize,
+                        height: cellSize
+                    )
+                    context.fill(
+                        Path(rect),
+                        with: .color(isLight ? .white : Color(white: 0.85))
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -702,14 +833,37 @@ struct CSSRuleInfo: Identifiable {
     let cssText: String
 }
 
+/// Represents parsed CSS content - either flat properties or nested blocks
+enum ParsedCSSContent {
+    case properties([(property: String, value: String)])
+    case keyframes([(selector: String, properties: [(property: String, value: String)])])
+}
+
 struct CSSRuleRow: View {
     let rule: CSSRuleInfo
     @State private var isExpanded: Bool = false
 
+    /// Parsed CSS content from cssText
+    private var parsedContent: ParsedCSSContent {
+        CSSFormatter.parseRule(from: rule.cssText)
+    }
+
+    /// Count for badge display
+    private var itemCount: Int {
+        switch parsedContent {
+        case .properties(let props):
+            return props.count
+        case .keyframes(let frames):
+            return frames.count
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                isExpanded.toggle()
+                withAnimation(.easeOut(duration: 0.15)) {
+                    isExpanded.toggle()
+                }
             } label: {
                 HStack {
                     Image(systemName: "chevron.right")
@@ -723,6 +877,13 @@ struct CSSRuleRow: View {
                         .lineLimit(1)
 
                     Spacer()
+
+                    Text("\(itemCount)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.1), in: Capsule())
                 }
                 .padding(.vertical, 8)
                 .contentShape(Rectangle())
@@ -730,15 +891,281 @@ struct CSSRuleRow: View {
             .buttonStyle(.plain)
 
             if isExpanded {
-                Text(rule.cssText)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                expandedContent
                     .padding(.leading, 20)
                     .padding(.bottom, 8)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .animation(.easeOut(duration: 0.15), value: isExpanded)
+    }
+
+    @ViewBuilder
+    private var expandedContent: some View {
+        switch parsedContent {
+        case .properties(let props):
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(props.enumerated()), id: \.offset) { _, prop in
+                    FormattedCSSPropertyRow(property: prop.property, value: prop.value)
+                }
+            }
+        case .keyframes(let frames):
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(frames.enumerated()), id: \.offset) { _, frame in
+                    KeyframeBlockView(selector: frame.selector, properties: frame.properties)
+                }
+            }
+        }
+    }
+}
+
+/// View for displaying a keyframe block (e.g., "0% { transform: ... }")
+private struct KeyframeBlockView: View {
+    let selector: String
+    let properties: [(property: String, value: String)]
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            // Keyframe selector (0%, 100%, from, to)
+            Text("\(selector) {")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(CSSSyntaxColors.keyword(for: colorScheme))
+
+            // Properties
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(properties.enumerated()), id: \.offset) { _, prop in
+                    FormattedCSSPropertyRow(property: prop.property, value: prop.value)
+                }
+            }
+            .padding(.leading, 12)
+
+            Text("}")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.tertiary)
+        }
+    }
+}
+
+/// Formatted CSS property row with syntax highlighting and color preview
+private struct FormattedCSSPropertyRow: View {
+    let property: String
+    let value: String
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var parsedColor: Color? {
+        CSSColorParser.parse(value)
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            // Color swatch if applicable
+            if let color = parsedColor {
+                ColorSwatchView(color: color)
+            }
+
+            // Property name (keyword color)
+            Text(property)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(CSSSyntaxColors.property(for: colorScheme))
+
+            Text(":")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.tertiary)
+
+            // Value (formatted based on type)
+            FormattedValueText(value: value)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(";")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 1)
+    }
+}
+
+/// Syntax highlighted value text
+private struct FormattedValueText: View {
+    let value: String
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Text(value)
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundStyle(valueColor)
+    }
+
+    private var valueColor: Color {
+        let trimmed = value.trimmingCharacters(in: .whitespaces).lowercased()
+
+        // Color values
+        if CSSColorParser.containsColor(trimmed) {
+            return CSSSyntaxColors.colorValue(for: colorScheme)
+        }
+
+        // Numbers and units
+        if trimmed.first?.isNumber == true ||
+           trimmed.hasPrefix(".") ||
+           trimmed.hasPrefix("-") {
+            return CSSSyntaxColors.number(for: colorScheme)
+        }
+
+        // Strings
+        if trimmed.hasPrefix("\"") || trimmed.hasPrefix("'") {
+            return CSSSyntaxColors.string(for: colorScheme)
+        }
+
+        // URLs
+        if trimmed.hasPrefix("url(") {
+            return CSSSyntaxColors.url(for: colorScheme)
+        }
+
+        // Default for keywords
+        return CSSSyntaxColors.keyword(for: colorScheme)
+    }
+}
+
+/// CSS syntax highlighting colors with dark/light mode support
+/// Based on WCAG accessibility guidelines (4.5:1 contrast ratio)
+private enum CSSSyntaxColors {
+    /// Property names (e.g., "color", "background")
+    static func property(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.78, green: 0.56, blue: 0.90)  // Light purple
+            : Color(red: 0.56, green: 0.27, blue: 0.68)  // Dark purple
+    }
+
+    /// Color values (e.g., "#fff", "rgba()")
+    static func colorValue(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.40, green: 0.80, blue: 0.40)  // Light green
+            : Color(red: 0.13, green: 0.55, blue: 0.13)  // Forest green
+    }
+
+    /// Numeric values (e.g., "10px", "1.5")
+    static func number(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.60, green: 0.80, blue: 1.00)  // Light blue
+            : Color(red: 0.10, green: 0.40, blue: 0.75)  // Steel blue
+    }
+
+    /// String values (e.g., "'Arial'")
+    static func string(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 1.00, green: 0.70, blue: 0.40)  // Light orange
+            : Color(red: 0.80, green: 0.40, blue: 0.00)  // Dark orange
+    }
+
+    /// URL values (e.g., "url(...)")
+    static func url(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.85, green: 0.65, blue: 0.50)  // Light brown
+            : Color(red: 0.55, green: 0.35, blue: 0.20)  // Dark brown
+    }
+
+    /// Keyword values (e.g., "block", "flex")
+    static func keyword(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.70, green: 0.70, blue: 0.75)  // Light gray
+            : Color(red: 0.35, green: 0.35, blue: 0.40)  // Dark gray
+    }
+}
+
+/// CSS formatter utilities
+enum CSSFormatter {
+    /// Parses a CSS rule, handling both regular rules and at-rules like @keyframes
+    static func parseRule(from cssText: String) -> ParsedCSSContent {
+        let trimmed = cssText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Check if this is a @keyframes rule
+        if trimmed.hasPrefix("@keyframes") || trimmed.hasPrefix("@-webkit-keyframes") {
+            return .keyframes(parseKeyframes(from: trimmed))
+        }
+
+        // Regular rule - parse flat properties
+        return .properties(parseProperties(from: trimmed))
+    }
+
+    /// Parses @keyframes rule into individual frame blocks
+    private static func parseKeyframes(
+        from cssText: String
+    ) -> [(selector: String, properties: [(property: String, value: String)])] {
+        var results: [(selector: String, properties: [(property: String, value: String)])] = []
+
+        // Find the outer braces of @keyframes
+        guard let firstBrace = cssText.firstIndex(of: "{"),
+              let lastBrace = cssText.lastIndex(of: "}"),
+              firstBrace < lastBrace else {
+            return results
+        }
+
+        let innerContent = String(cssText[cssText.index(after: firstBrace)..<lastBrace])
+
+        // Parse each keyframe block (e.g., "0% { ... }" or "from { ... }")
+        let pattern = #"([\d.]+%|from|to)\s*\{([^}]*)\}"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+            return results
+        }
+
+        let nsRange = NSRange(innerContent.startIndex..., in: innerContent)
+        let matches = regex.matches(in: innerContent, options: [], range: nsRange)
+
+        for match in matches {
+            guard match.numberOfRanges >= 3,
+                  let selectorRange = Range(match.range(at: 1), in: innerContent),
+                  let propsRange = Range(match.range(at: 2), in: innerContent) else {
+                continue
+            }
+
+            let selector = String(innerContent[selectorRange]).trimmingCharacters(in: .whitespaces)
+            let propsText = String(innerContent[propsRange])
+            let properties = parsePropertiesFromBlock(propsText)
+
+            if !properties.isEmpty {
+                results.append((selector, properties))
+            }
+        }
+
+        return results
+    }
+
+    /// Parses CSS properties from a simple block content (no nested braces)
+    private static func parsePropertiesFromBlock(
+        _ content: String
+    ) -> [(property: String, value: String)] {
+        let declarations = content.split(separator: ";", omittingEmptySubsequences: true)
+
+        return declarations.compactMap { decl in
+            let parts = decl.split(separator: ":", maxSplits: 1)
+            guard parts.count == 2 else { return nil }
+
+            let property = parts[0].trimmingCharacters(in: .whitespaces)
+            let value = parts[1].trimmingCharacters(in: .whitespaces)
+
+            guard !property.isEmpty, !value.isEmpty else { return nil }
+            return (property, value)
+        }
+    }
+
+    /// Parses CSS properties from a rule's cssText (for regular rules)
+    static func parseProperties(from cssText: String) -> [(property: String, value: String)] {
+        var content = cssText
+
+        // Find content between braces
+        if let openBrace = content.firstIndex(of: "{"),
+           let closeBrace = content.lastIndex(of: "}") {
+            content = String(content[content.index(after: openBrace)..<closeBrace])
+        }
+
+        return parsePropertiesFromBlock(content)
+    }
+
+    /// Formats CSS text with proper indentation
+    static func format(_ cssText: String) -> String {
+        let properties = parseProperties(from: cssText)
+        return properties.map { "  \($0.property): \($0.value);" }.joined(separator: "\n")
     }
 }
 
