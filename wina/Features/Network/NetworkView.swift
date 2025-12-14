@@ -1602,22 +1602,6 @@ private struct DetailTableRow: View {
     }
 }
 
-// MARK: - Copied Feedback Toast
-
-private struct CopiedFeedbackToast: View {
-    let message: String
-
-    var body: some View {
-        Text(message)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.black.opacity(0.8), in: Capsule())
-            .padding(.bottom, 20)
-    }
-}
-
 // MARK: - Body Header View
 
 private struct BodyHeaderView: View {
@@ -1723,56 +1707,83 @@ private struct SearchableTextView: UIViewRepresentable {
         Coordinator()
     }
 
-    func makeUIView(context: Context) -> AutoSizingTextView {
-        let textView = AutoSizingTextView()
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = true
+
+        let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
         textView.backgroundColor = .clear
         textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
         textView.dataDetectorTypes = []
-        textView.alwaysBounceVertical = false
         textView.isScrollEnabled = false
-
-        // Prevent horizontal expansion
         textView.textContainer.lineBreakMode = .byWordWrapping
         textView.textContainer.widthTracksTextView = true
+        textView.tag = 100
 
+        scrollView.addSubview(textView)
+        context.coordinator.scrollView = scrollView
         context.coordinator.textView = textView
-        return textView
+        return scrollView
     }
 
-    func updateUIView(_ uiView: AutoSizingTextView, context: Context) {
-        let attributedText = NSMutableAttributedString(
-            string: text,
-            attributes: [
-                .font: font,
-                .foregroundColor: textColor
-            ]
-        )
+    func updateUIView(_ uiView: UIScrollView, context: Context) {
+        let coordinator = context.coordinator
 
-        // Apply search highlighting
-        var matchRanges: [NSRange] = []
-        if !searchText.isEmpty {
-            let nsText = text as NSString
-            var searchRange = NSRange(location: 0, length: nsText.length)
+        // Cancel previous search task
+        coordinator.searchTask?.cancel()
 
-            while searchRange.location < nsText.length {
-                let foundRange = nsText.range(
-                    of: searchText,
-                    options: .caseInsensitive,
-                    range: searchRange
-                )
-                if foundRange.location != NSNotFound {
-                    matchRanges.append(foundRange)
-                    searchRange.location = foundRange.location + foundRange.length
-                    searchRange.length = nsText.length - searchRange.location
-                } else {
-                    break
+        guard let textView = uiView.viewWithTag(100) as? UITextView else { return }
+
+        // Capture values for background thread
+        let text = self.text
+        let searchText = self.searchText
+        let currentMatchIndex = self.currentMatchIndex
+        let font = self.font
+        let textColor = self.textColor
+        let onMatchCountChanged = self.onMatchCountChanged
+
+        // Start new search task in background
+        coordinator.searchTask = Task.detached(priority: .userInitiated) {
+            // Find matches in background
+            var matchRanges: [NSRange] = []
+            if !searchText.isEmpty {
+                let nsText = text as NSString
+                var searchRange = NSRange(location: 0, length: nsText.length)
+
+                while searchRange.location < nsText.length {
+                    if Task.isCancelled { return }
+
+                    let foundRange = nsText.range(
+                        of: searchText,
+                        options: .caseInsensitive,
+                        range: searchRange
+                    )
+                    if foundRange.location != NSNotFound {
+                        matchRanges.append(foundRange)
+                        searchRange.location = foundRange.location + foundRange.length
+                        searchRange.length = nsText.length - searchRange.location
+                    } else {
+                        break
+                    }
                 }
             }
 
-            // Highlight all matches
+            if Task.isCancelled { return }
+
+            // Build attributed string in background
+            let attributedText = NSMutableAttributedString(
+                string: text,
+                attributes: [
+                    .font: font,
+                    .foregroundColor: textColor
+                ]
+            )
+
             for (index, range) in matchRanges.enumerated() {
+                if Task.isCancelled { return }
                 let isCurrentMatch = index == currentMatchIndex
                 attributedText.addAttributes([
                     .backgroundColor: isCurrentMatch
@@ -1780,33 +1791,45 @@ private struct SearchableTextView: UIViewRepresentable {
                         : UIColor.systemYellow.withAlphaComponent(0.3)
                 ], range: range)
             }
-        }
 
-        uiView.attributedText = attributedText
-        uiView.invalidateIntrinsicContentSize()
+            if Task.isCancelled { return }
 
-        // Report match count
-        DispatchQueue.main.async {
-            onMatchCountChanged?(matchRanges.count)
-        }
+            // Update UI on main thread
+            await MainActor.run {
+                textView.attributedText = attributedText
 
-        // Scroll to current match
-        if !matchRanges.isEmpty && currentMatchIndex < matchRanges.count {
-            let targetRange = matchRanges[currentMatchIndex]
-            DispatchQueue.main.async {
-                uiView.scrollRangeToVisible(targetRange)
+                // Update layout
+                let width = uiView.bounds.width > 0 ? uiView.bounds.width : ScreenUtility.screenSize.width - 64
+                let textSize = textView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+                textView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: textSize.height))
+                uiView.contentSize = textView.frame.size
+
+                // Report match count
+                onMatchCountChanged?(matchRanges.count)
+
+                // Scroll to current match
+                if !matchRanges.isEmpty && currentMatchIndex < matchRanges.count {
+                    let targetRange = matchRanges[currentMatchIndex]
+                    if let start = textView.position(from: textView.beginningOfDocument, offset: targetRange.location),
+                       let end = textView.position(from: start, offset: targetRange.length),
+                       let textRange = textView.textRange(from: start, to: end) {
+                        let rect = textView.firstRect(for: textRange)
+                        let scrollRect = rect.insetBy(dx: 0, dy: -50)
+                        uiView.scrollRectToVisible(scrollRect, animated: true)
+                    }
+                }
             }
         }
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: AutoSizingTextView, context: Context) -> CGSize? {
-        guard let width = proposal.width, width > 0 else { return nil }
-        let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: size.height)
-    }
-
     class Coordinator {
-        weak var textView: AutoSizingTextView?
+        weak var scrollView: UIScrollView?
+        weak var textView: UITextView?
+        var searchTask: Task<Void, Never>?
+
+        deinit {
+            searchTask?.cancel()
+        }
     }
 }
 
@@ -2031,8 +2054,11 @@ private struct ResponseSearchBar: View {
     let onPrevious: () -> Void
     let onNext: () -> Void
 
+    private var hasMatches: Bool { !searchText.isEmpty && totalMatches > 0 }
+
     var body: some View {
         HStack(spacing: 8) {
+            // Search input field - fixed height to prevent layout shift on focus
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
@@ -2053,43 +2079,48 @@ private struct ResponseSearchBar: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                } else {
+                    // Placeholder to maintain consistent width
+                    Color.clear
+                        .frame(width: 14, height: 14)
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .frame(height: 32)
             .background(Color(uiColor: .tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 8))
 
-            if !searchText.isEmpty && totalMatches > 0 {
-                Text("\(currentMatch + 1)/\(totalMatches)")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 50)
-
-                HStack(spacing: 4) {
-                    Button(action: onPrevious) {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(totalMatches == 0)
-
-                    Button(action: onNext) {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(totalMatches == 0)
+            // Fixed-width navigation area to prevent layout shift
+            HStack(spacing: 4) {
+                if hasMatches {
+                    Text("\(currentMatch + 1)/\(totalMatches)")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                } else if !searchText.isEmpty {
+                    Text("0/0")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.tertiary)
                 }
-                .foregroundStyle(totalMatches > 0 ? .primary : .tertiary)
-            } else if !searchText.isEmpty {
-                Text("No matches")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+
+                Button(action: onPrevious) {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!hasMatches)
+
+                Button(action: onNext) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!hasMatches)
             }
+            .foregroundStyle(hasMatches ? .primary : .tertiary)
+            .frame(width: 110, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -2138,7 +2169,7 @@ private struct FormattedBodyView: View {
                     currentMatchIndex: currentMatchIndex,
                     onMatchCountChanged: onMatchCountChanged
                 )
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 400, alignment: .leading)
             } else {
                 SelectableTextView(text: formattedBody)
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -99,6 +99,8 @@
 			packageProductDependencies = (
 				4097EB262EEDC3C000E9A0D9 /* UAParserSwift */,
 				4097EBA22EEDC4B600E9A0D9 /* SwiftSoup */,
+				40A1B0032F0E000000000003 /* Runestone */,
+				40A1B0042F0E000000000004 /* TreeSitterHTMLRunestone */,
 			);
 			productName = wina;
 			productReference = 406E0D4B2EE4093D00D6F9C6 /* wina.app */;
@@ -158,6 +160,8 @@
 			packageReferences = (
 				4097EB252EEDC3C000E9A0D9 /* XCRemoteSwiftPackageReference "UAParserSwift" */,
 				4097EBA12EEDC4B600E9A0D9 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				40A1B0012F0E000000000001 /* XCRemoteSwiftPackageReference "Runestone" */,
+				40A1B0022F0E000000000002 /* XCRemoteSwiftPackageReference "TreeSitterLanguages" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 406E0D4C2EE4093D00D6F9C6 /* Products */;
@@ -493,6 +497,22 @@
 				minimumVersion = 2.7.0;
 			};
 		};
+		40A1B0012F0E000000000001 /* XCRemoteSwiftPackageReference "Runestone" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simonbs/Runestone.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.0;
+			};
+		};
+		40A1B0022F0E000000000002 /* XCRemoteSwiftPackageReference "TreeSitterLanguages" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simonbs/TreeSitterLanguages.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -505,6 +525,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4097EBA12EEDC4B600E9A0D9 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		40A1B0032F0E000000000003 /* Runestone */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 40A1B0012F0E000000000001 /* XCRemoteSwiftPackageReference "Runestone" */;
+			productName = Runestone;
+		};
+		40A1B0042F0E000000000004 /* TreeSitterHTMLRunestone */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 40A1B0022F0E000000000002 /* XCRemoteSwiftPackageReference "TreeSitterLanguages" */;
+			productName = TreeSitterHTMLRunestone;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

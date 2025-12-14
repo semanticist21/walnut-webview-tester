@@ -22,13 +22,12 @@ struct HeaderActionButton: View {
                 Image(systemName: icon)
                 Text(label)
             }
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.fill.tertiary, in: Capsule())
-            .contentShape(Capsule())
+            .font(.system(size: 11, weight: .medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
         }
         .buttonStyle(.plain)
+        .glassEffect(in: .capsule)
         .disabled(isDisabled)
     }
 }
@@ -36,40 +35,27 @@ struct HeaderActionButton: View {
 // MARK: - Copy Button (Header Style)
 
 /// Copy button with icon and text label for section headers
-/// Shows "Copied" with checkmark feedback after copying
 struct CopyButton: View {
     let text: String
     var label: String = "Copy"
     var onCopy: (() -> Void)?
-
-    @State private var isCopied = false
 
     var body: some View {
         Button {
             guard !text.isEmpty else { return }
             UIPasteboard.general.string = text
             onCopy?()
-
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isCopied = true
-            }
-            Task {
-                try? await Task.sleep(for: .seconds(1.5))
-                // No animation on return
-                isCopied = false
-            }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                Text(isCopied ? "Copied" : label)
+                Image(systemName: "doc.on.doc")
+                Text(label)
             }
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.fill.tertiary, in: Capsule())
-            .contentShape(Capsule())
+            .font(.system(size: 11, weight: .medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
         }
         .buttonStyle(.plain)
+        .glassEffect(in: .capsule)
         .disabled(text.isEmpty)
     }
 }
@@ -77,29 +63,35 @@ struct CopyButton: View {
 // MARK: - Copy Icon Button
 
 /// Compact copy button with icon only
-/// Shows checkmark feedback after copying
 struct CopyIconButton: View {
     let text: String
     var size: GlassIconButton.Size = .small
     var onCopy: (() -> Void)?
 
-    @State private var isCopied = false
-
     var body: some View {
-        GlassIconButton(icon: isCopied ? "checkmark" : "doc.on.doc", size: size) {
+        GlassIconButton(icon: "doc.on.doc", size: size) {
             guard !text.isEmpty else { return }
             UIPasteboard.general.string = text
             onCopy?()
-
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isCopied = true
-            }
-            Task {
-                try? await Task.sleep(for: .seconds(1.5))
-                isCopied = false
-            }
         }
         .disabled(text.isEmpty)
+    }
+}
+
+// MARK: - Copied Feedback Toast
+
+/// Toast message for copy feedback
+struct CopiedFeedbackToast: View {
+    let message: String
+
+    var body: some View {
+        Text(message)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.black.opacity(0.8), in: Capsule())
+            .padding(.bottom, 20)
     }
 }
 

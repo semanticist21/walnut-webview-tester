@@ -6,7 +6,9 @@
 //
 
 import Combine
+import Runestone
 import SwiftUI
+import TreeSitterHTMLRunestone
 
 // MARK: - Source Tab
 
@@ -406,25 +408,29 @@ struct SourcesView: View {
                 await fetchCurrentTab()
             }
         }
+        .onChange(of: debouncedSearchText) { _, _ in
+            // Trigger search when debounced text changes
+            if selectedTab == .elements {
+                if elementsViewMode == .tree {
+                    updateMatchingNodes()
+                } else {
+                    updateRawHTMLMatches()
+                }
+            }
+        }
         .onChange(of: manager.domTree?.id) { _, _ in
             // Update search results when DOM tree loads
-            if !searchText.isEmpty && elementsViewMode == .tree {
+            if !debouncedSearchText.isEmpty && elementsViewMode == .tree {
                 updateMatchingNodes()
             }
         }
         .onChange(of: manager.rawHTML) { _, newHTML in
-            // Cache processed lines when raw HTML loads
+            // Cache raw HTML lines for search
             if let html = newHTML {
-                Task.detached(priority: .userInitiated) {
-                    let lines = HTMLProcessor.formatHTMLToLines(html)
-                    let limitedLines = Array(lines.prefix(HTMLSyntaxView.maxLines))
-                    await MainActor.run {
-                        cachedRawHTMLLines = limitedLines
-                        // Update search results if needed
-                        if !searchText.isEmpty && elementsViewMode == .raw {
-                            updateRawHTMLMatches()
-                        }
-                    }
+                cachedRawHTMLLines = html.components(separatedBy: .newlines)
+                // Update search results if needed
+                if !debouncedSearchText.isEmpty && elementsViewMode == .raw {
+                    updateRawHTMLMatches()
                 }
             } else {
                 cachedRawHTMLLines = []
@@ -432,7 +438,7 @@ struct SourcesView: View {
         }
         .onChange(of: elementsViewMode) { _, newMode in
             // Update search results when view mode changes
-            if !searchText.isEmpty {
+            if !debouncedSearchText.isEmpty {
                 if newMode == .tree {
                     updateMatchingNodes()
                 } else {
@@ -501,16 +507,16 @@ struct SourcesView: View {
     }
 
     private var filteredStylesheets: [StylesheetInfo] {
-        guard !searchText.isEmpty else { return manager.stylesheets }
+        guard !debouncedSearchText.isEmpty else { return manager.stylesheets }
         return manager.stylesheets.filter {
-            $0.href?.localizedCaseInsensitiveContains(searchText) == true
+            $0.href?.localizedCaseInsensitiveContains(debouncedSearchText) == true
         }
     }
 
     private var filteredScripts: [ScriptInfo] {
-        guard !searchText.isEmpty else { return manager.scripts }
+        guard !debouncedSearchText.isEmpty else { return manager.scripts }
         return manager.scripts.filter {
-            $0.src?.localizedCaseInsensitiveContains(searchText) == true
+            $0.src?.localizedCaseInsensitiveContains(debouncedSearchText) == true
         }
     }
 
@@ -518,7 +524,11 @@ struct SourcesView: View {
         var content = ""
         switch selectedTab {
         case .elements:
-            content = "DOM Tree exported"
+            if elementsViewMode == .raw, let html = manager.rawHTML {
+                content = html
+            } else if let root = manager.domTree {
+                content = serializeDOMTree(root, depth: 0)
+            }
         case .styles:
             content = filteredStylesheets
                 .map { $0.href ?? "<style> tag (\($0.rulesCount) rules)" }
@@ -529,6 +539,32 @@ struct SourcesView: View {
                 .joined(separator: "\n")
         }
         shareItem = SourcesShareContent(content: content)
+    }
+
+    private func serializeDOMTree(_ node: DOMNode, depth: Int) -> String {
+        let indent = String(repeating: "  ", count: depth)
+        var result = ""
+
+        if node.isText {
+            if let text = node.textContent {
+                result = "\(indent)\(text)\n"
+            }
+        } else {
+            var tag = "<\(node.nodeName.lowercased())"
+            for (key, value) in node.attributes {
+                tag += " \(key)=\"\(value)\""
+            }
+            tag += ">"
+            result = "\(indent)\(tag)\n"
+
+            for child in node.children {
+                result += serializeDOMTree(child, depth: depth + 1)
+            }
+
+            result += "\(indent)</\(node.nodeName.lowercased())>\n"
+        }
+
+        return result
     }
 
     // MARK: - Header
@@ -565,63 +601,62 @@ struct SourcesView: View {
 
             TextField(selectedTab == .elements ? "Search" : "Filter", text: $searchText)
                 .textFieldStyle(.plain)
-                .onChange(of: searchText) { _, _ in
-                    if selectedTab == .elements {
-                        if elementsViewMode == .tree {
-                            updateMatchingNodes()
-                        } else {
-                            updateRawHTMLMatches()
-                        }
-                    }
-                }
 
-            searchNavigationView
-
-            if !searchText.isEmpty {
-                Button {
-                    clearSearch()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
+            // Search navigation - always reserve space
+            Group {
+                if selectedTab == .elements && !searchText.isEmpty {
+                    searchNavigationView
                 }
-                .buttonStyle(.plain)
             }
+            .frame(minWidth: 100, alignment: .trailing)
 
-            // View mode toggle for Elements tab
-            if selectedTab == .elements {
-                Divider()
-                    .frame(height: 20)
-
-                Button {
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        elementsViewMode = elementsViewMode == .tree ? .raw : .tree
-                    }
-                    Task {
-                        await fetchCurrentTab()
-                    }
-                } label: {
-                    Image(systemName: elementsViewMode.icon)
-                        .font(.system(size: 14))
-                        .foregroundStyle(elementsViewMode == .raw ? .primary : .secondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+            // Clear button - always reserve space
+            Button {
+                clearSearch()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
             }
+            .buttonStyle(.plain)
+            .opacity(searchText.isEmpty ? 0 : 1)
+            .disabled(searchText.isEmpty)
+
+            Divider()
+                .frame(height: 20)
+                .opacity(selectedTab == .elements ? 1 : 0)
+
+            // View mode toggle - always reserve space
+            Button {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    elementsViewMode = elementsViewMode == .tree ? .raw : .tree
+                }
+                Task {
+                    await fetchCurrentTab()
+                }
+            } label: {
+                Image(systemName: elementsViewMode.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(elementsViewMode == .raw ? .primary : .secondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(selectedTab == .elements ? 1 : 0)
+            .disabled(selectedTab != .elements)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(height: 44)
         .background(.ultraThinMaterial)
     }
 
     @ViewBuilder
     private var searchNavigationView: some View {
-        if selectedTab == .elements && !searchText.isEmpty {
-            if elementsViewMode == .tree {
-                treeSearchNavigation
-            } else {
-                rawHTMLSearchNavigation
-            }
+        if elementsViewMode == .tree {
+            treeSearchNavigation
+        } else {
+            rawHTMLSearchNavigation
         }
     }
 
@@ -698,20 +733,28 @@ struct SourcesView: View {
     }
 
     private func updateMatchingNodes() {
-        guard let root = manager.domTree, !searchText.isEmpty else {
+        guard let root = manager.domTree, !debouncedSearchText.isEmpty else {
             matchingNodePaths = []
             currentMatchIndex = 0
             return
         }
-        matchingNodePaths = collectMatchingPaths(node: root, currentPath: [])
-        currentMatchIndex = matchingNodePaths.isEmpty ? 0 : min(currentMatchIndex, matchingNodePaths.count - 1)
+
+        let query = debouncedSearchText.lowercased()
+
+        // Run search on background thread
+        Task.detached(priority: .userInitiated) {
+            let paths = Self.collectMatchingPaths(node: root, currentPath: [], query: query)
+            await MainActor.run {
+                matchingNodePaths = paths
+                currentMatchIndex = paths.isEmpty ? 0 : min(currentMatchIndex, paths.count - 1)
+            }
+        }
     }
 
-    private func collectMatchingPaths(node: DOMNode, currentPath: [String]) -> [[String]] {
+    private static func collectMatchingPaths(node: DOMNode, currentPath: [String], query: String) -> [[String]] {
         let nodePath = currentPath + [node.id.uuidString]
         var paths: [[String]] = []
 
-        let query = searchText.lowercased()
         let matches =
             node.nodeName.lowercased().contains(query) ||
             (node.attributes["id"]?.lowercased().contains(query) ?? false) ||
@@ -723,7 +766,7 @@ struct SourcesView: View {
         }
 
         for child in node.children {
-            paths.append(contentsOf: collectMatchingPaths(node: child, currentPath: nodePath))
+            paths.append(contentsOf: collectMatchingPaths(node: child, currentPath: nodePath, query: query))
         }
 
         return paths
@@ -740,42 +783,24 @@ struct SourcesView: View {
     }
 
     private func updateRawHTMLMatches() {
-        // Cancel previous search task
-        searchTask?.cancel()
-
-        guard !searchText.isEmpty else {
+        guard !debouncedSearchText.isEmpty else {
             rawMatchLineIndices = []
             currentRawMatchIndex = 0
-            isSearching = false
             return
         }
 
-        // Debounce: wait 150ms before searching
-        isSearching = true
-        let query = searchText.lowercased()
+        let query = debouncedSearchText.lowercased()
         let lines = cachedRawHTMLLines
 
-        searchTask = Task {
-            // Debounce delay
-            try? await Task.sleep(for: .milliseconds(150))
-
-            guard !Task.isCancelled else { return }
-
-            // Search on background thread
-            let matchingIndices = await Task.detached(priority: .userInitiated) {
-                var indices: [Int] = []
-                for (index, line) in lines.enumerated() where line.lowercased().contains(query) {
-                    indices.append(index)
-                }
-                return indices
-            }.value
-
-            guard !Task.isCancelled else { return }
-
+        // Run search on background thread
+        Task.detached(priority: .userInitiated) {
+            var indices: [Int] = []
+            for (index, line) in lines.enumerated() where line.lowercased().contains(query) {
+                indices.append(index)
+            }
             await MainActor.run {
-                rawMatchLineIndices = matchingIndices
-                currentRawMatchIndex = matchingIndices.isEmpty ? 0 : min(currentRawMatchIndex, matchingIndices.count - 1)
-                isSearching = false
+                rawMatchLineIndices = indices
+                currentRawMatchIndex = indices.isEmpty ? 0 : min(currentRawMatchIndex, indices.count - 1)
             }
         }
     }
@@ -1348,7 +1373,7 @@ struct SourcesShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-// MARK: - HTML Syntax View (UITextView-based)
+// MARK: - HTML Syntax View (Runestone with Tree-sitter virtualization)
 
 struct HTMLSyntaxView: View {
     let html: String
@@ -1356,582 +1381,155 @@ struct HTMLSyntaxView: View {
     let currentMatchLineIndex: Int?
     let matchingLineIndices: [Int]
 
-    @State private var attributedText: NSAttributedString?
-    @State private var isProcessing = true
-    @State private var totalLines = 0
-    @State private var scrollToMatch: Int?
-
-    nonisolated static let maxLines = 10000
-
     var body: some View {
-        Group {
-            if isProcessing {
-                VStack(spacing: 12) {
-                    ProgressView()
-                    Text("Formatting HTML...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if attributedText == nil {
-                Text("No HTML content")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                VStack(spacing: 0) {
-                    if totalLines > Self.maxLines {
-                        HStack(spacing: 4) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text("Showing \(Self.maxLines) of \(totalLines) lines")
-                                .fontWeight(.medium)
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.ultraThinMaterial)
-                    }
-
-                    HTMLTextView(
-                        attributedText: attributedText!,
-                        searchText: searchText,
-                        scrollToMatch: scrollToMatch
-                    )
-                }
-            }
-        }
+        HTMLTextView(
+            text: html,
+            searchText: searchText,
+            currentMatchIndex: currentMatchLineIndex,
+            matchingLineIndices: matchingLineIndices
+        )
         .background(Color(uiColor: .systemBackground))
-        .task(id: html) {
-            await processHTML()
-        }
-        .onChange(of: currentMatchLineIndex) { _, newIndex in
-            scrollToMatch = newIndex
-        }
-    }
-
-    @MainActor
-    private func processHTML() async {
-        isProcessing = true
-
-        let htmlCopy = html
-        let maxLines = Self.maxLines
-
-        let result = await Task.detached(priority: .userInitiated) {
-            HTMLProcessor.processToNSAttributedString(html: htmlCopy, maxLines: maxLines)
-        }.value
-
-        attributedText = result.attributedString
-        totalLines = result.totalLines
-        isProcessing = false
     }
 }
 
-// MARK: - HTML Text View (UIViewRepresentable)
+// MARK: - HTML Text View (Runestone with virtualization)
 
 struct HTMLTextView: UIViewRepresentable {
-    let attributedText: NSAttributedString
+    let text: String
     let searchText: String
-    let scrollToMatch: Int?
+    let currentMatchIndex: Int?
+    let matchingLineIndices: [Int]
+
+    func makeUIView(context: Context) -> TextView {
+        let textView = TextView()
+
+        // Read-only mode with text selection
+        textView.isEditable = false
+        textView.isSelectable = true
+
+        // Disable line wrapping for horizontal scroll
+        textView.isLineWrappingEnabled = false
+
+        // Visual settings
+        textView.showLineNumbers = true
+        textView.backgroundColor = .systemBackground
+        textView.lineHeightMultiplier = 1.2
+
+        // Set up theme and state
+        context.coordinator.setupTextView(textView, with: text)
+
+        return textView
+    }
+
+    func updateUIView(_ textView: TextView, context: Context) {
+        let coordinator = context.coordinator
+
+        // Update text if changed
+        if coordinator.lastText != text {
+            coordinator.lastText = text
+            coordinator.setupTextView(textView, with: text)
+        }
+
+        // Handle search - Runestone has built-in search support
+        if coordinator.lastSearchText != searchText {
+            coordinator.lastSearchText = searchText
+
+            if searchText.isEmpty {
+                textView.highlightedRanges = []
+            } else {
+                coordinator.highlightSearchResults(in: textView, searchText: searchText)
+            }
+        }
+
+        // Scroll to current match
+        if coordinator.lastMatchIndex != currentMatchIndex {
+            coordinator.lastMatchIndex = currentMatchIndex
+
+            if let matchIdx = currentMatchIndex, matchIdx < matchingLineIndices.count {
+                let lineIndex = matchingLineIndices[matchIdx]
+                _ = textView.goToLine(lineIndex)
+            }
+        }
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
 
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
-        textView.isEditable = false
-        textView.isSelectable = true
-        textView.isScrollEnabled = true
-        textView.showsHorizontalScrollIndicator = true
-        textView.showsVerticalScrollIndicator = true
-        textView.backgroundColor = .systemBackground
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
-
-        // Set initial text
-        textView.attributedText = attributedText
-        context.coordinator.lastAttributedText = attributedText
-        context.coordinator.lastSearchText = ""
-
-        return textView
-    }
-
-    func updateUIView(_ textView: UITextView, context: Context) {
-        let coordinator = context.coordinator
-
-        // Check if attributed text changed (new HTML loaded)
-        let textChanged = coordinator.lastAttributedText != attributedText
-        if textChanged {
-            coordinator.lastAttributedText = attributedText
-            coordinator.lastSearchText = ""
-            textView.attributedText = attributedText
-        }
-
-        // Debounce search highlighting
-        let searchChanged = coordinator.lastSearchText != searchText
-        if searchChanged {
-            coordinator.lastSearchText = searchText
-            coordinator.highlightTask?.cancel()
-
-            if searchText.isEmpty {
-                // Clear highlighting immediately
-                if !textChanged {
-                    textView.attributedText = attributedText
-                }
-            } else {
-                // Debounce highlighting
-                let text = attributedText
-                let query = searchText
-                coordinator.highlightTask = Task {
-                    try? await Task.sleep(for: .milliseconds(200))
-                    guard !Task.isCancelled else { return }
-
-                    let highlighted = Self.highlightSearchResults(in: text, searchText: query)
-
-                    await MainActor.run {
-                        guard !Task.isCancelled else { return }
-                        textView.attributedText = highlighted
-                    }
-                }
-            }
-        }
-
-        // Scroll to match if requested
-        if let matchIndex = scrollToMatch, matchIndex != coordinator.lastScrollMatch {
-            coordinator.lastScrollMatch = matchIndex
-            scrollToMatchIndex(textView: textView, matchIndex: matchIndex)
-        }
-    }
-
     class Coordinator {
-        var lastAttributedText: NSAttributedString?
+        var lastText: String = ""
         var lastSearchText: String = ""
-        var lastScrollMatch: Int?
-        var highlightTask: Task<Void, Never>?
-    }
+        var lastMatchIndex: Int?
 
-    private static func highlightSearchResults(in text: NSAttributedString, searchText: String) -> NSAttributedString {
-        let mutable = NSMutableAttributedString(attributedString: text)
-        let searchLower = searchText.lowercased()
-        let textLower = mutable.string.lowercased()
-
-        var searchRange = textLower.startIndex
-        while let range = textLower.range(of: searchLower, range: searchRange..<textLower.endIndex) {
-            let nsRange = NSRange(range, in: textLower)
-            mutable.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: nsRange)
-            searchRange = range.upperBound
-        }
-
-        return mutable
-    }
-
-    private func scrollToMatchIndex(textView: UITextView, matchIndex: Int) {
-        guard !searchText.isEmpty else { return }
-        let searchLower = searchText.lowercased()
-        let textLower = textView.text.lowercased()
-
-        var currentIndex = 0
-        var searchRange = textLower.startIndex
-
-        while let range = textLower.range(of: searchLower, range: searchRange..<textLower.endIndex) {
-            if currentIndex == matchIndex {
-                let nsRange = NSRange(range, in: textLower)
+        func setupTextView(_ textView: TextView, with text: String) {
+            // Create state with HTML language for syntax highlighting
+            DispatchQueue.global(qos: .userInitiated).async {
+                let state = TextViewState(text: text, theme: HTMLViewerTheme(), language: .html)
                 DispatchQueue.main.async {
-                    textView.scrollRangeToVisible(nsRange)
+                    textView.setState(state)
                 }
-                return
             }
-            currentIndex += 1
-            searchRange = range.upperBound
+        }
+
+        func highlightSearchResults(in textView: TextView, searchText: String) {
+            // Use Runestone's built-in search
+            let query = SearchQuery(text: searchText, matchMethod: .contains, isCaseSensitive: false)
+            let results = textView.search(for: query)
+
+            // Convert search results to highlighted ranges
+            let highlightedRanges = results.map { result in
+                HighlightedRange(range: result.range, color: .systemYellow.withAlphaComponent(0.4))
+            }
+            textView.highlightedRanges = highlightedRanges
         }
     }
 }
 
-// MARK: - HTML Line Model
+// MARK: - HTML Viewer Theme (Runestone Theme)
 
-struct HTMLLine: Identifiable, Sendable {
-    let id: Int
-    let content: AttributedString
-}
+final class HTMLViewerTheme: Runestone.Theme {
+    let backgroundColor: UIColor = .systemBackground
+    let userInterfaceStyle: UIUserInterfaceStyle = .unspecified
 
-// MARK: - HTML Processor (Background Thread Safe)
+    let font: UIFont = .monospacedSystemFont(ofSize: 12, weight: .regular)
+    let textColor: UIColor = .label
 
-enum HTMLProcessor: Sendable {
-    struct ProcessResult: Sendable {
-        let lines: [HTMLLine]
-        let totalLines: Int
-    }
+    let gutterBackgroundColor: UIColor = .secondarySystemBackground
+    let gutterHairlineColor: UIColor = .separator
 
-    struct NSAttributedResult: Sendable {
-        let attributedString: NSAttributedString
-        let totalLines: Int
-    }
+    let lineNumberColor: UIColor = .tertiaryLabel
+    let lineNumberFont: UIFont = .monospacedSystemFont(ofSize: 10, weight: .regular)
 
-    nonisolated static func processToLines(html: String, maxLines: Int) -> ProcessResult {
-        let rawLines = formatHTMLToLines(html)
-        let totalLines = rawLines.count
-        let limitedLines = Array(rawLines.prefix(maxLines))
+    let selectedLineBackgroundColor: UIColor = .systemGray6
+    let selectedLinesLineNumberColor: UIColor = .secondaryLabel
+    let selectedLinesGutterBackgroundColor: UIColor = .tertiarySystemBackground
 
-        let htmlLines = limitedLines.enumerated().map { index, lineStr in
-            HTMLLine(id: index, content: highlightLine(lineStr))
-        }
+    let invisibleCharactersColor: UIColor = .tertiaryLabel
 
-        return ProcessResult(lines: htmlLines, totalLines: totalLines)
-    }
+    let pageGuideHairlineColor: UIColor = .separator
+    let pageGuideBackgroundColor: UIColor = .secondarySystemBackground
 
-    nonisolated static func processToNSAttributedString(html: String, maxLines: Int) -> NSAttributedResult {
-        let rawLines = formatHTMLToLines(html)
-        let totalLines = rawLines.count
-        let limitedLines = Array(rawLines.prefix(maxLines))
+    let markedTextBackgroundColor: UIColor = .systemYellow.withAlphaComponent(0.2)
 
-        let result = NSMutableAttributedString()
-        let font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-
-        for (index, lineStr) in limitedLines.enumerated() {
-            let highlighted = highlightLineNS(lineStr, font: font)
-            result.append(highlighted)
-            if index < limitedLines.count - 1 {
-                result.append(NSAttributedString(string: "\n"))
-            }
-        }
-
-        return NSAttributedResult(attributedString: result, totalLines: totalLines)
-    }
-
-    nonisolated private static func highlightLineNS(_ lineStr: String, font: UIFont) -> NSAttributedString {
-        let bracketColor = UIColor.secondaryLabel
-        let tagNameColor = UIColor(red: 0.8, green: 0.2, blue: 0.4, alpha: 1.0)
-        let attrNameColor = UIColor(red: 0.6, green: 0.4, blue: 0.8, alpha: 1.0)
-        let attrValueColor = UIColor(red: 0.2, green: 0.6, blue: 0.8, alpha: 1.0)
-
-        let baseAttrs: [NSAttributedString.Key: Any] = [.font: font]
-
-        guard let tagStart = lineStr.firstIndex(of: "<"),
-              let tagEnd = lineStr.lastIndex(of: ">") else {
-            return NSAttributedString(string: lineStr, attributes: baseAttrs.merging([.foregroundColor: UIColor.label]) { _, new in new })
-        }
-
-        let result = NSMutableAttributedString()
-
-        // Indentation
-        let indent = String(lineStr[..<tagStart])
-        if !indent.isEmpty {
-            result.append(NSAttributedString(string: indent, attributes: baseAttrs))
-        }
-
-        // Tag
-        let tag = String(lineStr[tagStart...tagEnd])
-        result.append(highlightTagNS(tag, font: font, bracketColor: bracketColor, tagNameColor: tagNameColor, attrNameColor: attrNameColor, attrValueColor: attrValueColor))
-
-        return result
-    }
-
-    nonisolated private static func highlightTagNS(
-        _ tag: String,
-        font: UIFont,
-        bracketColor: UIColor,
-        tagNameColor: UIColor,
-        attrNameColor: UIColor,
-        attrValueColor: UIColor
-    ) -> NSAttributedString {
-        let baseAttrs: [NSAttributedString.Key: Any] = [.font: font]
-
-        // Special cases
-        if tag.hasPrefix("<!--") || tag.hasPrefix("<!DOCTYPE") || tag.hasPrefix("<?") {
-            return NSAttributedString(string: tag, attributes: baseAttrs.merging([.foregroundColor: UIColor.secondaryLabel]) { _, new in new })
-        }
-
-        let result = NSMutableAttributedString()
-        var state: ParseState = .bracket
-        var buffer = ""
-
-        func flushBuffer(color: UIColor) {
-            if !buffer.isEmpty {
-                let attrs = baseAttrs.merging([.foregroundColor: color]) { _, new in new }
-                result.append(NSAttributedString(string: buffer, attributes: attrs))
-                buffer = ""
-            }
-        }
-
-        for char in tag {
-            switch state {
-            case .bracket:
-                buffer.append(char)
-                if char == "<" {
-                    flushBuffer(color: bracketColor)
-                    state = .tagName
-                }
-
-            case .tagName:
-                if char == "/" {
-                    buffer.append(char)
-                    flushBuffer(color: bracketColor)
-                } else if char == ">" {
-                    flushBuffer(color: tagNameColor)
-                    result.append(NSAttributedString(string: ">", attributes: baseAttrs.merging([.foregroundColor: bracketColor]) { _, new in new }))
-                    state = .bracket
-                } else if char == " " {
-                    flushBuffer(color: tagNameColor)
-                    result.append(NSAttributedString(string: " ", attributes: baseAttrs))
-                    state = .attrName
-                } else {
-                    buffer.append(char)
-                }
-
-            case .attrName:
-                if char == "=" {
-                    flushBuffer(color: attrNameColor)
-                    result.append(NSAttributedString(string: "=", attributes: baseAttrs.merging([.foregroundColor: UIColor.secondaryLabel]) { _, new in new }))
-                    state = .attrValue
-                } else if char == ">" {
-                    flushBuffer(color: attrNameColor)
-                    result.append(NSAttributedString(string: ">", attributes: baseAttrs.merging([.foregroundColor: bracketColor]) { _, new in new }))
-                    state = .bracket
-                } else if char == "/" {
-                    flushBuffer(color: attrNameColor)
-                    result.append(NSAttributedString(string: "/", attributes: baseAttrs.merging([.foregroundColor: bracketColor]) { _, new in new }))
-                } else if char == " " {
-                    flushBuffer(color: attrNameColor)
-                    result.append(NSAttributedString(string: " ", attributes: baseAttrs))
-                } else {
-                    buffer.append(char)
-                }
-
-            case .attrValue:
-                if char == "\"" || char == "'" {
-                    buffer.append(char)
-                    state = .inQuote(char)
-                } else if char == " " {
-                    flushBuffer(color: attrValueColor)
-                    result.append(NSAttributedString(string: " ", attributes: baseAttrs))
-                    state = .attrName
-                } else if char == ">" {
-                    flushBuffer(color: attrValueColor)
-                    result.append(NSAttributedString(string: ">", attributes: baseAttrs.merging([.foregroundColor: bracketColor]) { _, new in new }))
-                    state = .bracket
-                } else if char == "/" {
-                    flushBuffer(color: attrValueColor)
-                    result.append(NSAttributedString(string: "/", attributes: baseAttrs.merging([.foregroundColor: bracketColor]) { _, new in new }))
-                } else {
-                    buffer.append(char)
-                }
-
-            case .inQuote(let quote):
-                buffer.append(char)
-                if char == quote {
-                    flushBuffer(color: attrValueColor)
-                    state = .attrName
-                }
-            }
-        }
-
-        flushBuffer(color: .label)
-        return result
-    }
-
-    nonisolated static func formatHTMLToLines(_ html: String) -> [String] {
-        var lines: [String] = []
-        var depth = 0
-        var inTag = false
-        var tagContent = ""
-        var textBuffer = ""
-
-        for char in html {
-            if char == "<" {
-                if !textBuffer.isEmpty {
-                    let trimmed = textBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !trimmed.isEmpty {
-                        lines.append(String(repeating: " ", count: depth) + trimmed)
-                    }
-                    textBuffer = ""
-                }
-                inTag = true
-                tagContent = "<"
-            } else if char == ">" && inTag {
-                tagContent += ">"
-                inTag = false
-
-                let isClosing = tagContent.hasPrefix("</")
-                let isSelfClosing = tagContent.hasSuffix("/>") ||
-                    tagContent.hasPrefix("<!") || tagContent.hasPrefix("<?")
-                let isVoid = isVoidTag(tagContent)
-
-                if isClosing { depth = max(0, depth - 1) }
-                lines.append(String(repeating: " ", count: depth) + tagContent)
-                if !isClosing && !isSelfClosing && !isVoid { depth += 1 }
-
-                tagContent = ""
-            } else if inTag {
-                tagContent.append(char)
-            } else {
-                textBuffer.append(char)
-            }
-        }
-
-        return lines
-    }
-
-    nonisolated private static func isVoidTag(_ tag: String) -> Bool {
-        let voidTags = ["area", "base", "br", "col", "embed", "hr", "img",
-                        "input", "link", "meta", "source", "track", "wbr"]
-        let lower = tag.lowercased()
-        return voidTags.contains { lower.hasPrefix("<\($0)") || lower.hasPrefix("<\($0) ") }
-    }
-
-    nonisolated private static func highlightLine(_ lineStr: String) -> AttributedString {
-        let bracketColor = Color.secondary
-        let tagNameColor = Color(red: 0.8, green: 0.2, blue: 0.4)
-        let attrNameColor = Color(red: 0.6, green: 0.4, blue: 0.8)
-        let attrValueColor = Color(red: 0.2, green: 0.6, blue: 0.8)
-
-        if let tagStart = lineStr.firstIndex(of: "<"),
-           let tagEnd = lineStr.lastIndex(of: ">") {
-            var result = AttributedString()
-
-            // Indentation
-            let indent = String(lineStr[..<tagStart])
-            if !indent.isEmpty {
-                result.append(AttributedString(indent))
-            }
-
-            // Tag
-            let tag = String(lineStr[tagStart...tagEnd])
-            result.append(highlightTag(tag, bracketColor: bracketColor,
-                                       tagNameColor: tagNameColor,
-                                       attrNameColor: attrNameColor,
-                                       attrValueColor: attrValueColor))
-            return result
-        } else {
-            var plainLine = AttributedString(lineStr)
-            plainLine.foregroundColor = .primary
-            return plainLine
+    func textColor(for highlightName: String) -> UIColor? {
+        switch highlightName {
+        case "tag", "tag.builtin":
+            return UIColor(red: 0.8, green: 0.2, blue: 0.4, alpha: 1.0)
+        case "attribute":
+            return UIColor(red: 0.6, green: 0.4, blue: 0.8, alpha: 1.0)
+        case "string", "string.special":
+            return UIColor(red: 0.2, green: 0.6, blue: 0.8, alpha: 1.0)
+        case "comment":
+            return .secondaryLabel
+        case "punctuation", "punctuation.bracket", "punctuation.delimiter":
+            return .tertiaryLabel
+        default:
+            return nil
         }
     }
 
-    nonisolated private static func highlightTag(
-        _ tag: String,
-        bracketColor: Color,
-        tagNameColor: Color,
-        attrNameColor: Color,
-        attrValueColor: Color
-    ) -> AttributedString {
-        // Special cases
-        if tag.hasPrefix("<!--") || tag.hasPrefix("<!DOCTYPE") || tag.hasPrefix("<?") {
-            var comment = AttributedString(tag)
-            comment.foregroundColor = .secondary
-            return comment
-        }
-
-        var result = AttributedString()
-        var state: ParseState = .bracket
-        var buffer = ""
-
-        func flushBuffer(color: Color) {
-            if !buffer.isEmpty {
-                var part = AttributedString(buffer)
-                part.foregroundColor = color
-                result.append(part)
-                buffer = ""
-            }
-        }
-
-        for char in tag {
-            switch state {
-            case .bracket:
-                buffer.append(char)
-                if char == "<" {
-                    flushBuffer(color: bracketColor)
-                    state = .tagName
-                }
-
-            case .tagName:
-                if char == "/" {
-                    buffer.append(char)
-                    flushBuffer(color: bracketColor)
-                } else if char == ">" {
-                    flushBuffer(color: tagNameColor)
-                    var bracket = AttributedString(">")
-                    bracket.foregroundColor = bracketColor
-                    result.append(bracket)
-                    state = .bracket
-                } else if char == " " {
-                    flushBuffer(color: tagNameColor)
-                    result.append(AttributedString(" "))
-                    state = .attrName
-                } else {
-                    buffer.append(char)
-                }
-
-            case .attrName:
-                if char == "=" {
-                    flushBuffer(color: attrNameColor)
-                    var eq = AttributedString("=")
-                    eq.foregroundColor = .secondary
-                    result.append(eq)
-                    state = .attrValue
-                } else if char == ">" {
-                    flushBuffer(color: attrNameColor)
-                    var bracket = AttributedString(">")
-                    bracket.foregroundColor = bracketColor
-                    result.append(bracket)
-                    state = .bracket
-                } else if char == "/" {
-                    flushBuffer(color: attrNameColor)
-                    var slash = AttributedString("/")
-                    slash.foregroundColor = bracketColor
-                    result.append(slash)
-                } else if char == " " {
-                    flushBuffer(color: attrNameColor)
-                    result.append(AttributedString(" "))
-                } else {
-                    buffer.append(char)
-                }
-
-            case .attrValue:
-                if char == "\"" || char == "'" {
-                    buffer.append(char)
-                    state = .inQuote(char)
-                } else if char == " " {
-                    flushBuffer(color: attrValueColor)
-                    result.append(AttributedString(" "))
-                    state = .attrName
-                } else if char == ">" {
-                    flushBuffer(color: attrValueColor)
-                    var bracket = AttributedString(">")
-                    bracket.foregroundColor = bracketColor
-                    result.append(bracket)
-                    state = .bracket
-                } else {
-                    buffer.append(char)
-                }
-
-            case .inQuote(let quote):
-                buffer.append(char)
-                if char == quote {
-                    flushBuffer(color: attrValueColor)
-                    state = .attrName
-                }
-            }
-        }
-
-        // Flush remaining
-        switch state {
-        case .tagName: flushBuffer(color: tagNameColor)
-        case .attrName: flushBuffer(color: attrNameColor)
-        case .attrValue, .inQuote: flushBuffer(color: attrValueColor)
-        case .bracket: flushBuffer(color: bracketColor)
-        }
-
-        return result
-    }
-
-    private enum ParseState {
-        case bracket
-        case tagName
-        case attrName
-        case attrValue
-        case inQuote(Character)
+    func fontTraits(for highlightName: String) -> FontTraits {
+        []
     }
 }
 
