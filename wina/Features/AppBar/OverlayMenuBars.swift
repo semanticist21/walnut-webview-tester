@@ -195,6 +195,18 @@ struct OverlayMenuBars: View {
                         .buttonStyle(.plain)
 
                         Button {
+                            showEditor = true
+                        } label: {
+                            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
                             showNetwork = true
                         } label: {
                             Image(systemName: "network")
@@ -222,18 +234,6 @@ struct OverlayMenuBars: View {
                             showPerformance = true
                         } label: {
                             Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                                .font(.system(size: 15))
-                                .foregroundStyle(.primary)
-                                .padding(8)
-                                .background(.ultraThinMaterial, in: Circle())
-                                .contentShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            showEditor = true
-                        } label: {
-                            Image(systemName: "chevron.left.forwardslash.chevron.right")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
                                 .padding(8)

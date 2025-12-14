@@ -120,8 +120,6 @@ extension WebViewScripts {
                 style.textContent = css;
                 (document.head || document.documentElement).appendChild(style);
             }
-
-            console.log('[Wina] Emulation active:', Object.keys(overrides).length / 2, 'overrides');
         })();
         """
 
