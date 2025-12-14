@@ -143,8 +143,9 @@ struct SourcesView: View {
         }
         .onChange(of: manager.rawHTML) { _, newHTML in
             // Cache raw HTML lines for search
+            // Use "\n" instead of .newlines to match Runestone's line parsing
             if let html = newHTML {
-                cachedRawHTMLLines = html.components(separatedBy: .newlines)
+                cachedRawHTMLLines = html.components(separatedBy: "\n")
                 // Update search results if needed
                 if !debouncedSearchText.isEmpty && elementsViewMode == .raw {
                     updateRawHTMLMatches()

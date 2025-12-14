@@ -36,6 +36,16 @@ struct HTMLTextView: UIViewRepresentable {
     let currentMatchIndex: Int?
     let matchingLineIndices: [Int]
 
+    /// Calculate character offset for the start of a given line (0-based)
+    private func lineStartOffset(for lineIndex: Int) -> Int {
+        let lines = text.components(separatedBy: "\n")
+        var offset = 0
+        for i in 0..<min(lineIndex, lines.count) {
+            offset += lines[i].count + 1  // +1 for newline
+        }
+        return offset
+    }
+
     func makeUIView(context: Context) -> TextView {
         let textView = TextView()
 
@@ -72,18 +82,24 @@ struct HTMLTextView: UIViewRepresentable {
 
             if searchText.isEmpty {
                 textView.highlightedRanges = []
+                coordinator.searchResultRanges = []
             } else {
                 coordinator.highlightSearchResults(in: textView, searchText: searchText)
             }
         }
 
-        // Scroll to current match
+        // Scroll to current match using stored search result ranges
         if coordinator.lastMatchIndex != currentMatchIndex {
             coordinator.lastMatchIndex = currentMatchIndex
 
             if let matchIdx = currentMatchIndex, matchIdx < matchingLineIndices.count {
-                let lineIndex = matchingLineIndices[matchIdx]
-                _ = textView.goToLine(lineIndex)
+                let targetLineIndex = matchingLineIndices[matchIdx]
+                let targetOffset = lineStartOffset(for: targetLineIndex)
+
+                // Find first search result on or after the target line
+                if let range = coordinator.searchResultRanges.first(where: { $0.location >= targetOffset }) {
+                    textView.scrollRangeToVisible(range)
+                }
             }
         }
     }
@@ -96,6 +112,7 @@ struct HTMLTextView: UIViewRepresentable {
         var lastText: String = ""
         var lastSearchText: String = ""
         var lastMatchIndex: Int?
+        var searchResultRanges: [NSRange] = []
 
         func setupTextView(_ textView: TextView, with text: String) {
             // Create state with HTML language for syntax highlighting
@@ -111,6 +128,9 @@ struct HTMLTextView: UIViewRepresentable {
             // Use Runestone's built-in search
             let query = SearchQuery(text: searchText, matchMethod: .contains, isCaseSensitive: false)
             let results = textView.search(for: query)
+
+            // Store ranges for navigation
+            searchResultRanges = results.map(\.range)
 
             // Convert search results to highlighted ranges
             let highlightedRanges = results.map { result in
