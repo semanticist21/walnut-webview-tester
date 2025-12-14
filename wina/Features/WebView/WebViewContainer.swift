@@ -128,6 +128,13 @@ struct WebViewContainer: View {
                                 .allowsHitTesting(false)
                         }
                     }
+                    .overlay(alignment: .bottom) {
+                        // Screenshot saved toast
+                        if navigator?.showScreenshotSavedToast == true {
+                            CopiedFeedbackToast(message: "Saved to Photos")
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

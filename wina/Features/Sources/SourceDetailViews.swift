@@ -793,6 +793,7 @@ private struct MatchedRuleRowView: View {
 #Preview("Element Detail") {
     ElementDetailView(
         node: DOMNode(
+            path: [0],
             nodeType: 1,
             nodeName: "DIV",
             attributes: ["id": "main", "class": "container flex"],

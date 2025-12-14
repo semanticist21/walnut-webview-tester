@@ -73,21 +73,18 @@ struct EmulationSettingsView: View {
                     Toggle("Reduced Transparency", isOn: $reducedTransparency)
                     InfoPopoverButton(text: "prefers-reduced-transparency\n\nDisables blur and transparency effects.")
                 }
-            } footer: {
-                Text("Applying changes will reload the current page.")
             }
 
             Section {
-                Button(role: .destructive) {
-                    resetToDefaults()
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Reset to Defaults")
-                        Spacer()
+                HStack {
+                    Spacer()
+                    GlassActionButton("Reset", icon: "arrow.counterclockwise", style: .destructive) {
+                        resetToDefaults()
                     }
+                    .disabled(isDefault && !isEmulationActive)
+                    Spacer()
                 }
-                .disabled(isDefault && !isEmulationActive)
+                .listRowBackground(Color.clear)
             }
         }
         .navigationTitle("Emulation")
@@ -100,7 +97,18 @@ struct EmulationSettingsView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if isEmulationActive {
+            if hasChanges {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Changes will reload page")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+            } else if isEmulationActive {
                 HStack {
                     Image(systemName: "wand.and.stars")
                         .foregroundStyle(.purple)
@@ -113,6 +121,7 @@ struct EmulationSettingsView: View {
                 .background(.ultraThinMaterial)
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: hasChanges)
         .onAppear {
             loadFromStorage()
         }
@@ -141,7 +150,7 @@ struct EmulationSettingsView: View {
         )
         Task {
             _ = await navigator.evaluateJavaScript(configScript)
-            await navigator.reload()
+            navigator.reload()
         }
         dismiss()
     }
@@ -169,7 +178,7 @@ struct EmulationSettingsView: View {
             )
             Task {
                 _ = await navigator.evaluateJavaScript(configScript)
-                await navigator.reload()
+                navigator.reload()
             }
             dismiss()
         }

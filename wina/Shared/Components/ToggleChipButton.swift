@@ -27,5 +27,8 @@ struct ToggleChipButton: View {
         }
         .buttonStyle(.plain)
         .glassEffect(in: .rect(cornerRadius: 12))
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAddTraits(.isButton)
     }
 }

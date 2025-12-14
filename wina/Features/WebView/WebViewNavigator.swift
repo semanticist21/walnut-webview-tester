@@ -15,6 +15,7 @@ class WebViewNavigator {
     var canGoForward: Bool = false
     var currentURL: URL?
     var showScreenshotFlash: Bool = false
+    var showScreenshotSavedToast: Bool = false
     let consoleManager = ConsoleManager()
     let networkManager = NetworkManager()
     let performanceManager = PerformanceManager()
@@ -125,7 +126,14 @@ class WebViewNavigator {
                     continuation.resume(returning: false)
                     return
                 }
-                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                // Convert to opaque image (removes unnecessary alpha channel)
+                let format = UIGraphicsImageRendererFormat()
+                format.opaque = true
+                let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+                let opaqueImage = renderer.image { _ in
+                    image.draw(at: .zero)
+                }
+                UIImageWriteToSavedPhotosAlbum(opaqueImage, nil, nil, nil)
                 continuation.resume(returning: true)
             }
         }
