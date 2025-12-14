@@ -60,26 +60,19 @@ final class SharedInfoWebView {
         // Already initialized
         if isReady, webView != nil { return }
 
-        // Wait for existing init
-        if let initTask {
-            await initTask.value
-            return
-        }
+        onStatusUpdate("Launching WebView process...")
 
-        initTask = Task {
-            onStatusUpdate("Launching WebView process...")
+        let config = WKWebViewConfiguration()
+        let wv = WKWebView(frame: .zero, configuration: config)
 
-            let config = WKWebViewConfiguration()
-            let wv = WKWebView(frame: .zero, configuration: config)
+        // Load minimal HTML without waiting (non-blocking)
+        wv.loadHTMLString("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
 
-            onStatusUpdate("Initializing WebView...")
-            await wv.loadHTMLStringAsync("<html><body></body></html>", baseURL: URL(string: "https://example.com"))
+        // Brief delay for WebView to initialize
+        try? await Task.sleep(for: .milliseconds(100))
 
-            self.webView = wv
-            self.isReady = true
-        }
-
-        await initTask?.value
+        self.webView = wv
+        self.isReady = true
     }
 
     func evaluateJavaScript(_ script: String) async -> Any? {

@@ -14,13 +14,6 @@ struct winaApp: App {
     init() {
         // Clear network body cache from previous session (unless preserveLog is enabled)
         NetworkBodyStorage.shared.clearOnLaunchIfNeeded()
-
-        // Prewarm WebKit processes after app UI is ready (3 second delay)
-        // WKWebView must be created on main thread, but delaying prevents blocking app launch
-        Task {
-            try? await Task.sleep(for: .seconds(3))
-            await prewarmInfoWebView()
-        }
     }
 
     var body: some Scene {

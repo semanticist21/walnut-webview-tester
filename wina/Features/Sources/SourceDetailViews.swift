@@ -876,6 +876,7 @@ struct ScriptDetailView: View {
     @State private var scriptContent: String = ""
     @State private var isLoading: Bool = true
     @State private var errorMessage: String?
+    @State private var copiedFeedback: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -902,6 +903,14 @@ struct ScriptDetailView: View {
                 .background(Color(uiColor: .systemBackground))
             }
         }
+        .overlay(alignment: .bottom) {
+            if let feedback = copiedFeedback {
+                CopiedFeedbackToast(message: feedback)
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
         .task {
             await fetchDetails()
         }
@@ -985,13 +994,23 @@ struct ScriptDetailView: View {
                     .foregroundStyle(.secondary)
 
                 if let src = script.src {
-                    ExpandableURLView(url: src)
+                    ExpandableURLView(url: src) {
+                        showCopiedFeedback()
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding()
         }
         .background(Color(uiColor: .systemBackground))
+    }
+
+    private func showCopiedFeedback() {
+        copiedFeedback = "URL copied"
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            copiedFeedback = nil
+        }
     }
 
     private func fetchDetails() async {
@@ -1175,8 +1194,8 @@ struct CSSPropertyRow: View {
 /// Expandable URL view with collapse/expand for long URLs
 private struct ExpandableURLView: View {
     let url: String
+    var onCopy: (() -> Void)?
     @State private var isExpanded: Bool = false
-    @State private var copiedFeedback: String?
 
     private var isLongURL: Bool {
         url.count > 60
@@ -1229,26 +1248,11 @@ private struct ExpandableURLView: View {
 
             GlassActionButton("Copy URL", icon: "doc.on.doc") {
                 UIPasteboard.general.string = url
-                showCopiedFeedback()
+                onCopy?()
             }
         }
         .padding()
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
-    }
-
-    private func showCopiedFeedback() {
-        copiedFeedback = "URL copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            copiedFeedback = nil
-        }
     }
 }
 
