@@ -183,16 +183,22 @@ class StorageManager {
     func setItem(key: String, value: String, type: StorageItem.StorageType) async -> Bool {
         guard let navigator else { return false }
 
-        let escapedKey = key.replacingOccurrences(of: "'", with: "\\'")
-        let escapedValue = value.replacingOccurrences(of: "'", with: "\\'")
+        // Use JSON encoding for safe JavaScript string escaping
+        guard let keyData = try? JSONSerialization.data(withJSONObject: key),
+              let valueData = try? JSONSerialization.data(withJSONObject: value),
+              let jsonKey = String(data: keyData, encoding: .utf8),
+              let jsonValue = String(data: valueData, encoding: .utf8)
+        else { return false }
 
         let script: String
         switch type {
         case .localStorage:
-            script = "localStorage.setItem('\(escapedKey)', '\(escapedValue)'); true;"
+            script = "localStorage.setItem(\(jsonKey), \(jsonValue)); true;"
         case .sessionStorage:
-            script = "sessionStorage.setItem('\(escapedKey)', '\(escapedValue)'); true;"
+            script = "sessionStorage.setItem(\(jsonKey), \(jsonValue)); true;"
         case .cookies:
+            let escapedKey = key.replacingOccurrences(of: "=", with: "%3D")
+            let escapedValue = value.replacingOccurrences(of: ";", with: "%3B")
             script = "document.cookie = '\(escapedKey)=\(escapedValue)'; true;"
         }
 
@@ -569,6 +575,11 @@ private struct StorageEditSheet: View {
     @State private var isSaving: Bool = false
     @State private var isDeleting: Bool = false
     @State private var showDeleteConfirm: Bool = false
+    @State private var showJsonEditor: Bool = false
+
+    private var isValueJson: Bool {
+        JsonParser.isValidJson(editedValue)
+    }
 
     var body: some View {
         NavigationStack {
@@ -579,10 +590,47 @@ private struct StorageEditSheet: View {
                         .textSelection(.enabled)
                 }
 
-                Section("Value") {
+                Section {
                     TextEditor(text: $editedValue)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(minHeight: 120)
+                } header: {
+                    HStack {
+                        Text("Value")
+                        Spacer()
+                        if isValueJson {
+                            Button {
+                                showJsonEditor = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil")
+                                    Text("Edit")
+                                }
+                                .font(.caption.weight(.medium))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.fill.tertiary, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                // JSON Explorer section (only for valid JSON)
+                if isValueJson {
+                    Section {
+                        JsonExplorerView(jsonText: editedValue)
+                            .frame(minHeight: 200)
+                            .listRowInsets(EdgeInsets())
+                    } header: {
+                        HStack {
+                            Text("JSON Explorer")
+                            Spacer()
+                            Text("\(countJsonElements(editedValue)) items")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
 
                 Section {
@@ -624,6 +672,9 @@ private struct StorageEditSheet: View {
                     deleteItem()
                 }
             }
+            .sheet(isPresented: $showJsonEditor) {
+                JsonEditorSheet(jsonText: $editedValue)
+            }
             .onAppear {
                 editedValue = item.value
             }
@@ -655,6 +706,14 @@ private struct StorageEditSheet: View {
             isDeleting = false
         }
     }
+
+    private func countJsonElements(_ jsonString: String) -> Int {
+        guard let data = jsonString.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) else { return 0 }
+        if let dict = json as? [String: Any] { return dict.count }
+        if let array = json as? [Any] { return array.count }
+        return 1
+    }
 }
 
 // MARK: - Storage Add Sheet
@@ -668,6 +727,11 @@ private struct StorageAddSheet: View {
     @State private var key: String = ""
     @State private var value: String = ""
     @State private var isSaving: Bool = false
+    @State private var showJsonEditor: Bool = false
+
+    private var isValueJson: Bool {
+        JsonParser.isValidJson(value)
+    }
 
     var body: some View {
         NavigationStack {
@@ -679,10 +743,47 @@ private struct StorageAddSheet: View {
                         .textInputAutocapitalization(.never)
                 }
 
-                Section("Value") {
+                Section {
                     TextEditor(text: $value)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(minHeight: 100)
+                } header: {
+                    HStack {
+                        Text("Value")
+                        Spacer()
+                        if isValueJson {
+                            Button {
+                                showJsonEditor = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil")
+                                    Text("Edit")
+                                }
+                                .font(.caption.weight(.medium))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.fill.tertiary, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                // JSON Explorer section (only for valid JSON)
+                if isValueJson {
+                    Section {
+                        JsonExplorerView(jsonText: value)
+                            .frame(minHeight: 160)
+                            .listRowInsets(EdgeInsets())
+                    } header: {
+                        HStack {
+                            Text("JSON Explorer")
+                            Spacer()
+                            Text("\(countJsonElements(value)) items")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
             .navigationTitle("Add to \(storageType.label)")
@@ -700,6 +801,9 @@ private struct StorageAddSheet: View {
                     .disabled(isSaving || key.isEmpty)
                 }
             }
+            .sheet(isPresented: $showJsonEditor) {
+                JsonEditorSheet(jsonText: $value)
+            }
         }
     }
 
@@ -712,6 +816,14 @@ private struct StorageAddSheet: View {
             }
             isSaving = false
         }
+    }
+
+    private func countJsonElements(_ jsonString: String) -> Int {
+        guard let data = jsonString.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) else { return 0 }
+        if let dict = json as? [String: Any] { return dict.count }
+        if let array = json as? [Any] { return array.count }
+        return 1
     }
 }
 

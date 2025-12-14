@@ -496,6 +496,7 @@ struct SourcesView: View {
         if manager.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(uiColor: .systemBackground))
         } else if let error = manager.errorMessage {
             errorView(error)
         } else if let root = manager.domTree {
@@ -527,6 +528,7 @@ struct SourcesView: View {
         if manager.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(uiColor: .systemBackground))
         } else if let error = manager.errorMessage {
             errorView(error)
         } else if manager.stylesheets.isEmpty {
@@ -557,6 +559,7 @@ struct SourcesView: View {
         if manager.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(uiColor: .systemBackground))
         } else if let error = manager.errorMessage {
             errorView(error)
         } else if filteredScripts.isEmpty {
@@ -584,7 +587,7 @@ struct SourcesView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -592,18 +595,20 @@ struct SourcesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(Color(uiColor: .systemBackground))
     }
 
     private func emptyView(_ message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(uiColor: .systemBackground))
     }
 }
 

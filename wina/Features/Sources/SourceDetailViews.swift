@@ -501,7 +501,7 @@ struct ScriptDetailView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -509,6 +509,7 @@ struct ScriptDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(Color(uiColor: .systemBackground))
     }
 
     /// View explaining CORS limitation for external scripts
@@ -516,7 +517,7 @@ struct ScriptDetailView: View {
         VStack(spacing: 16) {
             Image(systemName: "lock.shield")
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
 
             Text("External Script")
                 .font(.headline)
@@ -557,6 +558,7 @@ struct ScriptDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(Color(uiColor: .systemBackground))
     }
 
     private func fetchDetails() async {
@@ -605,15 +607,25 @@ private struct SourceInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 80, alignment: .leading)
+                .frame(width: 60, alignment: .leading)
             Text(value)
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(.primary)
             Spacer()
+            Button {
+                UIPasteboard.general.string = value
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
     }
 }
@@ -623,18 +635,30 @@ struct AttributeRow: View {
     let value: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(name)
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
-
-            Text(value)
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(name)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.primary)
+                Text(value)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+            Spacer()
+            Button {
+                UIPasteboard.general.string = "\(name)=\"\(value)\""
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
     }
@@ -657,6 +681,16 @@ struct CSSPropertyRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Spacer()
+            Button {
+                UIPasteboard.general.string = "\(property): \(value);"
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 2)
     }
