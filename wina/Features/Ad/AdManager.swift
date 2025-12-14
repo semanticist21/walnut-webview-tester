@@ -10,6 +10,14 @@ struct AdOptions {
     /// Unique identifier for tracking shown ads in memory.
     /// If an ad with this id has been shown once, it won't be shown again during the session.
     let id: String
+
+    /// Probability of showing the ad (0.0 to 1.0). Default is 0.3 (30%).
+    let probability: Double
+
+    init(id: String, probability: Double = 0.3) {
+        self.id = id
+        self.probability = max(0.0, min(1.0, probability))
+    }
 }
 
 // MARK: - Ad Manager
@@ -54,16 +62,22 @@ final class AdManager: NSObject {
         isLoading = false
     }
 
-    /// Shows an interstitial ad if not already shown for the given options.id.
+    /// Shows an interstitial ad based on probability, if not already shown for the given options.id.
     /// - Parameters:
-    ///   - options: Ad options containing the unique id for tracking.
+    ///   - options: Ad options containing the unique id and probability (default 30%).
     ///   - adUnitId: The AdMob ad unit ID. If ad is not loaded, it will be loaded first.
-    /// - Returns: `true` if ad was shown, `false` if skipped (already shown) or failed.
+    /// - Returns: `true` if ad was shown, `false` if skipped (already shown, probability check failed) or failed.
     @discardableResult
     func showInterstitialAd(options: AdOptions, adUnitId: String) async -> Bool {
         // Skip if already shown for this id
         guard !shownAdIds.contains(options.id) else {
             logger.info("Ad already shown for id: \(options.id), skipping")
+            return false
+        }
+
+        // Random probability check
+        guard Double.random(in: 0.0..<1.0) < options.probability else {
+            logger.info("Ad skipped by probability check (\(Int(options.probability * 100))%) for id: \(options.id)")
             return false
         }
 
@@ -123,13 +137,16 @@ extension AdManager: FullScreenContentDelegate {
         _ ad: FullScreenPresentingAd,
         didFailToPresentFullScreenContentWithError error: Error
     ) {
-        logger.error("Ad failed to present: \(error.localizedDescription)")
+        let errorMessage = error.localizedDescription
         Task { @MainActor in
+            logger.error("Ad failed to present: \(errorMessage)")
             interstitialAd = nil
         }
     }
 
     nonisolated func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        logger.info("Ad will present")
+        Task { @MainActor in
+            logger.info("Ad will present")
+        }
     }
 }
