@@ -1167,20 +1167,33 @@ private struct NetworkDetailView: View {
                 }
                 .padding()
             } else {
-                emptyState(message: "No response body")
-                    .padding()
+                emptyState(
+                    message: "Unable to capture response body",
+                    subtitle: "Static resources (scripts, stylesheets) cannot be intercepted"
+                )
+                .padding()
             }
         }
     }
 
     // MARK: - Helpers
 
-    private func emptyState(message: String) -> some View {
-        Text(message)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 40)
+    private func emptyState(message: String, subtitle: String? = nil) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: "eye.slash")
+                .font(.system(size: 24))
+                .foregroundStyle(.tertiary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 40)
     }
 
     private func copyToClipboard(_ text: String, label: String) {
