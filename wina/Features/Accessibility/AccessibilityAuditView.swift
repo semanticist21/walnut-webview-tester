@@ -13,8 +13,10 @@ struct AccessibilityIssue: Identifiable, Equatable {
     let id = UUID()
     let severity: Severity
     let category: Category
-    let message: String
-    let element: String  // Simplified element representation
+    let help: String  // Short help message
+    let failureSummary: String  // Detailed failure info
+    let element: String  // Truncated element for display
+    let fullHtml: String  // Full HTML for copy
     let selector: String?  // CSS selector for the element
     let helpUrl: String?  // Link to axe-core documentation
     let ruleId: String?  // axe-core rule ID
@@ -170,9 +172,10 @@ struct AccessibilityAuditView: View {
 
         if !searchText.isEmpty {
             result = result.filter {
-                $0.message.localizedCaseInsensitiveContains(searchText)
+                $0.help.localizedCaseInsensitiveContains(searchText)
                     || $0.element.localizedCaseInsensitiveContains(searchText)
                     || $0.category.label.localizedCaseInsensitiveContains(searchText)
+                    || ($0.ruleId?.localizedCaseInsensitiveContains(searchText) ?? false)
             }
         }
 
@@ -224,6 +227,12 @@ struct AccessibilityAuditView: View {
                 ) {
                     issues = []
                     hasScanned = false
+                },
+                .init(
+                    icon: "square.and.arrow.up",
+                    isDisabled: issues.isEmpty || isScanning
+                ) {
+                    shareAllIssues()
                 }
             ],
             rightButtons: [
@@ -235,6 +244,77 @@ struct AccessibilityAuditView: View {
                 }
             ]
         )
+    }
+
+    private func shareAllIssues() {
+        let summary = generateShareText()
+        let activityVC = UIActivityViewController(
+            activityItems: [summary],
+            applicationActivities: nil
+        )
+
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = rootVC.view
+                popover.sourceRect = CGRect(x: rootVC.view.bounds.midX, y: 100, width: 0, height: 0)
+            }
+            rootVC.present(activityVC, animated: true)
+        }
+    }
+
+    private func generateShareText() -> String {
+        var lines: [String] = []
+
+        // Header
+        lines.append("# Accessibility Audit Report")
+        lines.append("")
+        if let url = navigator?.currentURL?.absoluteString {
+            lines.append("URL: \(url)")
+        }
+        lines.append("Date: \(Date().formatted(date: .abbreviated, time: .shortened))")
+        lines.append("")
+
+        // Summary
+        let errorCount = issueCountBySeverity[.error] ?? 0
+        let warningCount = issueCountBySeverity[.warning] ?? 0
+        let infoCount = issueCountBySeverity[.info] ?? 0
+        lines.append("## Summary")
+        lines.append("- Errors: \(errorCount)")
+        lines.append("- Warnings: \(warningCount)")
+        lines.append("- Info: \(infoCount)")
+        lines.append("- Total: \(issues.count)")
+        lines.append("")
+
+        // Issues by severity
+        for severity in AccessibilityIssue.Severity.allCases {
+            let severityIssues = issues.filter { $0.severity == severity }
+            if severityIssues.isEmpty { continue }
+
+            lines.append("## \(severity.label) (\(severityIssues.count))")
+            lines.append("")
+
+            for (index, issue) in severityIssues.enumerated() {
+                lines.append("### \(index + 1). \(issue.help)")
+                if let ruleId = issue.ruleId {
+                    lines.append("- Rule: \(ruleId)")
+                }
+                lines.append("- Category: \(issue.category.label)")
+                if !issue.failureSummary.isEmpty {
+                    lines.append("- Details: \(issue.failureSummary)")
+                }
+                if let selector = issue.selector {
+                    lines.append("- Selector: \(selector)")
+                }
+                lines.append("- HTML: \(issue.fullHtml)")
+                if let helpUrl = issue.helpUrl {
+                    lines.append("- Help: \(helpUrl)")
+                }
+                lines.append("")
+            }
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Search Bar
@@ -428,22 +508,21 @@ struct AccessibilityAuditView: View {
             let category = AccessibilityIssue.Category.from(tags: tags, ruleId: ruleId)
 
             for node in nodes {
-                let html = node["html"] as? String ?? ""
+                let fullHtml = node["html"] as? String ?? ""
                 let targets = node["target"] as? [String] ?? []
                 let selector = targets.first
                 let failureSummary = node["failureSummary"] as? String ?? ""
 
-                // Create readable element representation
-                let element = html.count > 80 ? String(html.prefix(80)) + "..." : html
-
-                // Combine help message with failure summary
-                let message = failureSummary.isEmpty ? help : "\(help): \(failureSummary)"
+                // Create truncated element for collapsed display
+                let element = fullHtml.count > 60 ? String(fullHtml.prefix(60)) + "..." : fullHtml
 
                 result.append(AccessibilityIssue(
                     severity: severity,
                     category: category,
-                    message: message,
+                    help: help,
+                    failureSummary: failureSummary,
                     element: element,
+                    fullHtml: fullHtml,
                     selector: selector,
                     helpUrl: helpUrl,
                     ruleId: ruleId
@@ -500,45 +579,138 @@ private struct FilterTab: View {
 private struct IssueRow: View {
     let issue: AccessibilityIssue
     @Environment(\.openURL) private var openURL
+    @State private var isExpanded: Bool = false
+
+    private var copyText: String {
+        var parts: [String] = []
+        if let ruleId = issue.ruleId {
+            parts.append("Rule: \(ruleId)")
+        }
+        parts.append("Severity: \(issue.severity.rawValue)")
+        parts.append("Category: \(issue.category.label)")
+        parts.append("Issue: \(issue.help)")
+        if !issue.failureSummary.isEmpty {
+            parts.append("Details: \(issue.failureSummary)")
+        }
+        if let selector = issue.selector {
+            parts.append("Selector: \(selector)")
+        }
+        parts.append("HTML: \(issue.fullHtml)")
+        if let helpUrl = issue.helpUrl {
+            parts.append("Help: \(helpUrl)")
+        }
+        return parts.joined(separator: "\n")
+    }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            // Severity icon
-            Image(systemName: issue.severity.icon)
-                .font(.system(size: 14))
-                .foregroundStyle(issue.severity.color)
-                .frame(width: 20)
+        Button {
+            withAnimation(.easeOut(duration: 0.15)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                // Severity icon
+                Image(systemName: issue.severity.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(issue.severity.color)
+                    .frame(width: 20)
 
-            VStack(alignment: .leading, spacing: 4) {
-                // Category badge + rule ID
-                HStack(spacing: 6) {
-                    Label(issue.category.label, systemImage: issue.category.icon)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(issue.severity.color)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(issue.severity.color.opacity(0.15), in: Capsule())
+                VStack(alignment: .leading, spacing: 4) {
+                    // Category badge + rule ID
+                    HStack(spacing: 6) {
+                        Label(issue.category.label, systemImage: issue.category.icon)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(issue.severity.color)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(issue.severity.color.opacity(0.15), in: Capsule())
 
-                    if let ruleId = issue.ruleId {
-                        Text(ruleId)
-                            .font(.system(size: 9, design: .monospaced))
+                        if let ruleId = issue.ruleId {
+                            Text(ruleId)
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        Spacer()
+
+                        // Chevron indicator
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.tertiary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    }
+
+                    // Help message (title)
+                    Text(issue.help)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.primary)
+                        .lineLimit(isExpanded ? nil : 1)
+                        .multilineTextAlignment(.leading)
+
+                    // Element (truncated when collapsed)
+                    Text(isExpanded ? issue.fullHtml : issue.element)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(isExpanded ? 6 : 1)
+                        .multilineTextAlignment(.leading)
+
+                    // Expanded details
+                    if isExpanded {
+                        expandedDetails
                     }
                 }
 
-                // Message
-                Text(issue.message)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.primary)
+                // Action buttons
+                actionButtons
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(issue.severity == .error ? Color.red.opacity(0.05) : Color.clear)
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .bottom) {
+            Divider()
+                .padding(.leading, 42)
+        }
+    }
 
-                // Element
-                Text(issue.element)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+    @ViewBuilder
+    private var expandedDetails: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Failure summary
+            if !issue.failureSummary.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Details")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                    Text(issue.failureSummary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(4)
+                }
             }
 
-            Spacer()
+            // Selector
+            if let selector = issue.selector {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Selector")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                    Text(selector)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        VStack(spacing: 4) {
+            // Copy button
+            CopyIconButton(copyText)
 
             // Help link button
             if let helpUrl = issue.helpUrl, let url = URL(string: helpUrl) {
@@ -546,20 +718,13 @@ private struct IssueRow: View {
                     openURL(url)
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                         .frame(width: 28, height: 28)
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
             }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(issue.severity == .error ? Color.red.opacity(0.05) : Color.clear)
-        .overlay(alignment: .bottom) {
-            Divider()
-                .padding(.leading, 42)
         }
     }
 }
