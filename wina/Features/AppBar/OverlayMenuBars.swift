@@ -280,10 +280,10 @@ struct OverlayMenuBars: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
                 .frame(height: bottomBarHeight)
                 .contentShape(Rectangle())  // 전체 높이를 터치 영역으로
             }
+            .contentMargins(.horizontal, 16, for: .scrollContent)  // 패딩 영역까지 스크롤 가능
             .scrollBounceBehavior(.basedOnSize)  // overscroll 방지
             .frame(height: bottomBarHeight)
             .frame(width: geometry.size.width - 16)  // 기기 너비 - 좌우 padding
