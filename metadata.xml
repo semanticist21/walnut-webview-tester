@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <!-- App Store Connect Metadata -->
+
+    <!-- Title: 30 characters max -->
+    <title>Wallnut: WebView Tester</title>
+
+    <!-- Subtitle: 30 characters max -->
+    <subtitle>WKWebView DevTools for iOS</subtitle>
+
+    <!-- Description: 4000 characters max -->
+    <description>
+Wallnut is a developer tool for testing and debugging WKWebView configurations on iOS devices.
+
+## Features
+
+**WebView Testing**
+- Toggle between WKWebView and SFSafariViewController
+- Real-time configuration changes (JavaScript, cookies, media playback, etc.)
+- Responsive viewport resizing for testing different screen sizes
+- Screenshot capture (WKWebView only)
+
+**Built-in DevTools**
+- Console: Capture JavaScript console.log, warn, error messages
+- Network: Monitor fetch/XHR requests with timing and response data
+- Storage: Inspect localStorage, sessionStorage, and cookies
+- Performance: View Web Vitals (LCP, FID, CLS) and Navigation Timing
+- Sources: Browse DOM tree, stylesheets, and inline scripts
+- Accessibility: axe-core based accessibility audit
+
+**Developer Utilities**
+- API Capability detection (Geolocation, Camera, WebRTC, etc.)
+- Custom User-Agent configuration
+- Bookmark management for frequently tested URLs
+- Info panel with WebView benchmark results
+
+Note: Some Web APIs are restricted in WKWebView due to WebKit security policies and CORS limitations.
+
+## Requirements
+
+- iOS 18.4+
+- Device permissions required for Camera, Microphone, and Location API testing
+
+Built for developers who need to test WebView behavior without building a separate test app.
+    </description>
+
+    <!-- Keywords: 100 characters max, comma separated -->
+    <keywords>webview,wkwebview,devtools,debug,console,network,developer,safari,testing,inspector</keywords>
+
+    <!-- Promotional Text: 170 characters max (can be updated without new build) -->
+    <promotional_text>Test WKWebView configurations and debug web content with built-in DevTools. No Xcode required.</promotional_text>
+
+    <!-- What's New / Release Notes -->
+    <whats_new>
+- Initial release
+- WKWebView and SFSafariViewController support
+- DevTools: Console, Network, Storage, Performance, Sources, Accessibility
+- API Capability detection and benchmarks
+    </whats_new>
+
+    <!-- Support URL -->
+    <support_url>https://github.com/anthropics/wallnut/issues</support_url>
+
+    <!-- Privacy Policy URL -->
+    <privacy_url>https://github.com/anthropics/wallnut/blob/main/PRIVACY.md</privacy_url>
+
+    <!-- Category -->
+    <primary_category>Developer Tools</primary_category>
+    <secondary_category>Utilities</secondary_category>
+
+    <!-- Age Rating: 4+, 9+, 13+, 16+, 18+ (region-specific ratings may vary) -->
+    <!-- Set via App Store Connect questionnaire -->
+    <age_rating>17+</age_rating>
+    <age_rating_reason>Unrestricted Web Access - app allows browsing any URL</age_rating_reason>
+</metadata>
