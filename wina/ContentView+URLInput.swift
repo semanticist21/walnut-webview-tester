@@ -235,7 +235,7 @@ extension ContentView {
                     }
                 } else {
                     ThemeToggleButton()
-                    BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !bookmarks.isEmpty)
+                    BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: !urlStorage.bookmarks.isEmpty)
                     AboutButton(showAbout: $showAbout)
                 }
             }

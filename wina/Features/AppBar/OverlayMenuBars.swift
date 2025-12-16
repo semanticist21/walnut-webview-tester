@@ -17,6 +17,7 @@ struct OverlayMenuBars: View {
     let onHome: () -> Void
     let onURLChange: (String) -> Void
     let navigator: WebViewNavigator?
+    let urlStorage: URLStorageManager
     @Binding var showSettings: Bool
     @Binding var showBookmarks: Bool
     @Binding var showInfo: Bool
@@ -34,7 +35,6 @@ struct OverlayMenuBars: View {
     // WKWebView 내부 input 필드의 키보드 표시 상태를 추적한다
     @State private var isKeyboardVisible: Bool = false
     @State private var showPhotoPermissionAlert: Bool = false
-    @FocusState private var urlInputFocused: Bool
 
     private let topBarHeight: CGFloat = 64
     private let bottomBarHeight: CGFloat = 56
@@ -100,7 +100,14 @@ struct OverlayMenuBars: View {
         // URL 변경 overlay - bottomBar 조건부 렌더링과 독립적으로 유지
         .overlay {
             if showURLInput {
-                urlInputOverlay
+                URLInputOverlayView(
+                    urlInputText: $urlInputText,
+                    showURLInput: $showURLInput,
+                    showBookmarks: $showBookmarks,
+                    urlStorage: urlStorage,
+                    currentURL: navigator?.currentURL?.absoluteString,
+                    onURLChange: onURLChange
+                )
             }
         }
         .alert("Photo Access Required", isPresented: $showPhotoPermissionAlert) {
@@ -296,95 +303,6 @@ struct OverlayMenuBars: View {
         }
     }
 
-    // MARK: - URL Input Overlay
-
-    private var urlInputOverlay: some View {
-        ZStack {
-            // Dimmed background
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    urlInputFocused = false
-                    showURLInput = false
-                }
-
-            // Input card
-            VStack(spacing: 16) {
-                Text("Change URL")
-                    .font(.headline)
-
-                // URL input with clear button
-                HStack(spacing: 8) {
-                    TextField("Enter URL", text: $urlInputText)
-                        .textFieldStyle(.plain)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.URL)
-                        .submitLabel(.go)
-                        .focused($urlInputFocused)
-                        .onSubmit {
-                            if !urlInputText.isEmpty {
-                                onURLChange(urlInputText)
-                                showURLInput = false
-                            }
-                        }
-
-                    // Clear button
-                    if !urlInputText.isEmpty {
-                        Button {
-                            urlInputText = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 32, height: 32)
-                                .contentShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .backport.glassEffect(in: .capsule)
-
-                // Action buttons
-                HStack(spacing: 12) {
-                    Button {
-                        urlInputFocused = false
-                        showURLInput = false
-                    } label: {
-                        Text("Cancel")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.plain)
-                    .backport.glassEffect(in: .capsule)
-
-                    Button {
-                        if !urlInputText.isEmpty {
-                            onURLChange(urlInputText)
-                            showURLInput = false
-                        }
-                    } label: {
-                        Text("Go")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.plain)
-                    .backport.glassEffect(in: .capsule)
-                    .opacity(urlInputText.isEmpty ? 0.5 : 1)
-                    .disabled(urlInputText.isEmpty)
-                }
-            }
-            .padding(20)
-            .frame(width: 320)
-            .backport.glassEffect(in: .rect(cornerRadius: 24))
-        }
-        .onAppear {
-            urlInputFocused = true
-        }
-    }
-
     // MARK: - Screenshot
 
     private func takeScreenshotWithFeedback() {
@@ -490,6 +408,7 @@ struct OverlayMenuBars: View {
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,
+            urlStorage: .shared,
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),
@@ -516,6 +435,7 @@ struct OverlayMenuBars: View {
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,
+            urlStorage: .shared,
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),

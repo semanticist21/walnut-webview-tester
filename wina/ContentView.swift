@@ -29,14 +29,13 @@ struct ContentView: View {
     @State var showWebView: Bool = false
     @State private var loadedURL = ""
     @State private var webViewID = UUID()
-    @State var bookmarks: [String] = []
-    @State private var cachedRecentURLs: [String] = []
     @State var validationTask: Task<Void, Never>?
     @State private var webViewNavigator = WebViewNavigator()
     @State private var storageManager = StorageManager()
     @FocusState var textFieldFocused: Bool
-    @AppStorage("recentURLs") private var recentURLsData = Data()
-    @AppStorage("bookmarkedURLs") private var bookmarkedURLsData = Data()
+
+    // Shared URL storage
+    var urlStorage: URLStorageManager { URLStorageManager.shared }
 
     // Quick options (synced with Settings)
     @AppStorage("cleanStart") var cleanStart = true
@@ -59,19 +58,8 @@ struct ContentView: View {
         return heightRatio <= 0.83
     }
 
-    private func decodeRecentURLs() -> [String] {
-        (try? JSONDecoder().decode([String].self, from: recentURLsData)) ?? []
-    }
-
-    private func loadBookmarks() -> [String] {
-        (try? JSONDecoder().decode([String].self, from: bookmarkedURLsData)) ?? []
-    }
-
     var filteredURLs: [String] {
-        if urlText.isEmpty {
-            return cachedRecentURLs
-        }
-        return cachedRecentURLs.filter { $0.localizedCaseInsensitiveContains(urlText) }
+        urlStorage.filteredHistory(query: urlText)
     }
 
     let urlParts = [
@@ -102,7 +90,7 @@ struct ContentView: View {
             if showWebView {
                 OverlayMenuBars(
                     showWebView: showWebView,
-                    hasBookmarks: !bookmarks.isEmpty,
+                    hasBookmarks: !urlStorage.bookmarks.isEmpty,
                     useSafariVC: useSafariWebView,
                     isOverlayMode: !shouldBarsBeExpanded,
                     onHome: {
@@ -122,6 +110,9 @@ struct ContentView: View {
                         }
                     },
                     onURLChange: { newURL in
+                        // Add to history
+                        urlStorage.addToHistory(newURL)
+
                         // Load in same WebView instance (preserves history)
                         if !useSafariWebView {
                             webViewNavigator.loadURL(newURL)
@@ -132,6 +123,7 @@ struct ContentView: View {
                         }
                     },
                     navigator: useSafariWebView ? nil : webViewNavigator,
+                    urlStorage: urlStorage,
                     showSettings: $showSettings,
                     showBookmarks: $showBookmarks,
                     showInfo: $showInfo,
@@ -159,15 +151,15 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showBookmarks) {
             BookmarksSheet(
-                bookmarkedURLs: bookmarks,
+                bookmarkedURLs: urlStorage.bookmarks,
                 onSelect: { url in
                     urlText = url
                 },
                 onDelete: { url in
-                    removeBookmark(url)
+                    urlStorage.removeBookmark(url)
                 },
                 onAdd: { url in
-                    addBookmark(url)
+                    urlStorage.addBookmark(url)
                 },
                 currentURL: urlText
             )
@@ -265,16 +257,6 @@ struct ContentView: View {
                 webViewID = UUID()
             }
         }
-        .task {
-            cachedRecentURLs = decodeRecentURLs()
-            bookmarks = loadBookmarks()
-        }
-        .onChange(of: recentURLsData) { _, _ in
-            cachedRecentURLs = decodeRecentURLs()
-        }
-        .onChange(of: bookmarkedURLsData) { _, _ in
-            bookmarks = loadBookmarks()
-        }
     }
 
     // MARK: - URL Actions (internal for extension access)
@@ -282,21 +264,8 @@ struct ContentView: View {
     func submitURL() {
         guard !urlText.isEmpty else { return }
 
-        var urls = cachedRecentURLs
-        urls.removeAll { $0 == urlText }
-        urls.insert(urlText, at: 0)
-        if urls.count > 20 {
-            urls = Array(urls.prefix(20))
-        }
-        cachedRecentURLs = urls
-
-        // Background JSON encoding
-        let urlsToSave = urls
-        Task.detached(priority: .utility) {
-            if let data = try? JSONEncoder().encode(urlsToSave) {
-                await MainActor.run { recentURLsData = data }
-            }
-        }
+        // Add to history via shared storage
+        urlStorage.addToHistory(urlText)
 
         // Clean Start: clear all website data and DevTools logs before loading
         if cleanStart {
@@ -335,42 +304,7 @@ struct ContentView: View {
     }
 
     func removeURL(_ url: String) {
-        var urls = cachedRecentURLs
-        urls.removeAll { $0 == url }
-        cachedRecentURLs = urls
-
-        // Background JSON encoding
-        let urlsToSave = urls
-        Task.detached(priority: .utility) {
-            if let data = try? JSONEncoder().encode(urlsToSave) {
-                await MainActor.run { recentURLsData = data }
-            }
-        }
-    }
-
-    private func addBookmark(_ url: String) {
-        guard !bookmarks.contains(url) else { return }
-        bookmarks.insert(url, at: 0)
-
-        // Background JSON encoding
-        let bookmarksToSave = bookmarks
-        Task.detached(priority: .utility) {
-            if let data = try? JSONEncoder().encode(bookmarksToSave) {
-                await MainActor.run { bookmarkedURLsData = data }
-            }
-        }
-    }
-
-    private func removeBookmark(_ url: String) {
-        bookmarks.removeAll { $0 == url }
-
-        // Background JSON encoding
-        let bookmarksToSave = bookmarks
-        Task.detached(priority: .utility) {
-            if let data = try? JSONEncoder().encode(bookmarksToSave) {
-                await MainActor.run { bookmarkedURLsData = data }
-            }
-        }
+        urlStorage.removeFromHistory(url)
     }
 
     func validateURL() {
