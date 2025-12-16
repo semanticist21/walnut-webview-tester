@@ -20,10 +20,6 @@ struct URLInputOverlayView: View {
 
     @FocusState private var urlInputFocused: Bool
 
-    private var filteredHistory: [String] {
-        urlStorage.filteredHistory(query: urlInputText)
-    }
-
     var body: some View {
         ZStack {
             // Dimmed background
@@ -35,18 +31,16 @@ struct URLInputOverlayView: View {
                 }
 
             // Input card
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 // URL input row
                 urlInputRow
 
-                // History section
-                if !filteredHistory.isEmpty || urlInputText.isEmpty {
-                    ScrollView {
-                        historySection
-                    }
-                    .frame(maxHeight: 240)
-                    .scrollBounceBehavior(.basedOnSize)
+                // History section - 4 items height with scroll
+                ScrollView {
+                    historySection
                 }
+                .frame(height: 160)  // ~4 items (40px each)
+                .scrollBounceBehavior(.basedOnSize)
 
                 // Cancel button
                 Button {
@@ -56,11 +50,13 @@ struct URLInputOverlayView: View {
                     Text("Cancel")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 10)
             .frame(width: 340)
             .backport.glassEffect(in: .rect(cornerRadius: 24))
         }
@@ -140,7 +136,8 @@ struct URLInputOverlayView: View {
             .buttonStyle(.plain)
             .disabled(urlInputText.isEmpty)
         }
-        .padding(.horizontal, 12)
+        .padding(.leading, 18)
+        .padding(.trailing, 10)
         .padding(.vertical, 10)
         .backport.glassEffect(in: .capsule)
     }
@@ -154,36 +151,29 @@ struct URLInputOverlayView: View {
 
     // MARK: - History Section
 
+    @ViewBuilder
     private var historySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Section header
-            HStack(spacing: 6) {
-                Image(systemName: "clock")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                Text("History")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 4)
+        let history = urlStorage.history
+        let filtered = urlInputText.isEmpty ? history : history.filter {
+            $0.localizedCaseInsensitiveContains(urlInputText)
+        }
 
-            if filteredHistory.isEmpty {
-                Text("No history yet")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 8)
-            } else {
-                ForEach(filteredHistory, id: \.self) { url in
-                    historyRow(url: url)
+        if filtered.isEmpty {
+            Text(history.isEmpty ? "No history yet" : "No matches")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 16)
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(filtered.enumerated()), id: \.element) { index, url in
+                    historyRow(url: url, isLast: index == filtered.count - 1)
                 }
             }
         }
     }
 
-    private func historyRow(url: String) -> some View {
+    private func historyRow(url: String, isLast: Bool) -> some View {
         Button {
             urlInputText = url
             urlStorage.addToHistory(url)
@@ -191,20 +181,38 @@ struct URLInputOverlayView: View {
             showURLInput = false
         } label: {
             HStack(spacing: 8) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14))
                 Text(url)
-                    .font(.subheadline)
+                    .font(.system(size: 14))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .trailing) {
+            Button {
+                urlStorage.removeFromHistory(url)
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 12))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 6)
+        }
+        .overlay(alignment: .bottom) {
+            if !isLast {
+                Divider()
+                    .padding(.horizontal, 12)
+            }
+        }
     }
 }
