@@ -167,34 +167,27 @@ struct ContentView: View {
         .sheet(isPresented: $showInfo) {
             if useSafariWebView {
                 SafariVCInfoView()
+                    .standardSheet()
             } else {
                 // Pass navigator only when WebView is loaded (for live page testing)
                 InfoView(navigator: showWebView ? webViewNavigator : nil)
+                    .standardSheet()
             }
         }
         .sheet(isPresented: $showConsole) {
             ConsoleView(consoleManager: webViewNavigator.consoleManager)
-                .presentationDetents([.fraction(0.35), .medium, .large])
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .presentationDragIndicator(.visible)
+                .devToolsSheet()
         }
         .sheet(isPresented: $showNetwork) {
             NetworkView(
                 networkManager: webViewNavigator.networkManager,
                 resourceManager: webViewNavigator.resourceManager
             )
-            .presentationDetents([.fraction(0.35), .medium, .large])
-            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-            .presentationContentInteraction(.scrolls)
-            .presentationDragIndicator(.visible)
+            .devToolsSheet()
         }
         .sheet(isPresented: $showStorage) {
             StorageView(storageManager: storageManager, navigator: webViewNavigator)
-                .presentationDetents([.fraction(0.35), .medium, .large])
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .presentationDragIndicator(.visible)
+                .devToolsSheet()
         }
         .sheet(isPresented: $showPerformance) {
             PerformanceView(
@@ -224,24 +217,15 @@ struct ContentView: View {
                     }
                 }
             )
-            .presentationDetents([.medium, .large], selection: .constant(.medium))
-            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-            .presentationContentInteraction(.scrolls)
-            .presentationDragIndicator(.visible)
+            .standardSheet()
         }
         .sheet(isPresented: $showEditor) {
             SourcesView(navigator: webViewNavigator)
-                .presentationDetents([.medium, .large], selection: .constant(.medium))
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .presentationDragIndicator(.visible)
+                .standardSheet()
         }
         .sheet(isPresented: $showAccessibility) {
             AccessibilityAuditView(navigator: webViewNavigator)
-                .presentationDetents([.medium, .large], selection: .constant(.medium))
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .presentationDragIndicator(.visible)
+                .standardSheet()
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
@@ -313,6 +297,28 @@ struct ContentView: View {
             return
         }
         urlValidationState = URLValidator.isValidURL(urlText) ? .valid : .invalid
+    }
+}
+
+// MARK: - Sheet Presentation Modifiers
+
+private extension View {
+    /// DevTools sheet style with compact option (.fraction(0.35), .medium, .large)
+    func devToolsSheet() -> some View {
+        self
+            .presentationDetents([.fraction(0.35), .medium, .large], selection: .constant(.medium))
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationContentInteraction(.scrolls)
+            .presentationDragIndicator(.visible)
+    }
+
+    /// Standard sheet style (.medium, .large)
+    func standardSheet() -> some View {
+        self
+            .presentationDetents([.medium, .large], selection: .constant(.medium))
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationContentInteraction(.scrolls)
+            .presentationDragIndicator(.visible)
     }
 }
 
