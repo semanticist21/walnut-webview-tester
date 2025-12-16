@@ -1,0 +1,29 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "exclamationmark",
+    "magnifyingglass",
+    "checkmark",
+    "xmark",
+    "chevron",
+    "curlybraces",
+    "gearshape",
+    "ellipsis",
+    "arrowtriangle",
+    "externaldrive",
+    "icloud",
+    "slowmo",
+    "timelapse",
+    "airplayaudio",
+    "airplayvideo",
+    "waveform",
+    "textformat"
+  ],
+  "ignorePaths": [
+    "*.xcodeproj/**",
+    "*.xcassets/**",
+    "Pods/**",
+    "DerivedData/**"
+  ]
+}
