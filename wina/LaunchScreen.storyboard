@@ -16,19 +16,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchIcon" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-hae">
-                                <rect key="frame" x="116.66666666666667" y="346" width="160" height="160"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="160" id="5Ye-0z-bVN"/>
-                                    <constraint firstAttribute="height" constant="160" id="8Hj-2K-mXy"/>
-                                </constraints>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="SplashImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-hae">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="YRO-k0-hae" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="2kL-8d-j3x"/>
-                            <constraint firstItem="YRO-k0-hae" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Fyc-XZ-gMv"/>
+                            <constraint firstItem="YRO-k0-hae" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="4aP-1L-8j9"/>
+                            <constraint firstItem="YRO-k0-hae" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="5yV-2q-9jK"/>
+                            <constraint firstAttribute="trailing" secondItem="YRO-k0-hae" secondAttribute="trailing" id="8u3-7p-9jL"/>
+                            <constraint firstAttribute="bottom" secondItem="YRO-k0-hae" secondAttribute="bottom" id="9kL-1m-1jN"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -38,7 +36,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchIcon" width="1024" height="1024"/>
+        <image name="SplashImage" width="1284" height="2778"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
