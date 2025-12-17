@@ -38,6 +38,12 @@ enum BarConstants {
         barHeight * 2 + additionalSpacing
     }
 
+    /// Calculates the "App" preset height ratio for WebView
+    /// Returns the height ratio that fits the WebView within the app's UI bars
+    static func appContainerHeightRatio(for screenHeight: CGFloat) -> Double {
+        1.0 - (totalUIHeight / screenHeight)
+    }
+
     // MARK: - Sheet Presentation
 
     /// Standard sheet detents with compact option

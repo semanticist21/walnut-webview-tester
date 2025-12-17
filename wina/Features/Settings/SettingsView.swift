@@ -203,7 +203,7 @@ struct LiveSettingsView: View {
         findInteractionEnabled = false
         customUserAgent = ""
         webViewWidthRatio = 1.0
-        webViewHeightRatio = 0.82
+        webViewHeightRatio = BarConstants.appContainerHeightRatio(for: ScreenUtility.screenSize.height)
     }
 }
 
@@ -696,7 +696,7 @@ struct SettingsView: View {
 
         // WebView Size (App preset)
         webViewWidthRatio = 1.0
-        webViewHeightRatio = 0.82
+        webViewHeightRatio = BarConstants.appContainerHeightRatio(for: ScreenUtility.screenSize.height)
     }
 }
 

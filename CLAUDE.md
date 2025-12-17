@@ -92,6 +92,20 @@ func applyChanges() { storedValue = localValue; webViewID = UUID(); dismiss() }
 func resetToDefaults() { localValue = false }  // 저장 X
 ```
 
+### WebView 크기 초기화 패턴
+
+App preset 계산은 `BarConstants.appContainerHeightRatio(for:)` 사용 (중앙화).
+
+```swift
+// ✅ 동적 계산 (기기별 정확한 값)
+let heightRatio = BarConstants.appContainerHeightRatio(for: ScreenUtility.screenSize.height)
+
+// ❌ 하드코딩 (특정 기기에만 맞음)
+let heightRatio = 0.82
+```
+
+**초기화 시점**: `winaApp.init()` 대신 `ContentView.onAppear`에서 실행 (Scene 준비 후 `ScreenUtility.screenSize` 정확함)
+
 ### SWR 패턴 (StorageManager)
 
 로딩 인디케이터 없이 기존 데이터 표시 → 백그라운드 갱신 → atomic 업데이트

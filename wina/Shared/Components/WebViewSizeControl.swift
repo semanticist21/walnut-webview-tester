@@ -14,8 +14,7 @@ struct WebViewSizeControl: View {
     @Binding var heightRatio: Double
 
     private var appContainerHeightRatio: Double {
-        // Uses BarConstants.totalUIHeight (barHeight * 2 + additionalSpacing)
-        return 1.0 - (BarConstants.totalUIHeight / screenSize.height)
+        BarConstants.appContainerHeightRatio(for: screenSize.height)
     }
 
     private var screenSize: CGSize {
