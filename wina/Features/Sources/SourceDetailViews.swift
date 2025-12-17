@@ -7,6 +7,25 @@
 
 import SwiftUI
 
+// MARK: - CSS Property
+
+/// Represents a single CSS property with override and importance info
+struct CSSProperty: Identifiable {
+    let id: String  // "ruleId-propertyName" for uniqueness
+    let property: String
+    let value: String
+    let isImportant: Bool  // Has !important flag
+    var isOverridden: Bool  // Overridden by higher specificity rule
+
+    init(property: String, value: String, isImportant: Bool = false, isOverridden: Bool = false, ruleId: Int = 0) {
+        self.id = "\(ruleId)-\(property)"
+        self.property = property
+        self.value = value
+        self.isImportant = isImportant
+        self.isOverridden = isOverridden
+    }
+}
+
 // MARK: - Matched CSS Rule
 
 /// Represents a matched CSS rule with its source
@@ -15,7 +34,7 @@ struct MatchedCSSRule: Identifiable {
     let selector: String
     let source: CSSSource
     let layer: String?  // CSS @layer name (e.g., "base", "utilities")
-    let properties: [(property: String, value: String)]
+    var properties: [CSSProperty]  // Changed to CSSProperty with override info
     let specificity: Int  // For sorting
     let isCORSBlocked: Bool  // True if stylesheet couldn't be accessed due to CORS
 
@@ -24,7 +43,7 @@ struct MatchedCSSRule: Identifiable {
         selector: String,
         source: CSSSource,
         layer: String? = nil,
-        properties: [(property: String, value: String)],
+        properties: [CSSProperty],
         specificity: Int,
         isCORSBlocked: Bool = false
     ) {
@@ -555,7 +574,7 @@ struct ElementDetailView: View {
             }
 
             let selector = item["selector"] as? String ?? ""
-            let propsArray = item["properties"] as? [[String: String]] ?? []
+            let propsArray = item["properties"] as? [[String: Any]] ?? []
             let specificity = item["specificity"] as? Int ?? 0
             let corsBlocked = item["corsBlocked"] as? Bool ?? false
             let layer = item["layer"] as? String  // CSS @layer name
@@ -579,10 +598,19 @@ struct ElementDetailView: View {
                 source = .unknown
             }
 
-            // Parse properties
-            let properties = propsArray.compactMap { propDict -> (String, String)? in
-                guard let prop = propDict["p"], let val = propDict["v"] else { return nil }
-                return (prop, val)
+            // Parse properties with !important and override info
+            let properties = propsArray.compactMap { propDict -> CSSProperty? in
+                guard let prop = propDict["p"] as? String,
+                      let val = propDict["v"] as? String else { return nil }
+                let isImportant = propDict["i"] as? Bool ?? false
+                let isOverridden = propDict["o"] as? Bool ?? false
+                return CSSProperty(
+                    property: prop,
+                    value: val,
+                    isImportant: isImportant,
+                    isOverridden: isOverridden,
+                    ruleId: id
+                )
             }
 
             return MatchedCSSRule(
@@ -753,7 +781,8 @@ private enum ElementDetailScripts {
             for (let i = 0; i < style.length; i++) {
                 const prop = style[i];
                 const val = style.getPropertyValue(prop);
-                if (val) props.push({p: prop, v: val});
+                const priority = style.getPropertyPriority(prop);
+                if (val) props.push({p: prop, v: val, i: priority === 'important'});
             }
             return props;
         }
@@ -789,6 +818,25 @@ private enum ElementDetailScripts {
             if (sheet.href) { sourceInfo = {type: 'external', href: sheet.href}; } else { sourceInfo = {type: 'styleTag', index: styleTagIndex++}; }
             try { const cssRules = sheet.cssRules || sheet.rules; if (!cssRules) continue; processRules(cssRules, sourceInfo); }
             catch(e) { if (sheet.href) { rules.push({ id: ruleId++, selector: '', source: sourceInfo, properties: [], specificity: 0, corsBlocked: true }); } }
+        }
+        // Calculate overrides: for each property, find winner by specificity + !important
+        const propWinners = {};
+        for (let ri = rules.length - 1; ri >= 0; ri--) {
+            const r = rules[ri];
+            for (const prop of r.properties) {
+                const key = prop.p;
+                const score = (prop.i ? 10000 : 0) + r.specificity;
+                if (!propWinners[key] || score >= propWinners[key].score) {
+                    propWinners[key] = { ruleId: r.id, propIdx: r.properties.indexOf(prop), score };
+                }
+            }
+        }
+        // Mark overridden properties
+        for (const r of rules) {
+            for (const prop of r.properties) {
+                const winner = propWinners[prop.p];
+                prop.o = !(winner && winner.ruleId === r.id && winner.propIdx === r.properties.indexOf(prop));
+            }
         }
         return JSON.stringify(rules.slice(0, 100));
         """
@@ -974,8 +1022,12 @@ private struct MatchedRuleRowView: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: 2) {
-                    ForEach(Array(rule.properties.enumerated()), id: \.offset) { _, prop in
-                        FormattedCSSPropertyRow(property: prop.0, value: prop.1)
+                    ForEach(rule.properties) { prop in
+                        FormattedCSSPropertyRow(
+                            property: prop.property,
+                            value: prop.value,
+                            isOverridden: prop.isOverridden
+                        )
                     }
                 }
                 .padding(.leading, 16)

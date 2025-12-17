@@ -159,11 +159,13 @@ enum CSSFormatter {
 struct FormattedCSSPropertyRow: View {
     let property: String
     let value: String
+    var isOverridden: Bool = false
 
     @Environment(\.colorScheme) private var colorScheme
 
-    private var parsedColor: Color? {
-        CSSColorParser.parse(value)
+    /// Extract all colors from value (supports multiple colors like scrollbar-color)
+    private var extractedColors: [Color] {
+        CSSColorParser.extractColors(from: value).map(\.color)
     }
 
     var body: some View {
@@ -172,25 +174,28 @@ struct FormattedCSSPropertyRow: View {
             Text(property)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(CSSSyntaxColors.property(for: colorScheme))
+                .strikethrough(isOverridden, color: .secondary)
 
             Text(":")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.tertiary)
 
-            // Color swatch before value (if applicable)
-            if let color = parsedColor {
+            // Color swatches before value - supports multiple colors
+            ForEach(Array(extractedColors.enumerated()), id: \.offset) { _, color in
                 ColorSwatchView(color: color)
             }
 
             // Value (formatted based on type)
             FormattedValueText(value: value)
                 .fixedSize(horizontal: false, vertical: true)
+                .strikethrough(isOverridden, color: .secondary)
 
             Text(";")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 1)
+        .opacity(isOverridden ? 0.6 : 1.0)
     }
 }
 
