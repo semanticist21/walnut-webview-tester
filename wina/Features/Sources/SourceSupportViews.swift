@@ -94,17 +94,17 @@ struct CSSPropertyRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
-            // Color preview swatch
-            if let color = parsedColor {
-                ColorSwatchView(color: color)
-            }
-
             Text(property)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.primary)
             Text(":")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.tertiary)
+
+            // Color preview swatch (before value)
+            if let color = parsedColor {
+                ColorSwatchView(color: color)
+            }
 
             if isLongValue && !isExpanded {
                 Text(value.prefix(35) + "...")

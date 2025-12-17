@@ -646,40 +646,52 @@ struct ElementDetailView: View {
 
 /// JavaScript scripts for element detail fetching
 private enum ElementDetailScripts {
-    /// Script to fetch computed styles that differ from defaults
+    /// Script to fetch computed styles that differ from defaults (Chrome DevTools style)
+    /// Uses isolated iframe to get true initial values without inheritance
     static func computedStyles(selector: String) -> String {
         """
         (function() {
             const el = document.querySelector('\(selector)');
             if (!el) return '{}';
 
-            // Create a reference element of the same tag to compare defaults
             const tagName = el.tagName.toLowerCase();
-            const ref = document.createElement(tagName);
-            ref.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
-            document.body.appendChild(ref);
-
             const styles = window.getComputedStyle(el);
-            const refStyles = window.getComputedStyle(ref);
             const result = {};
 
-            // Compare and keep only non-default values (exclude CSS variables)
-            for (let i = 0; i < styles.length; i++) {
-                const prop = styles[i];
-                // Skip CSS custom properties (shown only in "Show all" mode)
-                if (prop.startsWith('--')) continue;
+            // Create isolated iframe to get true CSS initial values (no inheritance)
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden;';
+            document.body.appendChild(iframe);
 
-                const val = styles.getPropertyValue(prop);
-                const refVal = refStyles.getPropertyValue(prop);
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write('<!DOCTYPE html><html><head></head><body></body></html>');
+                iframeDoc.close();
 
-                // Keep if different from default
-                if (val !== refVal && val && val.trim()) {
-                    result[prop] = val;
+                // Create reference element in isolated environment (no inherited styles)
+                const ref = iframeDoc.createElement(tagName);
+                iframeDoc.body.appendChild(ref);
+                const refStyles = iframe.contentWindow.getComputedStyle(ref);
+
+                // Compare: element's computed vs isolated initial values
+                for (let i = 0; i < styles.length; i++) {
+                    const prop = styles[i];
+                    // Skip CSS custom properties (shown only in "Show all" mode)
+                    if (prop.startsWith('--')) continue;
+
+                    const val = styles.getPropertyValue(prop);
+                    const refVal = refStyles.getPropertyValue(prop);
+
+                    // Keep if different from initial value
+                    if (val !== refVal && val && val.trim()) {
+                        result[prop] = val;
+                    }
                 }
+            } finally {
+                // Cleanup
+                document.body.removeChild(iframe);
             }
-
-            // Cleanup
-            document.body.removeChild(ref);
 
             return JSON.stringify(result);
         })();
@@ -859,18 +871,17 @@ private struct MatchedRulesGroupView: View {
         .background(layerBackground, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    /// Background color based on layer type
+    /// Background color based on CSS Cascade standard (source-based, not layer name)
+    /// CSS Cascade priority: inline > unlayered > layered
     private var layerBackground: Color {
-        guard let layer else {
+        switch source {
+        case .inline:
+            // Inline styles have high cascade priority - subtle orange highlight
+            return Color.orange.opacity(0.08)
+        default:
+            // All other sources use neutral background
+            // @layer existence is indicated by icon, not background color
             return Color.secondary.opacity(0.05)
-        }
-        // Different subtle colors for different layers (Chrome DevTools style)
-        switch layer.lowercased() {
-        case "base": return Color.blue.opacity(0.05)
-        case "utilities": return Color.purple.opacity(0.05)
-        case "theme": return Color.green.opacity(0.05)
-        case "components": return Color.orange.opacity(0.05)
-        default: return Color.secondary.opacity(0.05)
         }
     }
 

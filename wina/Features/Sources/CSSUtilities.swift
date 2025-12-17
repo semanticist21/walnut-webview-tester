@@ -168,11 +168,6 @@ struct FormattedCSSPropertyRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
-            // Color swatch if applicable
-            if let color = parsedColor {
-                ColorSwatchView(color: color)
-            }
-
             // Property name (keyword color)
             Text(property)
                 .font(.system(size: 11, design: .monospaced))
@@ -181,6 +176,11 @@ struct FormattedCSSPropertyRow: View {
             Text(":")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.tertiary)
+
+            // Color swatch before value (if applicable)
+            if let color = parsedColor {
+                ColorSwatchView(color: color)
+            }
 
             // Value (formatted based on type)
             FormattedValueText(value: value)
@@ -196,20 +196,47 @@ struct FormattedCSSPropertyRow: View {
 
 // MARK: - Formatted Value Text
 
-/// Syntax highlighted value text
+/// Syntax highlighted value text with !important detection (CSS Cascade standard)
 struct FormattedValueText: View {
     let value: String
 
     @Environment(\.colorScheme) private var colorScheme
 
-    var body: some View {
-        Text(value)
-            .font(.system(size: 11, design: .monospaced))
-            .foregroundStyle(valueColor)
+    /// Check if value contains !important (highest cascade priority)
+    private var hasImportant: Bool {
+        value.lowercased().contains("!important")
     }
 
-    private var valueColor: Color {
-        let trimmed = value.trimmingCharacters(in: .whitespaces).lowercased()
+    /// Value without !important suffix
+    private var valueWithoutImportant: String {
+        let stripped = value.replacingOccurrences(
+            of: "\\s*!important\\s*",
+            with: "",
+            options: .regularExpression
+        )
+        return stripped.trimmingCharacters(in: .whitespaces)
+    }
+
+    var body: some View {
+        if hasImportant {
+            // CSS Cascade: !important has highest priority - highlight in red
+            HStack(spacing: 2) {
+                Text(valueWithoutImportant)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(valueColor(for: valueWithoutImportant))
+                Text("!important")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.red)
+            }
+        } else {
+            Text(value)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(valueColor(for: value))
+        }
+    }
+
+    private func valueColor(for text: String) -> Color {
+        let trimmed = text.trimmingCharacters(in: .whitespaces).lowercased()
 
         // Color values
         if CSSColorParser.containsColor(trimmed) {
