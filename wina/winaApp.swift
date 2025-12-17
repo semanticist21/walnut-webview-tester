@@ -11,7 +11,16 @@ import SwiftUI
 
 @main
 struct winaApp: App {
-    @AppStorage("isDarkMode") private var isDarkMode = false
+    /// nil = system, "light" = light mode, "dark" = dark mode
+    @AppStorage("colorSchemeOverride") private var colorSchemeOverride: String?
+
+    private var preferredScheme: ColorScheme? {
+        switch colorSchemeOverride {
+        case "light": .light
+        case "dark": .dark
+        default: nil  // System
+        }
+    }
 
     init() {
         // Clear network body cache from previous session (unless preserveLog is enabled)
@@ -36,7 +45,7 @@ struct winaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(isDarkMode ? .dark : .light)
+                .preferredColorScheme(preferredScheme)
         }
     }
 
