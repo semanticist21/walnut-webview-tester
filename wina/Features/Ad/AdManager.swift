@@ -75,7 +75,7 @@ final class AdManager: NSObject {
     @discardableResult
     func showInterstitialAd(options: AdOptions, adUnitId: String) async -> Bool {
         // Skip if user purchased ad removal
-        guard !UserDefaults.standard.bool(forKey: "isAdRemoved") else {
+        guard !StoreManager.shared.isAdRemoved else {
             return false
         }
 

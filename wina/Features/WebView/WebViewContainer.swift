@@ -630,7 +630,11 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             initiatedByFrame frame: WKFrameInfo,
             completionHandler: @escaping () -> Void
         ) {
-            completionHandler()
+            let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                completionHandler()
+            }))
+            presentAlertController(alertController)
         }
 
         // Handle JavaScript confirms
@@ -640,7 +644,14 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             initiatedByFrame frame: WKFrameInfo,
             completionHandler: @escaping (Bool) -> Void
         ) {
-            completionHandler(true)
+            let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                completionHandler(true)
+            }))
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+                completionHandler(false)
+            }))
+            presentAlertController(alertController)
         }
 
         // Handle JavaScript prompts
@@ -651,7 +662,33 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             initiatedByFrame frame: WKFrameInfo,
             completionHandler: @escaping (String?) -> Void
         ) {
-            completionHandler(defaultText)
+            let alertController = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
+            alertController.addTextField { textField in
+                textField.text = defaultText
+            }
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                completionHandler(alertController.textFields?.first?.text)
+            }))
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+                completionHandler(nil)
+            }))
+            presentAlertController(alertController)
+        }
+
+        private func presentAlertController(_ alertController: UIAlertController) {
+            guard let windowScene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
+                let rootViewController = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController
+            else {
+                return
+            }
+            // Find topmost presented view controller
+            var topVC = rootViewController
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            topVC.present(alertController, animated: true)
         }
 
         deinit {

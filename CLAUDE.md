@@ -647,9 +647,11 @@ struct HTMLTextView: UIViewRepresentable {
 ### Info.plist 권한 필요 API
 
 ```
-NSCameraUsageDescription        # Media Devices, WebRTC
-NSMicrophoneUsageDescription    # Media Devices, WebRTC
+NSCameraUsageDescription             # Media Devices, WebRTC
+NSMicrophoneUsageDescription         # Media Devices, WebRTC
 NSLocationWhenInUseUsageDescription  # Geolocation
+NSUserTrackingUsageDescription       # ATT (AdMob 개인화 광고)
+NSPhotoLibraryAddUsageDescription    # 스크린샷 저장
 ```
 
 ### WKWebView에서 항상 미지원
