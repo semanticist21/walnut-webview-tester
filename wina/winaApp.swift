@@ -28,7 +28,7 @@ struct winaApp: App {
             // Give the app a moment to launch and UI to settle before showing the ATT prompt
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
             await MainActor.run {
-                requestATTAuthorization()
+                Self.requestATTAuthorization()
             }
         }
     }
@@ -40,7 +40,7 @@ struct winaApp: App {
         }
     }
 
-    private func requestATTAuthorization() {
+    private static func requestATTAuthorization() {
         ATTrackingManager.requestTrackingAuthorization { status in
             let logger = Logger(subsystem: "com.wallnut.wina", category: "ATT")
             switch status {
