@@ -40,7 +40,10 @@ struct winaApp: App {
                 Self.requestATTAuthorization()
             }
 
-            // Preload interstitial ad after ATT prompt
+            // Wait for StoreManager to check entitlements (determines if user is premium)
+            await StoreManager.shared.checkEntitlements()
+
+            // Preload interstitial ad after ATT prompt (skips if premium user)
             // This triggers local network permission prompt early (if needed by AdMob SDK)
             try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds after ATT
             await AdManager.shared.loadInterstitialAd(adUnitId: AdManager.interstitialAdUnitId)

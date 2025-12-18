@@ -29,8 +29,11 @@ final class AdManager: NSObject {
 
     // MARK: - Ad Unit IDs
 
-    /// Interstitial ad unit ID
+    /// Interstitial ad unit ID (Production)
     static let interstitialAdUnitId = "ca-app-pub-6737616702687889/5962304852"
+
+    /// Google's official test interstitial ad unit ID (always shows test ads)
+    static let testInterstitialAdUnitId = "ca-app-pub-3940256099942544/4411468910"
 
     private var interstitialAd: InterstitialAd?
     private var shownAdIds: Set<String> = []
@@ -50,7 +53,14 @@ final class AdManager: NSObject {
 
     /// Loads an interstitial ad with the given ad unit ID.
     /// - Parameter adUnitId: The AdMob ad unit ID for interstitial ads.
+    /// - Note: Skips loading if user has purchased ad removal (no network request made).
     func loadInterstitialAd(adUnitId: String) async {
+        // Skip loading if user purchased ad removal - no network request
+        guard !StoreManager.shared.isAdRemoved else {
+            logger.info("Ad loading skipped - user has premium")
+            return
+        }
+
         guard !isLoading else { return }
         isLoading = true
 
@@ -60,6 +70,7 @@ final class AdManager: NSObject {
                 request: Request()
             )
             interstitialAd?.fullScreenContentDelegate = self
+            logger.info("Interstitial ad loaded successfully")
         } catch {
             logger.error("Failed to load interstitial ad: \(error.localizedDescription)")
         }
