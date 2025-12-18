@@ -32,13 +32,18 @@ struct winaApp: App {
         // Initialize StoreKit (starts transaction listener, checks entitlements)
         _ = StoreManager.shared
 
-        // Request ATT authorization after a short delay
+        // Request ATT authorization after a short delay, then preload ads
         Task.detached {
             // Give the app a moment to launch and UI to settle before showing the ATT prompt
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
             await MainActor.run {
                 Self.requestATTAuthorization()
             }
+
+            // Preload interstitial ad after ATT prompt
+            // This triggers local network permission prompt early (if needed by AdMob SDK)
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds after ATT
+            await AdManager.shared.loadInterstitialAd(adUnitId: AdManager.interstitialAdUnitId)
         }
     }
 
