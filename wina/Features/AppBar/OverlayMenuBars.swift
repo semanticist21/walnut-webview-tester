@@ -14,6 +14,7 @@ struct OverlayMenuBars: View {
     let hasBookmarks: Bool
     let useSafariVC: Bool
     let isOverlayMode: Bool  // true: pull menu, false: fixed position
+    let erudaModeEnabled: Bool
     let onHome: () -> Void
     let onURLChange: (String) -> Void
     let navigator: WebViewNavigator?
@@ -203,32 +204,36 @@ struct OverlayMenuBars: View {
                         }
                         .buttonStyle(.plain)
 
-                        // Console and Network buttons (only for WKWebView)
+                        // WKWebView-only buttons
                         if !useSafariVC {
-                            BottomBarIconButton(icon: "terminal") {
-                                showConsole = true
+                            // DevTools buttons (hidden when Eruda mode is enabled)
+                            if !erudaModeEnabled {
+                                BottomBarIconButton(icon: "terminal") {
+                                    showConsole = true
+                                }
+
+                                BottomBarIconButton(icon: "chevron.left.forwardslash.chevron.right") {
+                                    showEditor = true
+                                }
+
+                                BottomBarIconButton(icon: "network") {
+                                    showNetwork = true
+                                }
+
+                                BottomBarIconButton(icon: "externaldrive") {
+                                    showStorage = true
+                                }
+
+                                BottomBarIconButton(icon: "gauge.with.dots.needle.bottom.50percent") {
+                                    showPerformance = true
+                                }
+
+                                BottomBarIconButton(icon: "accessibility") {
+                                    showAccessibility = true
+                                }
                             }
 
-                            BottomBarIconButton(icon: "chevron.left.forwardslash.chevron.right") {
-                                showEditor = true
-                            }
-
-                            BottomBarIconButton(icon: "network") {
-                                showNetwork = true
-                            }
-
-                            BottomBarIconButton(icon: "externaldrive") {
-                                showStorage = true
-                            }
-
-                            BottomBarIconButton(icon: "gauge.with.dots.needle.bottom.50percent") {
-                                showPerformance = true
-                            }
-
-                            BottomBarIconButton(icon: "accessibility") {
-                                showAccessibility = true
-                            }
-
+                            // Screenshot button (always visible)
                             BottomBarIconButton(icon: "camera") {
                                 takeScreenshotWithFeedback()
                             }
@@ -374,6 +379,7 @@ private struct BottomBarIconButton: View {
             hasBookmarks: true,
             useSafariVC: false,
             isOverlayMode: true,
+            erudaModeEnabled: false,
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,
@@ -401,6 +407,7 @@ private struct BottomBarIconButton: View {
             hasBookmarks: true,
             useSafariVC: false,
             isOverlayMode: false,
+            erudaModeEnabled: false,
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,

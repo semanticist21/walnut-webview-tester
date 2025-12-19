@@ -44,6 +44,43 @@ extension InfoPopoverButton where S == Color {
     }
 }
 
+// MARK: - Rich Content Info Popover Button
+
+/// A button that shows an info popover with custom content when tapped
+struct RichInfoPopoverButton<S: ShapeStyle, Content: View>: View {
+    let iconColor: S
+    @ViewBuilder let content: () -> Content
+
+    @State private var showInfo = false
+
+    var body: some View {
+        Button {
+            showInfo = true
+        } label: {
+            Image(systemName: "info.circle")
+                .foregroundStyle(iconColor)
+                .font(.footnote)
+                .padding(6)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showInfo) {
+            content()
+                .font(.footnote)
+                .padding()
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+}
+
+// Convenience initializer with default color
+extension RichInfoPopoverButton where S == Color {
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.iconColor = .secondary
+        self.content = content
+    }
+}
+
 // MARK: - Deprecated Popover Button
 
 /// A button that shows a deprecation warning popover when tapped

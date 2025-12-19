@@ -91,13 +91,14 @@ struct ContentView: View {
                 urlInputView
             }
 
-            // Menu bars (hidden when Eruda mode is enabled)
-            if showWebView && !erudaModeEnabled {
+            // Menu bars
+            if showWebView {
                 OverlayMenuBars(
                     showWebView: showWebView,
                     hasBookmarks: !urlStorage.bookmarks.isEmpty,
                     useSafariVC: useSafariWebView,
                     isOverlayMode: !shouldBarsBeExpanded,
+                    erudaModeEnabled: erudaModeEnabled,
                     onHome: {
                         // Close all DevTools sheets before going home
                         showConsole = false

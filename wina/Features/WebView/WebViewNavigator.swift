@@ -235,8 +235,7 @@ class WebViewNavigator {
         let erudaLoaded = await evaluateJavaScript(checkEruda) as? Bool ?? false
 
         if erudaLoaded {
-            // Already loaded, just show it
-            _ = await evaluateJavaScript("eruda.show();")
+            // Already loaded, nothing to do (user can tap Eruda button to open)
             return
         }
 
@@ -247,9 +246,9 @@ class WebViewNavigator {
             return
         }
 
-        // Inject and initialize Eruda
+        // Inject and initialize Eruda (starts hidden, user taps button to open)
         _ = await evaluateJavaScript(erudaScript)
-        _ = await evaluateJavaScript("eruda.init(); eruda.show();")
+        _ = await evaluateJavaScript("eruda.init();")
     }
 
     /// Hide Eruda console if loaded

@@ -215,6 +215,9 @@ struct LoadedSettingsView: View {
     @Binding var loadedURL: String
     let navigator: WebViewNavigator
 
+    @AppStorage("erudaModeEnabled") private var erudaModeEnabled: Bool = false
+    @State private var showErudaWarning: Bool = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -269,6 +272,53 @@ struct LoadedSettingsView: View {
                         )
                     }
                 }
+
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { erudaModeEnabled },
+                        set: { newValue in
+                            if newValue {
+                                showErudaWarning = true
+                            } else {
+                                erudaModeEnabled = false
+                            }
+                        }
+                    )) {
+                        HStack {
+                            SettingsCategoryRow(
+                                icon: "terminal.fill",
+                                iconColor: .mint,
+                                title: "Eruda Console",
+                                description: "In-page developer tools"
+                            )
+                            RichInfoPopoverButton {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Eruda is a third-party mobile console.")
+                                    HStack(spacing: 4) {
+                                        Text("MIT License")
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(.blue.opacity(0.15))
+                                            .foregroundStyle(.blue)
+                                            .clipShape(Capsule())
+                                        Text("©")
+                                            .foregroundStyle(.secondary)
+                                        Link("liriliri", destination: URL(string: "https://github.com/liriliri/eruda")!)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .tint(.mint)
+                } header: {
+                    Text("Third-Party Tools")
+                } footer: {
+                    if erudaModeEnabled {
+                        Label("Built-in DevTools menu is disabled", systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -278,6 +328,22 @@ struct LoadedSettingsView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert("Enable Eruda Console", isPresented: $showErudaWarning) {
+                Button("Cancel", role: .cancel) { }
+                Button("Enable") {
+                    erudaModeEnabled = true
+                }
+            } message: {
+                Text("""
+                    Eruda is a third-party in-page console that will be injected into web pages.
+
+                    • This is open-source software (MIT License)
+                    • Use at your own risk
+                    • The built-in DevTools menu will be disabled while Eruda mode is active
+
+                    You can disable Eruda mode anytime from Settings.
+                    """)
             }
             .task {
                 // Show interstitial ad (30% probability, once per session)
@@ -450,8 +516,26 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+
+                    RichInfoPopoverButton {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Eruda is a third-party mobile console.")
+                            HStack(spacing: 4) {
+                                Text("MIT License")
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.blue.opacity(0.15))
+                                    .foregroundStyle(.blue)
+                                    .clipShape(Capsule())
+                                Text("©")
+                                    .foregroundStyle(.secondary)
+                                Link("liriliri", destination: URL(string: "https://github.com/liriliri/eruda")!)
+                            }
+                        }
+                    }
                 }
             }
+            .tint(.mint)
         } header: {
             Text("Third-Party Tools")
         } footer: {
