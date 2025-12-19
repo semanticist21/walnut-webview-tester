@@ -45,6 +45,9 @@ struct ContentView: View {
     @AppStorage("safariEntersReaderIfAvailable") private var safariEntersReaderIfAvailable = false
     @AppStorage("safariBarCollapsingEnabled") private var safariBarCollapsingEnabled = true
 
+    // Eruda mode (third-party in-page console)
+    @AppStorage("erudaModeEnabled") private var erudaModeEnabled = false
+
     // WebView size settings (for fullscreen detection)
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
@@ -88,8 +91,8 @@ struct ContentView: View {
                 urlInputView
             }
 
-            // Menu bars
-            if showWebView {
+            // Menu bars (hidden when Eruda mode is enabled)
+            if showWebView && !erudaModeEnabled {
                 OverlayMenuBars(
                     showWebView: showWebView,
                     hasBookmarks: !urlStorage.bookmarks.isEmpty,
@@ -136,7 +139,7 @@ struct ContentView: View {
                     showEditor: $showEditor,
                     showAccessibility: $showAccessibility
                 )
-            } else {
+            } else if !showWebView {
                 topBar
             }
         }
@@ -231,6 +234,26 @@ struct ContentView: View {
         .onChange(of: safariBarCollapsingEnabled) { _, _ in
             if useSafariWebView && showWebView {
                 webViewID = UUID()
+            }
+        }
+        // Eruda mode: inject/destroy when toggled
+        .onChange(of: erudaModeEnabled) { _, newValue in
+            guard showWebView && !useSafariWebView else { return }
+            Task {
+                if newValue {
+                    await webViewNavigator.injectEruda()
+                } else {
+                    await webViewNavigator.destroyEruda()
+                }
+            }
+        }
+        // Inject Eruda when WebView loads (if Eruda mode is enabled)
+        .onChange(of: webViewNavigator.currentURL) { _, _ in
+            guard erudaModeEnabled && showWebView && !useSafariWebView else { return }
+            Task {
+                // Small delay to ensure page is ready
+                try? await Task.sleep(for: .milliseconds(500))
+                await webViewNavigator.injectEruda()
             }
         }
     }

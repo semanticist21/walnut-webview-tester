@@ -222,4 +222,43 @@ class WebViewNavigator {
         let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
         return await cookieStore.allCookies()
     }
+
+    // MARK: - Eruda Console
+
+    /// Inject Eruda console into the current page
+    /// Eruda is loaded from bundled JS file to bypass CSP restrictions
+    func injectEruda() async {
+        guard let webView else { return }
+
+        // Check if Eruda is already loaded
+        let checkEruda = "typeof eruda !== 'undefined'"
+        let erudaLoaded = await evaluateJavaScript(checkEruda) as? Bool ?? false
+
+        if erudaLoaded {
+            // Already loaded, just show it
+            _ = await evaluateJavaScript("eruda.show();")
+            return
+        }
+
+        // Load Eruda from bundle
+        guard let erudaURL = Bundle.main.url(forResource: "eruda.min", withExtension: "js"),
+              let erudaScript = try? String(contentsOf: erudaURL, encoding: .utf8) else {
+            // eruda.min.js not found in bundle
+            return
+        }
+
+        // Inject and initialize Eruda
+        _ = await evaluateJavaScript(erudaScript)
+        _ = await evaluateJavaScript("eruda.init(); eruda.show();")
+    }
+
+    /// Hide Eruda console if loaded
+    func hideEruda() async {
+        _ = await evaluateJavaScript("if (typeof eruda !== 'undefined') eruda.hide();")
+    }
+
+    /// Destroy Eruda console completely
+    func destroyEruda() async {
+        _ = await evaluateJavaScript("if (typeof eruda !== 'undefined') eruda.destroy();")
+    }
 }

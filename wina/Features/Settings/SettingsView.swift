@@ -372,6 +372,10 @@ struct SettingsView: View {
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
     @AppStorage("webViewHeightRatio") private var webViewHeightRatio: Double = 0.82
 
+    // Eruda Mode
+    @AppStorage("erudaModeEnabled") private var erudaModeEnabled: Bool = false
+    @State private var showErudaWarning: Bool = false
+
     private var isIPad: Bool {
         UIDevice.current.isIPad
     }
@@ -389,6 +393,7 @@ struct SettingsView: View {
                 displaySection
                 userAgentSection
                 webViewSizeSection
+                erudaSection
                 resetSection
             }
             .navigationTitle("Settings")
@@ -399,6 +404,61 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert("Enable Eruda Console", isPresented: $showErudaWarning) {
+                Button("Cancel", role: .cancel) { }
+                Button("Enable") {
+                    erudaModeEnabled = true
+                }
+            } message: {
+                Text("""
+                    Eruda is a third-party in-page console that will be injected into web pages.
+
+                    • This is open-source software (MIT License)
+                    • Use at your own risk
+                    • The built-in DevTools menu will be disabled while Eruda mode is active
+
+                    You can disable Eruda mode anytime from Settings.
+                    """)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var erudaSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { erudaModeEnabled },
+                set: { newValue in
+                    if newValue {
+                        showErudaWarning = true
+                    } else {
+                        erudaModeEnabled = false
+                    }
+                }
+            )) {
+                HStack(spacing: 12) {
+                    Image(systemName: "terminal.fill")
+                        .font(.title3)
+                        .foregroundStyle(.mint)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Eruda Console")
+                            .font(.body)
+                        Text("In-page developer tools")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text("Third-Party Tools")
+        } footer: {
+            if erudaModeEnabled {
+                Label("Built-in DevTools menu is disabled", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
         }
     }
@@ -697,6 +757,9 @@ struct SettingsView: View {
         // WebView Size (App preset)
         webViewWidthRatio = 1.0
         webViewHeightRatio = BarConstants.appContainerHeightRatio(for: ScreenUtility.screenSize.height)
+
+        // Third-Party Tools
+        erudaModeEnabled = false
     }
 }
 

@@ -98,6 +98,25 @@ struct AboutView: View {
                 }
 
                 Spacer()
+
+                // Third-Party Licenses
+                VStack(spacing: 4) {
+                    Text("Open Source Licenses")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 16) {
+                        Link("Eruda", destination: URL(string: "https://github.com/liriliri/eruda")!)
+                        Link("axe-core", destination: URL(string: "https://github.com/dequelabs/axe-core")!)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+
+                    Text("MIT License")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.bottom, 16)
             }
             .padding(.horizontal, 24)
             .navigationTitle("About")
