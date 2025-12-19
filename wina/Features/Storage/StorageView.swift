@@ -389,6 +389,10 @@ struct StorageView: View {
             )
         }
         .task {
+            await AdManager.shared.showInterstitialAd(
+                options: AdOptions(id: "storage_devtools"),
+                adUnitId: AdManager.interstitialAdUnitId
+            )
             storageManager.setNavigator(navigator)
             await storageManager.refresh()
         }

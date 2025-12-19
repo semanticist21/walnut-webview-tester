@@ -5,6 +5,7 @@
 //  URL input view components for ContentView.
 //
 
+import GoogleMobileAds
 import SwiftUI
 import SwiftUIBackports
 
@@ -23,15 +24,13 @@ extension ContentView {
 
             // Banner ad at bottom (only for non-premium users)
             if !StoreManager.shared.isAdRemoved {
+                let adSize = currentOrientationAnchoredAdaptiveBanner(width: geometry.size.width)
                 VStack {
                     Spacer()
-                    BannerAdView(adUnitId: AdManager.bannerAdUnitId)
-                        .frame(
-                            width: geometry.size.width,
-                            height: 50
-                        )
+                    // TODO: Change to AdManager.bannerAdUnitId for production
+                    BannerAdView(adUnitId: AdManager.testBannerAdUnitId)
+                        .frame(width: adSize.size.width, height: adSize.size.height)
                 }
-                .ignoresSafeArea(edges: .bottom)
             }
 
             VStack(spacing: 16) {

@@ -246,6 +246,12 @@ struct NetworkView: View {
         .sheet(item: $selectedResource) { resource in
             ResourceDetailView(resource: resource)
         }
+        .task {
+            await AdManager.shared.showInterstitialAd(
+                options: AdOptions(id: "network_devtools"),
+                adUnitId: AdManager.interstitialAdUnitId
+            )
+        }
     }
 
     // MARK: - Network Header

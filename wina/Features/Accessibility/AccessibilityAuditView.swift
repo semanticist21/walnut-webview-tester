@@ -215,6 +215,12 @@ struct AccessibilityAuditView: View {
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(content: generateShareText())
         }
+        .task {
+            await AdManager.shared.showInterstitialAd(
+                options: AdOptions(id: "accessibility_devtools"),
+                adUnitId: AdManager.interstitialAdUnitId
+            )
+        }
     }
 
     private func showCopiedFeedback(_ message: String) {

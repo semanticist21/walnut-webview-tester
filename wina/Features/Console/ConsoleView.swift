@@ -289,6 +289,12 @@ struct ConsoleView: View {
                 enabledLogTypes: $enabledLogTypes
             )
         }
+        .task {
+            await AdManager.shared.showInterstitialAd(
+                options: AdOptions(id: "console_devtools"),
+                adUnitId: AdManager.interstitialAdUnitId
+            )
+        }
     }
 
     // MARK: - Console Header

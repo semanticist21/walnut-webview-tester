@@ -62,6 +62,12 @@ struct PerformanceView: View {
                 onCollect()
             }
         }
+        .task {
+            await AdManager.shared.showInterstitialAd(
+                options: AdOptions(id: "performance_devtools"),
+                adUnitId: AdManager.interstitialAdUnitId
+            )
+        }
     }
 
     // MARK: - Header
