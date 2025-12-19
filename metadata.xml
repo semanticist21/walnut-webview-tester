@@ -6,49 +6,49 @@
     <title>Wallnut: WebView Tester</title>
 
     <!-- Subtitle: 30 characters max -->
-    <subtitle>WKWebView DevTools for iOS</subtitle>
+    <subtitle>WebView Tester with DevTools</subtitle>
 
     <!-- Description: 4000 characters max -->
     <description>
-Wallnut is a developer tool for testing and debugging WKWebView configurations on iOS devices.
+Wallnut is a developer tool for testing WKWebView and SFSafariViewController configurations.
 
-## Features
+FEATURES
 
-**WebView Testing**
-- Toggle between WKWebView and SFSafariViewController
-- Real-time configuration changes (JavaScript, cookies, media playback, etc.)
-- Responsive viewport resizing for testing different screen sizes
-- Screenshot capture (WKWebView only)
+WebView Testing
+• Switch between WKWebView and SFSafariViewController modes
+• Real-time configuration changes (JavaScript, cookies, media playback, etc.)
+• Responsive viewport resizing for testing different screen sizes
+• Screenshot capture (WKWebView only)
 
-**Built-in DevTools**
-- Console: Capture JavaScript console.log, warn, error messages
-- Network: Monitor fetch/XHR requests with timing and response data
-- Storage: Inspect localStorage, sessionStorage, and cookies
-- Performance: View Web Vitals (LCP, FID, CLS) and Navigation Timing
-- Sources: Browse DOM tree, stylesheets, and inline scripts
-- Accessibility: axe-core based accessibility audit
+Built-in DevTools (WKWebView)
+• Console: Capture console.log, warn, error, and table outputs
+• Network: Monitor fetch/XHR requests with timing and response data
+• Storage: Inspect localStorage, sessionStorage, and cookies
+• Performance: View Web Vitals (LCP, FID, CLS) and Navigation Timing
+• Sources: Browse DOM tree, stylesheets, and inline scripts
+• Accessibility: axe-core based accessibility audit
 
-**Developer Utilities**
-- API Capability detection (Geolocation, Camera, WebRTC, etc.)
-- Custom User-Agent configuration
-- Bookmark management for frequently tested URLs
-- Info panel with WebView benchmark results
+SFSafariViewController
+• Native Safari experience with content blockers support
+• Safari cookies and login sessions shared
+• Reader mode and Safari extensions available
 
-Note: Some Web APIs are restricted in WKWebView due to WebKit security policies and CORS limitations.
+Developer Utilities
+• API Capability detection (Geolocation, Camera, WebRTC, etc.)
+• Custom User-Agent configuration
+• Bookmark management for frequently tested URLs
+• Device and browser info panel with benchmark results
 
-## Requirements
-
-- iOS 18.4+
-- Device permissions required for Camera, Microphone, and Location API testing
+Note: Some Web APIs are restricted in WKWebView due to WebKit security policies. DevTools features require WKWebView mode.
 
 Built for developers who need to test WebView behavior without building a separate test app.
     </description>
 
     <!-- Keywords: 100 characters max, comma separated -->
-    <keywords>webview,wkwebview,devtools,debug,console,network,developer,safari,testing,inspector</keywords>
+    <keywords>webview,wkwebview,sfsafariviewcontroller,devtools,debug,console,network,developer,safari,webkit,api</keywords>
 
     <!-- Promotional Text: 170 characters max (can be updated without new build) -->
-    <promotional_text>Test WKWebView configurations and debug web content with built-in DevTools. No Xcode required.</promotional_text>
+    <promotional_text>Test WebView configurations in real-time. Built-in DevTools: Console, Network, Storage, Performance, Sources. Customize User Agent, capture screenshots, and more.</promotional_text>
 
     <!-- What's New / Release Notes -->
     <whats_new>

@@ -4,11 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Wallnut (wina)** - iOS WKWebView 테스터 앱
+**Wallnut (wina)** - WKWebView & SFSafariViewController 테스터 앱
 
-WKWebView 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 26.1+ (Tahoe)
+WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 26.1+ (Tahoe)
 
-**주요 기능**: WKWebView/SafariVC 토글, 설정 옵션 테스트, DevTools (Console/Network/Storage/Performance/Sources), API Capability 감지, 북마크, 반응형 크기 조절, 스크린샷 (WKWebView 전용)
+**주요 기능**:
+- **WKWebView**: 설정 옵션 테스트, DevTools (Console/Network/Storage/Performance/Sources/Accessibility), 스크린샷
+- **SFSafariViewController**: Safari 쿠키/세션 공유, Content Blocker, Reader Mode, Safari 확장 지원
+- **공통**: URL 테스트, API Capability 감지, 북마크, 반응형 크기 조절
 
 ## Quick Reference
 
