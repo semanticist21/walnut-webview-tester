@@ -201,6 +201,10 @@ extension ContentView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onLongPressGesture {
+            UIPasteboard.general.string = url
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
         .overlay(alignment: .trailing) {
             Button {
                 removeURL(url)

@@ -195,6 +195,10 @@ struct URLInputOverlayView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onLongPressGesture {
+            UIPasteboard.general.string = url
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
         .overlay(alignment: .trailing) {
             Button {
                 urlStorage.removeFromHistory(url)

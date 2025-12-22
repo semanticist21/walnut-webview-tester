@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - URL Validation State
 
@@ -121,6 +122,10 @@ struct BookmarksSheet: View {
                         Text(url)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
+                    }
+                    .onLongPressGesture {
+                        UIPasteboard.general.string = url
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
