@@ -11,18 +11,19 @@
   "apple-swift-format.path": "swift format",
   "editor.rulers": [120],
   "cSpell.words": [
-    "wina",
-    "wallnut",
-    "WKWebView",
-    "SafariVC",
-    "SFSafariViewController",
-    "xmark",
+    "Autocapitalization",
+    "autocorrection",
     "checkmark",
     "circlepath",
-    "subheadline",
-    "autocorrection",
-    "Autocapitalization",
     "Contentful",
-    "WKURL"
+    "eruda",
+    "SafariVC",
+    "SFSafariViewController",
+    "subheadline",
+    "wallnut",
+    "wina",
+    "WKURL",
+    "WKWebView",
+    "xmark"
   ]
 }
