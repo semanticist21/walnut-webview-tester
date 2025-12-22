@@ -20,6 +20,23 @@ struct ConsoleLog: Identifiable, Equatable {
     var isCollapsed: Bool = false  // For groupCollapsed
     var tableData: [[String: String]]?  // For console.table
 
+    // ✨ Timer Support (console.time/timeLog/timeEnd)
+    var timerLabel: String?
+    var timerElapsed: TimeInterval?
+
+    // ✨ Count Support (console.count/countReset)
+    var countLabel: String?
+    var countValue: Int?
+
+    // ✨ Trace Support (console.trace)
+    var stackTrace: String?
+
+    // ✨ Styled Segments Support (console.log("%c..."))
+    var styledSegments: [ConsoleStyledSegment]?
+
+    // ✨ Object Support (console.dir, console.log with objects)
+    var objectValue: ConsoleValue?
+
     enum LogType: String, CaseIterable {
         case log
         case info
@@ -30,6 +47,17 @@ struct ConsoleLog: Identifiable, Equatable {
         case groupCollapsed
         case groupEnd
         case table
+        // ✨ New types
+        case time           // console.time
+        case timeLog        // console.timeLog
+        case timeEnd        // console.timeEnd
+        case count          // console.count
+        case countReset     // console.countReset
+        case assert         // console.assert
+        case dir            // console.dir
+        case trace          // console.trace
+        case command        // User input command
+        case result         // Command execution result
 
         var icon: String {
             switch self {
@@ -41,6 +69,13 @@ struct ConsoleLog: Identifiable, Equatable {
             case .group, .groupCollapsed: return "folder"
             case .groupEnd: return "folder"
             case .table: return "tablecells"
+            case .time, .timeLog, .timeEnd: return "stopwatch.fill"
+            case .count, .countReset: return "number.circle.fill"
+            case .assert: return "exclamationmark.circle.fill"
+            case .dir: return "tree"
+            case .trace: return "arrow.down.right.circle.fill"
+            case .command: return "chevron.right.circle.fill"
+            case .result: return "checkmark.circle.fill"
             }
         }
 
@@ -53,6 +88,13 @@ struct ConsoleLog: Identifiable, Equatable {
             case .debug: return .purple
             case .group, .groupCollapsed, .groupEnd: return .secondary
             case .table: return .cyan
+            case .time, .timeLog, .timeEnd: return .mint
+            case .count, .countReset: return .indigo
+            case .assert: return .orange
+            case .dir: return .blue
+            case .trace: return .gray
+            case .command: return .cyan
+            case .result: return .green
             }
         }
 
@@ -66,6 +108,16 @@ struct ConsoleLog: Identifiable, Equatable {
             case .group, .groupCollapsed: return "Group"
             case .groupEnd: return "GroupEnd"
             case .table: return "Table"
+            case .time: return "Timer"
+            case .timeLog: return "Timer"
+            case .timeEnd: return "Timer"
+            case .count: return "Count"
+            case .countReset: return "Count"
+            case .assert: return "Assert"
+            case .dir: return "Dir"
+            case .trace: return "Trace"
+            case .command: return "Command"
+            case .result: return "Result"
             }
         }
 
@@ -80,17 +132,29 @@ struct ConsoleLog: Identifiable, Equatable {
             case .groupCollapsed: return "GROUP"
             case .groupEnd: return "END"
             case .table: return "TABLE"
+            case .time: return "TIME"
+            case .timeLog: return "TIME"
+            case .timeEnd: return "TIME"
+            case .count: return "COUNT"
+            case .countReset: return "COUNT"
+            case .assert: return "ASSERT"
+            case .dir: return "DIR"
+            case .trace: return "TRACE"
+            case .command: return "CMD"
+            case .result: return "RES"
             }
         }
 
         // Types shown in filter tabs
         static var filterTypes: [LogType] {
-            [.error, .warn, .info, .log, .debug]
+            [.error, .warn, .info, .log, .debug, .assert, .trace]
         }
 
         // Types that can be displayed (excludes internal types like groupEnd)
         static var displayableTypes: [LogType] {
-            [.log, .info, .warn, .error, .debug, .group, .groupCollapsed, .table]
+            [.log, .info, .warn, .error, .debug, .group, .groupCollapsed, .table,
+             .time, .timeLog, .timeEnd, .count, .countReset, .assert, .dir, .trace,
+             .command, .result]
         }
     }
 
@@ -108,6 +172,12 @@ class ConsoleManager {
     var collapsedGroups: Set<UUID> = []
     private var currentGroupLevel: Int = 0
     private var groupStack: [UUID] = []
+
+    // ✨ Timer support (console.time/timeEnd)
+    private var timerContexts: [String: Date] = [:]
+
+    // ✨ Count support (console.count/countReset)
+    private var countContexts: [String: Int] = [:]
 
     // Read preserveLog from UserDefaults (set via @AppStorage in ConsoleSettingsSheet)
     var preserveLog: Bool {
@@ -170,11 +240,87 @@ class ConsoleManager {
         }
     }
 
+    // MARK: - Timer Methods (console.time/timeLog/timeEnd)
+
+    /// console.time(label) - 타이머 시작
+    func time(label: String = "default") {
+        DispatchQueue.main.async {
+            self.timerContexts[label] = Date()
+            var log = ConsoleLog(type: .time, message: "Timer '\(label)' started", source: nil, timestamp: Date())
+            log.timerLabel = label
+            self.logs.append(log)
+        }
+    }
+
+    /// console.timeLog(label) - 현재까지 경과 시간 로깅
+    func timeLog(label: String = "default") {
+        DispatchQueue.main.async {
+            guard let startTime = self.timerContexts[label] else {
+                self.addLog(type: "error", message: "Timer '\(label)' not found")
+                return
+            }
+            let elapsed = Date().timeIntervalSince(startTime) * 1000  // milliseconds
+            var log = ConsoleLog(type: .timeLog, message: "\(label): \(String(format: "%.3f", elapsed))ms", source: nil, timestamp: Date())
+            log.timerLabel = label
+            log.timerElapsed = elapsed / 1000
+            self.logs.append(log)
+        }
+    }
+
+    /// console.timeEnd(label) - 타이머 종료 및 결과 로깅
+    func timeEnd(label: String = "default") {
+        DispatchQueue.main.async {
+            guard let startTime = self.timerContexts[label] else {
+                self.addLog(type: "error", message: "Timer '\(label)' not found")
+                return
+            }
+            let elapsed = Date().timeIntervalSince(startTime) * 1000  // milliseconds
+            self.timerContexts.removeValue(forKey: label)
+            var log = ConsoleLog(type: .timeEnd, message: "\(label): \(String(format: "%.3f", elapsed))ms", source: nil, timestamp: Date())
+            log.timerLabel = label
+            log.timerElapsed = elapsed / 1000
+            self.logs.append(log)
+        }
+    }
+
+    // MARK: - Count Methods (console.count/countReset)
+
+    /// console.count(label) - 카운트 증가 및 로깅
+    func count(label: String = "default") {
+        DispatchQueue.main.async {
+            let newCount = (self.countContexts[label] ?? 0) + 1
+            self.countContexts[label] = newCount
+            var log = ConsoleLog(type: .count, message: "\(label): \(newCount)", source: nil, timestamp: Date())
+            log.countLabel = label
+            log.countValue = newCount
+            self.logs.append(log)
+        }
+    }
+
+    /// console.countReset(label) - 카운트 리셋
+    func countReset(label: String = "default") {
+        DispatchQueue.main.async {
+            let previousCount = self.countContexts[label] ?? 0
+            self.countContexts.removeValue(forKey: label)
+            self.addLog(type: "countReset", message: "\(label) count reset (was \(previousCount))")
+        }
+    }
+
+    /// console.assert(condition, message) - 조건 검증
+    func assert(_ condition: Bool, message: String) {
+        guard !condition else { return }
+        DispatchQueue.main.async {
+            self.addLog(type: "assert", message: "Assertion failed: \(message)")
+        }
+    }
+
     func clear() {
         logs.removeAll()
         currentGroupLevel = 0
         groupStack.removeAll()
         collapsedGroups.removeAll()
+        timerContexts.removeAll()
+        countContexts.removeAll()
     }
 
     func clearIfNotPreserved() {
@@ -567,6 +713,28 @@ private struct LogRow: View {
                 if log.type == .table, let tableData = parsedTableData {
                     // Table rendering
                     tableView(data: tableData)
+                } else if let objValue = log.objectValue {
+                    // Object value rendering (using ConsoleValueView)
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Message (label) if present
+                        if !log.message.isEmpty {
+                            Text(log.message)
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(log.type == .error ? .red : .secondary)
+                                .textSelection(.enabled)
+                        }
+
+                        // Object/Array value with tree view
+                        ConsoleValueView(value: objValue)
+                    }
+
+                    // Source location (if available)
+                    if let source = log.source {
+                        Text(source)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.blue)
+                            .padding(.top, 4)
+                    }
                 } else {
                     // Regular message
                     HStack(alignment: .top, spacing: 4) {
