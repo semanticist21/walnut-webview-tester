@@ -41,7 +41,7 @@ indirect enum ConsoleValue {
             let count = obj.properties.count
             return count == 0 ? "{}" : "{ \(count) properties }"
         case .array(let arr):
-            let count = arr.elements.count
+            let count = arr.totalCount
             return count == 0 ? "[]" : "[ \(count) items ]"
         case .function(let name):
             return "ƒ \(name)()"
@@ -117,14 +117,18 @@ struct ConsoleArray: Equatable {
     let elements: [ConsoleValue]
     let depth: Int
     let maxDepth: Int = 3
+    let totalCount: Int
+    let isTruncated: Bool
 
     var shouldAutoExpand: Bool {
         depth < maxDepth
     }
 
-    init(elements: [ConsoleValue], depth: Int = 0) {
+    init(elements: [ConsoleValue], depth: Int = 0, totalCount: Int? = nil, isTruncated: Bool = false) {
         self.elements = elements
         self.depth = depth
+        self.totalCount = totalCount ?? elements.count
+        self.isTruncated = isTruncated
     }
 }
 
@@ -236,6 +240,93 @@ extension ConsoleValue {
             return fromArray(arr, depth: depth, seenObjects: &seen)
         default:
             return .string(String(describing: value))
+        }
+    }
+
+    /// Serialized payload를 ConsoleValue로 변환 (WebView console hook)
+    static func fromSerializedAny(_ value: Any, depth: Int = 0) -> ConsoleValue? {
+        let maxDepth = 3
+        if depth >= maxDepth {
+            return .string("[Max Depth]")
+        }
+
+        guard let dict = value as? [String: Any],
+              let type = dict["type"] as? String else {
+            return nil
+        }
+
+        switch type {
+        case "null":
+            return .null
+        case "undefined":
+            return .undefined
+        case "boolean":
+            return .boolean(dict["value"] as? Bool ?? false)
+        case "number":
+            if let number = dict["value"] as? NSNumber {
+                return .number(number.doubleValue)
+            }
+            return .number(0)
+        case "string":
+            return .string(dict["value"] as? String ?? "")
+        case "function":
+            return .function(name: dict["name"] as? String ?? "anonymous")
+        case "date":
+            if let value = dict["value"] as? String,
+               let date = ISO8601DateFormatter().date(from: value) {
+                return .date(date)
+            }
+            return .string(dict["value"] as? String ?? "Invalid Date")
+        case "array":
+            let items = dict["items"] as? [Any] ?? []
+            let elements = items.compactMap { fromSerializedAny($0, depth: depth + 1) }
+            let totalCount = dict["length"] as? Int
+            let isTruncated = dict["truncated"] as? Bool ?? false
+            return .array(ConsoleArray(elements: elements, depth: depth, totalCount: totalCount, isTruncated: isTruncated))
+        case "object":
+            let props = dict["properties"] as? [String: Any] ?? [:]
+            var properties: [String: ConsoleValue] = [:]
+            for (key, raw) in props {
+                if let parsed = fromSerializedAny(raw, depth: depth + 1) {
+                    properties[key] = parsed
+                }
+            }
+            if dict["truncated"] as? Bool == true {
+                properties["[[Truncated]]"] = .string("true")
+            }
+            return .object(ConsoleObject(properties: properties, depth: depth))
+        case "map":
+            let entriesRaw = dict["entries"] as? [[String: Any]] ?? []
+            let entries: [(key: String, value: ConsoleValue)] = entriesRaw.compactMap { entry in
+                guard let valueRaw = entry["value"] else { return nil }
+                let keyString = entry["keyString"] as? String ?? "key"
+                guard let valueParsed = fromSerializedAny(valueRaw, depth: depth + 1) else { return nil }
+                return (key: keyString, value: valueParsed)
+            }
+            return .map(entries: entries)
+        case "set":
+            let valuesRaw = dict["values"] as? [Any] ?? []
+            let values = valuesRaw.compactMap { fromSerializedAny($0, depth: depth + 1) }
+            return .set(values: values)
+        case "error":
+            let message = dict["message"] as? String ?? "Error"
+            let stack = dict["stack"] as? String
+            if let stack, !stack.isEmpty {
+                return .error(message: "\(message)\n\(stack)")
+            }
+            return .error(message: message)
+        case "dom":
+            let tag = dict["tag"] as? String ?? "element"
+            let attributes = dict["attributes"] as? [String: String] ?? [:]
+            return .domElement(tag: tag, attributes: attributes)
+        case "symbol":
+            return .string(dict["value"] as? String ?? "Symbol()")
+        case "bigint":
+            return .string(dict["value"] as? String ?? "0n")
+        case "circular":
+            return .circularReference(dict["path"] as? String ?? "root")
+        default:
+            return .string(String(describing: dict["value"] ?? type))
         }
     }
 }

@@ -421,6 +421,7 @@ struct WKWebViewRepresentable: UIViewRepresentable {
                   let msg = body["message"] as? String else {
                 return
             }
+            var messageText = msg
             let source = body["source"] as? String
 
             // Parse styledSegments if present
@@ -429,7 +430,37 @@ struct WKWebViewRepresentable: UIViewRepresentable {
                 styledSegments = segments
             }
 
-            navigator?.consoleManager.addLog(type: type, message: msg, source: source, styledSegments: styledSegments)
+            var objectValue: ConsoleValue?
+            if let args = body["args"] as? [Any] {
+                let parsedValues = args.compactMap { ConsoleValue.fromSerializedAny($0) }
+                if parsedValues.count == 1, let value = parsedValues.first, value.isExpandable {
+                    messageText = ""
+                    objectValue = value
+                } else if parsedValues.count > 1 {
+                    if case .string(let first) = parsedValues[0] {
+                        let rest = Array(parsedValues.dropFirst())
+                        if rest.contains(where: { $0.isExpandable }) {
+                            messageText = first
+                            if rest.count == 1 {
+                                objectValue = rest[0]
+                            } else {
+                                objectValue = .array(ConsoleArray(elements: rest, depth: 0))
+                            }
+                        }
+                    } else if parsedValues.contains(where: { $0.isExpandable }) {
+                        messageText = ""
+                        objectValue = .array(ConsoleArray(elements: parsedValues, depth: 0))
+                    }
+                }
+            }
+
+            navigator?.consoleManager.addLog(
+                type: type,
+                message: messageText,
+                source: source,
+                objectValue: objectValue,
+                styledSegments: styledSegments
+            )
         }
 
         private func handleNetworkMessage(_ message: WKScriptMessage) {

@@ -646,6 +646,8 @@ private struct LogRow: View {
     let log: ConsoleLog
     let consoleManager: ConsoleManager
     @State private var isExpanded: Bool = false
+    @State private var showCopyFeedback: Bool = false
+    @State private var copyFeedbackMessage: String = ""
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -722,68 +724,55 @@ private struct LogRow: View {
                 if log.type == .table, let tableData = parsedTableData {
                     // Table rendering
                     tableView(data: tableData)
-                } else if let segments = log.styledSegments, !segments.isEmpty {
-                    // Styled segments rendering (console.log "%c" formatting)
-                    styledSegmentsView(segments: segments)
-                } else if let objValue = log.objectValue {
-                    // Object value rendering (using ConsoleValueView)
-                    VStack(alignment: .leading, spacing: 6) {
-                        // Message (label) if present
-                        if !log.message.isEmpty {
-                            Text(log.message)
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(log.type == .error ? .red : .secondary)
-                                .textSelection(.enabled)
-                        }
-
-                        // Object/Array value with tree view
-                        ConsoleValueView(value: objValue)
-                    }
-
-                    // Source location (if available)
-                    if let source = log.source {
-                        Text(source)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.blue)
-                            .padding(.top, 4)
-                    }
                 } else {
-                    // Regular message
-                    HStack(alignment: .top, spacing: 4) {
-                        // Group header has folder icon
-                        if isGroupHeader {
-                            Image(systemName: "folder.fill")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let segments = log.styledSegments, !segments.isEmpty {
+                            // Styled segments rendering (console.log "%c" formatting)
+                            styledSegmentsView(segments: segments)
+                        } else if !log.message.isEmpty || isGroupHeader {
+                            // Regular message
+                            HStack(alignment: .top, spacing: 4) {
+                                // Group header has folder icon
+                                if isGroupHeader {
+                                    Image(systemName: "folder.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Text(isExpanded || !needsExpansion ? log.message : String(log.message.prefix(120)) + "...")
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundStyle(log.type == .error ? .red : (isGroupHeader ? .secondary : .primary))
+                                    .fontWeight(isGroupHeader ? .semibold : .regular)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                // JSON copy button (only if JSON detected)
+                                if let json = extractedJSON {
+                                    Menu {
+                                        Button {
+                                            UIPasteboard.general.string = json.formatted
+                                        } label: {
+                                            Label("Copy Formatted", systemImage: "doc.on.doc")
+                                        }
+                                        Button {
+                                            UIPasteboard.general.string = json.minified
+                                        } label: {
+                                            Label("Copy Minified", systemImage: "arrow.right.arrow.left")
+                                        }
+                                    } label: {
+                                        Image(systemName: "curlybraces")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(.blue)
+                                            .padding(4)
+                                            .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                                    }
+                                }
+                            }
                         }
 
-                        Text(isExpanded || !needsExpansion ? log.message : String(log.message.prefix(120)) + "...")
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(log.type == .error ? .red : (isGroupHeader ? .secondary : .primary))
-                            .fontWeight(isGroupHeader ? .semibold : .regular)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        // JSON copy button (only if JSON detected)
-                        if let json = extractedJSON {
-                            Menu {
-                                Button {
-                                    UIPasteboard.general.string = json.formatted
-                                } label: {
-                                    Label("Copy Formatted", systemImage: "doc.on.doc")
-                                }
-                                Button {
-                                    UIPasteboard.general.string = json.minified
-                                } label: {
-                                    Label("Copy Minified", systemImage: "arrow.right.arrow.left")
-                                }
-                            } label: {
-                                Image(systemName: "curlybraces")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.blue)
-                                    .padding(4)
-                                    .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
-                            }
+                        if let objValue = log.objectValue {
+                            // Object/Array value with tree view
+                            ConsoleValueView(value: objValue)
                         }
                     }
 
@@ -822,36 +811,26 @@ private struct LogRow: View {
                 }
             }
         }
-        .contextMenu {
-            Button {
-                UIPasteboard.general.string = log.message
-            } label: {
-                Label("Copy Message", systemImage: "doc.on.doc")
-            }
-
-            if let source = log.source {
-                Button {
-                    UIPasteboard.general.string = source
-                } label: {
-                    Label("Copy Source", systemImage: "link")
+        .gesture(
+            LongPressGesture(minimumDuration: 0.5)
+                .onEnded { _ in
+                    UIPasteboard.general.string = log.message
+                    copyFeedbackMessage = "Copied message"
+                    showCopyFeedback = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        showCopyFeedback = false
+                    }
                 }
-            }
-
-            Divider()
-
-            Button {
-                var full = "[\(log.type.shortLabel)] \(log.message)"
-                if let source = log.source {
-                    full += " (\(source))"
-                }
-                UIPasteboard.general.string = full
-            } label: {
-                Label("Copy All", systemImage: "doc.on.clipboard")
-            }
-        }
+        )
         .overlay(alignment: .bottom) {
             Divider()
                 .padding(.leading, 12 + indentation)
+        }
+        .overlay(alignment: .center) {
+            if showCopyFeedback {
+                CopiedFeedbackToast(message: copyFeedbackMessage)
+                    .transition(.opacity)
+            }
         }
     }
 

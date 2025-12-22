@@ -7,13 +7,15 @@
 //
 
 import SwiftUI
+import SwiftUIBackports
 
 // MARK: - Combined Filter
 
 enum NetworkResourceFilter: String, CaseIterable, Identifiable {
     // Network filters
     case all
-    case fetchXhr
+    case fetch
+    case xhr
     case doc
     // Resource filters
     case img
@@ -31,7 +33,8 @@ enum NetworkResourceFilter: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .all: "All"
-        case .fetchXhr: "Fetch/XHR"
+        case .fetch: "Fetch"
+        case .xhr: "XHR"
         case .doc: "Doc"
         case .img: "Img"
         case .js: "JS"
@@ -46,7 +49,7 @@ enum NetworkResourceFilter: String, CaseIterable, Identifiable {
 
     var isNetworkFilter: Bool {
         switch self {
-        case .all, .fetchXhr, .doc, .errors, .mixed: true
+        case .all, .fetch, .xhr, .doc, .errors, .mixed: true
         default: false
         }
     }
@@ -69,7 +72,8 @@ enum NetworkResourceFilter: String, CaseIterable, Identifiable {
     func matchesNetworkRequest(_ request: NetworkRequest) -> Bool {
         switch self {
         case .all: true
-        case .fetchXhr: request.requestType == .fetch || request.requestType == .xhr
+        case .fetch: request.requestType == .fetch
+        case .xhr: request.requestType == .xhr
         case .doc: request.requestType == .document
         case .errors: request.error != nil || (request.status ?? 0) >= 400
         case .mixed: request.isMixedContent
@@ -105,6 +109,10 @@ struct NetworkView: View {
     @State private var selectedResource: ResourceEntry?
     @AppStorage("networkPreserveLog") private var preserveLog: Bool = false
     @AppStorage("resourcePreserveLog") private var resourcePreserveLog: Bool = false
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
 
     // MARK: - Filtered Data
 
@@ -192,8 +200,10 @@ struct NetworkView: View {
         switch filterType {
         case .all:
             networkManager.requests.count + resourceManager.resources.count
-        case .fetchXhr:
-            networkManager.requests.filter { $0.requestType == .fetch || $0.requestType == .xhr }.count
+        case .fetch:
+            networkManager.requests.filter { $0.requestType == .fetch }.count
+        case .xhr:
+            networkManager.requests.filter { $0.requestType == .xhr }.count
         case .doc:
             networkManager.requests.filter { $0.requestType == .document }.count
         case .img:
@@ -327,7 +337,7 @@ struct NetworkView: View {
                 }
 
                 // Network request tabs
-                ForEach([NetworkResourceFilter.fetchXhr, .doc], id: \.self) { filterType in
+                ForEach([NetworkResourceFilter.fetch, .xhr, .doc], id: \.self) { filterType in
                     NetworkFilterTab(
                         label: filterType.displayName,
                         count: count(for: filterType),
@@ -418,22 +428,33 @@ struct NetworkView: View {
 
     private var contentList: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    // Show network requests for network filters
-                    if showingNetworkData {
-                        ForEach(filteredRequests) { request in
-                            NetworkRequestRow(request: request)
-                                .id("request-\(request.id)")
-                                .onTapGesture {
-                                    selectedRequest = request
-                                }
+            GeometryReader { outerGeo in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        // Show network requests for network filters
+                        if showingNetworkData {
+                            ForEach(filteredRequests) { request in
+                                NetworkRequestRow(request: request)
+                                    .id("request-\(request.id)")
+                                    .onTapGesture {
+                                        selectedRequest = request
+                                    }
+                            }
                         }
-                    }
 
-                    // Show resources for resource filters (but not for "All" to avoid duplication with XHR/Fetch)
-                    if showingResourceData && filter != .all {
-                        ForEach(filteredResources) { resource in
+                        // Show resources for resource filters (but not for "All" to avoid duplication with XHR/Fetch)
+                        if showingResourceData && filter != .all {
+                            ForEach(filteredResources) { resource in
+                                ResourceRow(resource: resource)
+                                    .id("resource-\(resource.id)")
+                                    .onTapGesture {
+                                        selectedResource = resource
+                                    }
+                            }
+                        }
+
+                        // For "All" filter, only show resources that aren't captured by Network (exclude fetch/xhr)
+                        ForEach(allFilterResources) { resource in
                             ResourceRow(resource: resource)
                                 .id("resource-\(resource.id)")
                                 .onTapGesture {
@@ -441,31 +462,115 @@ struct NetworkView: View {
                                 }
                         }
                     }
-
-                    // For "All" filter, only show resources that aren't captured by Network (exclude fetch/xhr)
-                    ForEach(allFilterResources) { resource in
-                        ResourceRow(resource: resource)
-                            .id("resource-\(resource.id)")
-                            .onTapGesture {
-                                selectedResource = resource
-                            }
-                    }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        GeometryReader { innerGeo in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = innerGeo.size.height
+                                }
+                                .onChange(of: innerGeo.size.height) { _, newHeight in
+                                    contentHeight = newHeight
+                                }
+                        }
+                    )
                 }
-                .frame(maxWidth: .infinity)
+                .background(Color(uiColor: .systemBackground))
+                .scrollContentBackground(.hidden)
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .onAppear {
+                    scrollViewHeight = outerGeo.size.height
+                }
+                .onChange(of: outerGeo.size.height) { _, newHeight in
+                    scrollViewHeight = newHeight
+                }
+                .onChange(of: networkManager.requests.count) { _, _ in
+                    scrollToBottom(proxy: proxy)
+                }
+                .onChange(of: resourceManager.resources.count) { _, _ in
+                    scrollToBottom(proxy: proxy)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    VStack(spacing: 4) {
+                        Button(
+                            action: { scrollUp(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                                    .backport
+                                    .glassEffect(in: .circle)
+                            }
+                        )
+                        .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+
+                        Button(
+                            action: { scrollDown(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                                    .backport
+                                    .glassEffect(in: .circle)
+                            }
+                        )
+                        .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
+                    }
+                    .frame(height: 28 * 2 + 4)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 12)
+                }
             }
-            .background(Color(uiColor: .systemBackground))
-            .scrollContentBackground(.hidden)
-            .onChange(of: networkManager.requests.count) { _, _ in
-                scrollToBottom(proxy: proxy)
-            }
-            .onChange(of: resourceManager.resources.count) { _, _ in
-                scrollToBottom(proxy: proxy)
+            .onAppear {
+                scrollProxy = proxy
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func scrollToBottom(proxy: ScrollViewProxy) {
+    private var canScroll: Bool {
+        contentHeight > scrollViewHeight + 20
+    }
+
+    private func scrollUp(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        let firstID = filteredRequests.first.map { "request-\($0.id)" }
+            ?? filteredResources.first.map { "resource-\($0.id)" }
+            ?? allFilterResources.first.map { "resource-\($0.id)" }
+
+        if let id = firstID {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(id, anchor: .top)
+            }
+        }
+    }
+
+    private func scrollDown(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        // 역순: 화면에 표시되는 마지막 아이템부터 확인
+        var lastID: String?
+        if !allFilterResources.isEmpty {
+            lastID = "resource-\(allFilterResources.last!.id)"
+        } else if showingResourceData && filter != .all && !filteredResources.isEmpty {
+            lastID = "resource-\(filteredResources.last!.id)"
+        } else if !filteredRequests.isEmpty {
+            lastID = "request-\(filteredRequests.last!.id)"
+        }
+
+        if let id = lastID {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(id, anchor: .bottom)
+            }
+        }
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy?) {
         // Get the last item ID based on current filter
         var lastID: String?
 
@@ -482,7 +587,7 @@ struct NetworkView: View {
             lastID = "resource-\(lastResource.id)"
         }
 
-        if let lastID {
+        if let lastID, let proxy {
             withAnimation(.easeOut(duration: 0.15)) {
                 proxy.scrollTo(lastID, anchor: .bottom)
             }

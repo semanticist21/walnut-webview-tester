@@ -13,6 +13,11 @@ WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발�
 - **SFSafariViewController**: Safari 쿠키/세션 공유, Content Blocker, Reader Mode, Safari 확장 지원
 - **공통**: URL 테스트, API Capability 감지, 북마크, 반응형 크기 조절
 
+**Recent Focus** (as of Dec 2024):
+- Console %c CSS styling (color, background-color, font-weight, font-size)
+- Network tab improvements (fetch/XHR consolidation, cross-origin filtering)
+- Array chunking for large console outputs (100+ items)
+
 ## Quick Reference
 
 ### Build & Run
@@ -25,19 +30,29 @@ xcodebuild -project wina.xcodeproj -scheme wina -destination 'platform=iOS,name=
 ```
 
 ### Code Quality
-```bash
-# Lint (required before commit)
-swiftlint lint && swiftlint --fix
 
-# Format with swift-format (v6.2.1, optional - avoid with complex SwiftUI views)
+**Pre-commit checklist**:
+```bash
+# Lint + auto-fix (required before commit)
+swiftlint lint --fix && swiftlint lint
+
+# Optional: Format (avoid with complex SwiftUI views - can cause regressions)
 swift format format --in-place wina/SomeFile.swift
 
-# Analyze for unused code
-swiftlint analyze --compiler-log-path /tmp/xcodebuild.log
+# Analyze for unused code (run separately)
+xcodebuild clean -project wina.xcodeproj
+xcodebuild -project wina.xcodeproj -scheme wina -destination generic/platform=iOS -c Debug -c Analyze analyze
 
-# Check for print() statements
+# Check for print() statements (must all be removed)
 swiftlint lint | grep "no_print_in_production"
 ```
+
+**Workflow**:
+1. Make changes
+2. Run `swiftlint lint --fix` (auto-fixes most issues)
+3. Run `swiftlint lint` again (verify all passed)
+4. Commit with message in conventional format
+5. **DO NOT** push unless user explicitly asks
 
 ### Testing
 ```bash
@@ -126,9 +141,27 @@ let heightRatio = 0.82
 
 로딩 인디케이터 없이 기존 데이터 표시 → 백그라운드 갱신 → atomic 업데이트
 
-### DevTools Manager 패턴
+### DevTools Manager 패턴 & JavaScript Bridge Architecture
 
-`ConsoleManager`, `NetworkManager`, `StorageManager` 모두 `WebViewNavigator`에 포함. JavaScript 인젝션으로 캡처.
+**Core Architecture**:
+- All DevTools managers (`ConsoleManager`, `NetworkManager`, `StorageManager`) are owned by `WebViewNavigator`
+- Data flows: JavaScript hooks (injected) → message handlers → native managers → UI bindings (@Observable)
+- Each manager follows `@Observable` macro pattern (iOS 17+) for reactive updates
+
+**Communication Flow**:
+1. JavaScript hook injects code via `evaluateJavaScript()`
+2. Message handler catches event via `WKScriptMessageHandler` protocol
+3. Manager processes and stores data (atomic updates only)
+4. UI observes changes and re-renders
+
+**Key Files** (WebViewScripts series):
+- `WebViewScripts.swift` - Base hook injection (setup)
+- `WebViewScripts+Console.swift` - console.log, console.dir, console.time handlers
+- `WebViewScripts+Network.swift` - fetch/XHR interception + resource timing
+- `WebViewScripts+Emulation.swift` - User agent, viewport emulation
+- `WebViewScripts+Resource.swift` - Static resource tracking
+
+**Important**: Do NOT use `print()` statements in managers. Use `os_log` or `Logger` instead (SwiftLint enforces this).
 
 ### Console Method Implementations (JavaScript 훅)
 
@@ -162,6 +195,34 @@ console.timeEnd("fetch");  // "fetch: 456.789ms" (타이머 삭제)
 
 **Message Handler**: `WebViewContainer.handleConsoleMessage()` - `type: "time" | "timeLog" | "timeEnd"` 모두 처리
 
+#### console %c Styling - CSS 색상 및 포매팅
+
+```javascript
+// %c = format specifier, 뒤따르는 문자열 = CSS 스타일
+console.log("%cError", "color: red; font-weight: bold");
+console.log("%cSuccess%cDetailed", "color: green", "color: gray");
+```
+
+**Supported CSS Properties** (WebViewScripts+Console.swift:76):
+- `color: <color-name | hex>` - 텍스트 색상 (e.g., "red", "#FF0000")
+- `background-color: <color>` - 배경 색상
+- `font-weight: bold` - 굵은 텍스트
+- `font-size: <number>px` - 글씨 크기
+
+**Implementation** (WebViewScripts+Console.swift line 476):
+1. `formatConsoleMessage()` 함수가 %c 감지
+2. CSS 문자열을 `parseCSS()` 함수로 파싱 → {color, backgroundColor, isBold, fontSize} 객체로 변환
+3. 텍스트와 CSS를 짝으로 묶어 `styledSegments` 필드에 JSON 직렬화
+4. `ConsoleValueView`에서 `formattedText(for:)` 확장으로 UI 렌더링 (색상 + 스타일 적용)
+
+**UI Rendering** (ConsoleValueView.swift):
+```swift
+// 색상: native Color로 변환
+// 스타일: SwiftUI 수정자로 적용 (.bold(), .font(.system(size:)))
+```
+
+**주의사항**: 복합 색상값(rgb, rgba, hsl) 미지원 (named colors 또는 hex만 가능)
+
 ### ConsoleView 필터링 - Info 레벨 추가
 
 **필터 탭 구조** (탭 순서):
@@ -183,6 +244,41 @@ FilterTab(label: "Info", count: consoleManager.infoCount, isSelected: filterType
 ```
 
 **이점**: Eruda와 동일한 필터 구조로 기능 parity 달성
+
+### Network Tab 아키텍처
+
+**Recent Changes**:
+- Fetch + XHR 필터 통합 → 단일 "XHR" 탭 (fetch는 XHR로 캡처됨)
+- Cross-origin 리소스 도메인 기반 필터링
+- Resource timing 정확성 개선
+
+**NetworkManager 데이터 구조**:
+```swift
+struct NetworkRequest: Identifiable {
+    let id: UUID
+    let method: String           // GET, POST, etc
+    let url: String
+    let status: Int?             // nil = pending
+    let duration: Double?        // milliseconds
+    let resourceType: String     // xhr, fetch, image, stylesheet, etc
+    let requestHeaders: [String: String]
+    let responseHeaders: [String: String]
+    let requestBody: String?
+    let responseBody: String?
+    let initiator: String?       // script file:line that initiated request
+}
+```
+
+**Domain Filtering Pattern** (NetworkView.swift):
+```swift
+// 쿠키 필터링 예시
+let allDomains = Set(storageManager.domainCookies.keys).sorted()
+let filteredCookies = selectedDomain == "All"
+    ? storageManager.domainCookies.values.flatMap { $0 }
+    : storageManager.domainCookies[selectedDomain] ?? []
+```
+
+**Important**: Network tab는 "Preserve Log" 체크박스로 제어됨 (Settings or 내부 toggle)
 
 ### 스크린샷 패턴
 
@@ -1120,6 +1216,78 @@ storageManager.clearCache()
 
 ---
 
+## 개발 팁: DevTools 디버깅
+
+### Console 테스트 패턴
+
+```html
+<!-- Test file: simple-console-test.html -->
+<script>
+// 기본 로깅
+console.log("plain text");
+console.warn("warning");
+console.error("error");
+
+// 색상 스타일링 (%c)
+console.log("%cInfo", "color: blue");
+console.log("%cError%cDetails", "color: red; font-weight: bold", "color: gray");
+
+// 객체 검사
+console.dir({name: "John", age: 30, nested: {x: 1}});
+
+// 성능 타이밍
+console.time("fetch");
+console.timeLog("fetch");
+console.timeEnd("fetch");
+
+// 대량 배열 (청크 테스트)
+console.log(Array.from({length: 10000}, (_, i) => i));
+</script>
+```
+
+**Test Files**:
+- `simple-console-test.html` - 기본 console 기능 (색상, 타이밍)
+- `test-console.html` - 대량 객체 및 배열 스트레스 테스트
+
+### Network 모니터링 팁
+
+1. **Settings → "Preserve Network Log" 활성화** (기본값: 비활성화)
+2. Network 탭 열어둔 상태에서 URL 로드 → 자동 캡처
+3. 도메인 필터 선택 → 해당 도메인 리소스만 표시
+4. Request/Response 탭에서 헤더 및 본문 검사
+
+**Cross-origin 제한**:
+- 외부 CDN 리소스 크기: 보안상 0B 반환 (서버의 `Timing-Allow-Origin` 헤더로 우회 불가)
+- Status code는 표시됨
+
+### 성능 프로파일링
+
+```bash
+# Xcode Instruments로 메모리 누수 확인
+xcodebuild test -project wina.xcodeproj -scheme wina \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -c Debug -only-testing:winaTests/PerformanceTests
+
+# 특정 DevTools 탭 메모리 사용 확인
+# (Console: large arrays > 100 items, Network: 1000+ requests)
+```
+
+### JavaScript 주입 트러블슈팅
+
+**문제**: WebView에서 JavaScript 평가 실패
+```swift
+// ❌ 외부 스크립트 fetch 불가 (CORS)
+evaluateJavaScript("fetch('https://cdn.example.com/app.js')")
+
+// ✅ inline 코드만 가능
+evaluateJavaScript("console.log('hello')")
+
+// ✅ 웹페이지가 로드한 스크립트는 접근 가능
+evaluateJavaScript("window.myGlobalVar")
+```
+
+**해결책**: 외부 리소스는 웹페이지의 HTML/script 태그로 로드, Swift에서는 결과만 조회
+
 ## 리소스 & 참고
 
 - **StoreKit 2**: https://developer.apple.com/documentation/storekit
@@ -1127,3 +1295,4 @@ storageManager.clearCache()
 - **SwiftUI**: https://developer.apple.com/xcode/swiftui/
 - **Google AdMob**: https://admob.google.com
 - **Eruda Console**: https://eruda.liriliri.io/
+- **Test Files**: `simple-console-test.html`, `test-console.html` (프로젝트 루트)

@@ -57,7 +57,7 @@ extension WebViewScripts {
                 return null;
             }
 
-            // Helper to format arguments
+            // Helper to format arguments (string preview only)
             function formatArg(arg) {
                 if (arg === null) return 'null';
                 if (arg === undefined) return 'undefined';
@@ -69,18 +69,138 @@ extension WebViewScripts {
                 if (arg instanceof RegExp) return arg.toString();
                 if (arg instanceof Date) return 'Date(' + arg.toISOString() + ')';
                 if (arg instanceof Promise) return 'Promise {<pending>}';
-                if (arg instanceof Map) return 'Map(' + arg.size + ') {' + Array.from(arg.entries()).map(function(e) { return e[0] + ' => ' + e[1]; }).join(', ') + '}';
-                if (arg instanceof Set) return 'Set(' + arg.size + ') {' + Array.from(arg).join(', ') + '}';
+                if (arg instanceof Map) return 'Map(' + arg.size + ') { ... }';
+                if (arg instanceof Set) return 'Set(' + arg.size + ') { ... }';
                 if (ArrayBuffer.isView(arg)) return arg.constructor.name + '(' + arg.length + ') [' + Array.from(arg.slice(0, 10)).join(', ') + (arg.length > 10 ? ', ...' : '') + ']';
                 if (arg instanceof ArrayBuffer) return 'ArrayBuffer(' + arg.byteLength + ')';
                 if (typeof arg === 'object') {
                     try {
                         const str = JSON.stringify(arg, null, 2);
-                        return str === '{}' && Object.keys(arg).length === 0 ? '{}' : (str === '{}' ? '[object ' + (arg.constructor?.name || 'Object') + ']' : str);
-                    }
-                    catch(e) { return '[object ' + (arg.constructor?.name || 'Object') + ']'; }
+                        // Return JSON if stringifiable and not empty
+                        if (str && str !== '{}') {
+                            return str;
+                        }
+                    } catch(e) {}
+                    // For objects that can't be stringified, show readable preview
+                    const objName = arg.constructor?.name || 'Object';
+                    return objName + ' { ... }';
                 }
                 return String(arg);
+            }
+
+            // Serialize value for native (structured, JSON-safe)
+            function serializeValue(value, depth, seen, path, protoDepth) {
+                const maxDepth = 3;
+                const maxProtoDepth = 1;
+                const maxProps = 200;
+                const maxArrayLength = 2000;
+
+                depth = depth || 0;
+                protoDepth = protoDepth || 0;
+                seen = seen || new WeakMap();
+                path = path || 'root';
+
+                if (value === null) return { type: 'null' };
+                if (value === undefined) return { type: 'undefined' };
+                if (typeof value === 'boolean') return { type: 'boolean', value: value };
+                if (typeof value === 'number') return { type: 'number', value: value };
+                if (typeof value === 'string') return { type: 'string', value: value };
+                if (typeof value === 'symbol') return { type: 'symbol', value: String(value) };
+                if (typeof value === 'bigint') return { type: 'bigint', value: value.toString() + 'n' };
+                if (typeof value === 'function') {
+                    return { type: 'function', name: value.name || 'anonymous' };
+                }
+                if (value instanceof Date) {
+                    return { type: 'date', value: value.toISOString() };
+                }
+                if (value instanceof Error) {
+                    return { type: 'error', message: value.message || String(value), stack: value.stack || null };
+                }
+                if (value instanceof Element) {
+                    return {
+                        type: 'dom',
+                        tag: value.tagName ? value.tagName.toLowerCase() : 'element',
+                        attributes: {
+                            id: value.id || '',
+                            class: value.className || ''
+                        }
+                    };
+                }
+                if (value instanceof Map) {
+                    const entries = [];
+                    let count = 0;
+                    value.forEach(function(v, k) {
+                        if (count >= maxArrayLength) return;
+                        const keySerialized = serializeValue(k, depth + 1, seen, path + '.<mapKey>', protoDepth);
+                        entries.push({
+                            keyString: formatArg(k),
+                            key: keySerialized,
+                            value: serializeValue(v, depth + 1, seen, path + '.<mapValue>', protoDepth)
+                        });
+                        count++;
+                    });
+                    return { type: 'map', entries: entries };
+                }
+                if (value instanceof Set) {
+                    const values = [];
+                    let count = 0;
+                    value.forEach(function(v) {
+                        if (count >= maxArrayLength) return;
+                        values.push(serializeValue(v, depth + 1, seen, path + '.<setValue>', protoDepth));
+                        count++;
+                    });
+                    return { type: 'set', values: values };
+                }
+                if (Array.isArray(value)) {
+                    const length = value.length;
+                    const limit = Math.min(length, maxArrayLength);
+                    const items = [];
+                    for (let i = 0; i < limit; i++) {
+                        items.push(serializeValue(value[i], depth + 1, seen, path + '[' + i + ']', protoDepth));
+                    }
+                    return { type: 'array', items: items, length: length, truncated: length > maxArrayLength };
+                }
+
+                if (typeof value === 'object') {
+                    if (depth >= maxDepth) {
+                        return { type: 'object', properties: {}, truncated: true };
+                    }
+                    if (seen.has(value)) {
+                        return { type: 'circular', path: seen.get(value) || path };
+                    }
+                    seen.set(value, path);
+
+                    const props = {};
+                    const names = Object.getOwnPropertyNames(value);
+                    let count = 0;
+                    for (let i = 0; i < names.length; i++) {
+                        const key = names[i];
+                        if (count >= maxProps) {
+                            props['[[Truncated]]'] = { type: 'string', value: 'true' };
+                            break;
+                        }
+                        try {
+                            const desc = Object.getOwnPropertyDescriptor(value, key);
+                            if (desc && typeof desc.get === 'function' && !('value' in desc)) {
+                                props[key] = { type: 'string', value: '[Getter]' };
+                            } else {
+                                props[key] = serializeValue(value[key], depth + 1, seen, path + '.' + key, protoDepth);
+                            }
+                        } catch (e) {
+                            props[key] = { type: 'error', message: 'Unable to access' };
+                        }
+                        count++;
+                    }
+
+                    const proto = Object.getPrototypeOf(value);
+                    if (proto && proto !== Object.prototype && protoDepth < maxProtoDepth) {
+                        props['[[Prototype]]'] = serializeValue(proto, depth + 1, seen, path + '.[[Prototype]]', protoDepth + 1);
+                    }
+
+                    return { type: 'object', properties: props };
+                }
+
+                return { type: 'unknown', value: String(value) };
             }
 
             // Parse CSS string to extract color, background, bold, fontSize
@@ -237,7 +357,8 @@ extension WebViewScripts {
                         const payload = {
                             type: method,
                             message: formatted.message,
-                            source: source
+                            source: source,
+                            args: args.map(function(arg) { return serializeValue(arg); })
                         };
                         if (formatted.styledSegments !== null) {
                             payload.styledSegments = formatted.styledSegments;
@@ -336,6 +457,21 @@ extension WebViewScripts {
                     });
                 } catch(e) {}
                 originalTable.apply(console, arguments);
+            };
+
+            // console.dir
+            const originalDir = console.dir;
+            console.dir = function(obj) {
+                try {
+                    const payload = {
+                        type: 'dir',
+                        message: '',
+                        source: getCallerSource(),
+                        args: [serializeValue(obj)]
+                    };
+                    sendMessage(payload);
+                } catch(e) {}
+                originalDir.apply(console, arguments);
             };
 
             // Capture uncaught errors

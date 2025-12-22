@@ -112,7 +112,7 @@ struct JSONSyntaxHighlightedView: View {
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(jsonString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { index, line in
+                ForEach(Array(jsonString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
                     JSONLineView(line: String(line))
                 }
             }
@@ -174,34 +174,8 @@ struct JSONLineView: View {
         while i < line.endIndex {
             let char = line[i]
 
-            // Key detection
             if char == "\"" {
-                if !current.isEmpty {
-                    parts.append((current, .punctuation))
-                    current = ""
-                }
-
-                var keyContent = "\""
-                i = line.index(after: i)
-                while i < line.endIndex && line[i] != "\"" {
-                    keyContent.append(line[i])
-                    i = line.index(after: i)
-                }
-                if i < line.endIndex {
-                    keyContent.append("\"")
-                    i = line.index(after: i)
-                }
-
-                // Check if this is a key (followed by colon)
-                let remaining = String(line[i...]).trimmingCharacters(in: .whitespaces)
-                if remaining.hasPrefix(":") {
-                    parts.append((keyContent, .key))
-                } else {
-                    parts.append((keyContent, .string))
-                }
-            }
-            // String value detection (quote without colon before)
-            else if char == "\"" {
+                // String or key detection
                 if !current.isEmpty {
                     parts.append((current, .punctuation))
                     current = ""
@@ -218,49 +192,41 @@ struct JSONLineView: View {
                     i = line.index(after: i)
                 }
 
-                parts.append((stringContent, .string))
-            }
-            // Number detection
-            else if char.isNumber || (char == "-" && current.isEmpty) {
+                // Check if this is a key (followed by colon)
+                let remaining = String(line[i...]).trimmingCharacters(in: .whitespaces)
+                if remaining.hasPrefix(":") {
+                    parts.append((stringContent, .key))
+                } else {
+                    parts.append((stringContent, .string))
+                }
+            } else if char.isNumber || (char == "-" && current.isEmpty) {
+                // Number detection
                 var numStr = current + String(char)
                 i = line.index(after: i)
-                while i < line.endIndex && (line[i].isNumber || line[i] == "." || line[i] == "e" || line[i] == "E" || line[i] == "-" || line[i] == "+") {
+                while i < line.endIndex && isNumberChar(line[i]) {
                     numStr.append(line[i])
                     i = line.index(after: i)
                 }
                 parts.append((numStr, .number))
                 current = ""
                 continue
-            }
-            // Boolean and null detection
-            else if line[i...].hasPrefix("true") || line[i...].hasPrefix("false") || line[i...].hasPrefix("null") {
+            } else if isBooleanOrNull(line[i...]) {
+                // Boolean and null detection
                 if !current.isEmpty {
                     parts.append((current, .punctuation))
                     current = ""
                 }
-
-                if line[i...].hasPrefix("true") {
-                    parts.append(("true", .boolean))
-                    i = line.index(i, offsetBy: 4)
-                } else if line[i...].hasPrefix("false") {
-                    parts.append(("false", .boolean))
-                    i = line.index(i, offsetBy: 5)
-                } else {
-                    parts.append(("null", .null))
-                    i = line.index(i, offsetBy: 4)
-                }
-            }
-            // Punctuation
-            else if "{}[],:".contains(char) {
+                appendBooleanOrNull(to: &parts, from: &i, line: line)
+            } else if "{}[],:".contains(char) {
+                // Punctuation
                 if !current.isEmpty {
                     parts.append((current, .punctuation))
                     current = ""
                 }
                 parts.append((String(char), .punctuation))
                 i = line.index(after: i)
-            }
-            // Whitespace and other
-            else {
+            } else {
+                // Whitespace and other
                 current.append(char)
                 i = line.index(after: i)
             }
@@ -271,6 +237,27 @@ struct JSONLineView: View {
         }
 
         return parts
+    }
+
+    private func isNumberChar(_ char: Character) -> Bool {
+        char.isNumber || char == "." || char == "e" || char == "E" || char == "-" || char == "+"
+    }
+
+    private func isBooleanOrNull(_ substring: String.SubSequence) -> Bool {
+        substring.hasPrefix("true") || substring.hasPrefix("false") || substring.hasPrefix("null")
+    }
+
+    private func appendBooleanOrNull(to parts: inout [(content: String, type: JSONElementType)], from i: inout String.Index, line: String) {
+        if line[i...].hasPrefix("true") {
+            parts.append(("true", .boolean))
+            i = line.index(i, offsetBy: 4)
+        } else if line[i...].hasPrefix("false") {
+            parts.append(("false", .boolean))
+            i = line.index(i, offsetBy: 5)
+        } else {
+            parts.append(("null", .null))
+            i = line.index(i, offsetBy: 4)
+        }
     }
 }
 
@@ -299,7 +286,7 @@ struct HTMLSyntaxHighlightedView: View {
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(htmlString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { index, line in
+                ForEach(Array(htmlString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
                     HTMLLineView(line: String(line))
                 }
             }
@@ -382,8 +369,7 @@ struct HTMLLineView: View {
                 }
 
                 parts.append((tagContent, .tag))
-            }
-            else {
+            } else {
                 current.append(char)
                 i = line.index(after: i)
             }
