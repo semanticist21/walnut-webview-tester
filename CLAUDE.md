@@ -15,27 +15,40 @@ WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발�
 
 ## Quick Reference
 
+### Build & Run
 ```bash
-# Build & Run
+# Build and run in simulator
 open wina.xcodeproj && Cmd+R
 
-# Linting (필수)
+# Run on specific device
+xcodebuild -project wina.xcodeproj -scheme wina -destination 'platform=iOS,name=iPhone 16,OS=latest'
+```
+
+### Code Quality
+```bash
+# Lint (required before commit)
 swiftlint lint && swiftlint --fix
 
-# swift-format (선택적 - SwiftUI 복잡 뷰에서 문제 발생 가능)
+# Format with swift-format (v6.2.1, optional - avoid with complex SwiftUI views)
 swift format format --in-place wina/SomeFile.swift
 
-# Tests
-xcodebuild test -project wina.xcodeproj -scheme wina -destination 'platform=iOS Simulator,name=iPhone 16'
-
-# Single test file
-xcodebuild test -project wina.xcodeproj -scheme wina -only-testing:winaTests/URLValidatorTests
-
-# SwiftLint Analyzer (unused imports/declarations)
+# Analyze for unused code
 swiftlint analyze --compiler-log-path /tmp/xcodebuild.log
 
-# Check for print() statements (custom SwiftLint rule)
+# Check for print() statements
 swiftlint lint | grep "no_print_in_production"
+```
+
+### Testing
+```bash
+# Run all tests
+xcodebuild test -project wina.xcodeproj -scheme wina -destination 'platform=iOS Simulator,name=iPhone 16'
+
+# Run specific test file
+xcodebuild test -project wina.xcodeproj -scheme wina -only-testing:winaTests/URLValidatorTests
+
+# Run tests with coverage
+xcodebuild test -project wina.xcodeproj -scheme wina -enableCodeCoverage YES
 ```
 
 ## Architecture
@@ -50,7 +63,7 @@ wina/
 │   ├── Ad/              # AdManager (Google AdMob interstitial)
 │   ├── Accessibility/   # AccessibilityAuditView (axe-core 기반)
 │   ├── AppBar/          # OverlayMenuBars (+URLInput extension), 버튼들
-│   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView
+│   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView, EmulationSettingsView
 │   ├── Console/         # ConsoleManager + UI (JS console 캡처)
 │   ├── Network/         # NetworkManager + UI (fetch/XHR 모니터링 + 리소스 목록 통합)
 │   ├── Storage/         # StorageManager + UI (localStorage/sessionStorage/cookies, SWR 패턴)
@@ -265,7 +278,9 @@ enum BarConstants {
 
 ### AdManager 광고 패턴
 
-확률 기반 interstitial 광고. 세션당 id별 1회 표시.
+두 가지 광고 타입: **Interstitial** (전체화면, 확률 기반) + **Banner** (하단, 항상 표시)
+
+#### Interstitial 광고 (세션당 id별 1회)
 
 ```swift
 // 기본 30% 확률
@@ -284,7 +299,49 @@ AdOptions(id: "feature_name", probability: 0.5)
 3. 확률 체크 (기본 30%) → 실패 시 skip
 4. 광고 로드 및 표시
 
-**광고 위치**: Info/Settings sheet, DevTools (Console/Network/Storage/Performance/Sources/Accessibility), Screenshot
+**Interstitial 위치**: Info/Settings sheet, DevTools (Console/Network/Storage/Performance/Sources/Accessibility), Screenshot
+
+#### Banner 광고 (하단 고정, 비프리미엄)
+
+```swift
+// ContentView 하단에 조건부 표시
+if !StoreManager.shared.isAdRemoved {
+    BannerAdView()
+        .frame(height: 50)
+}
+```
+
+**동작**:
+- 비프리미엄 사용자만 표시 (프리미엄은 숨김)
+- URL 입력 시 자동으로 로드 (초기 URL 로드 최적화)
+- SafariVC 모드에서도 표시
+
+### Eruda 모드 (in-page 콘솔)
+
+WKWebView 전용 제3자 디버깅 도구. DevTools와 병행 가능.
+
+```swift
+// SettingsView에서 활성화
+@AppStorage("erudaModeEnabled") var erudaModeEnabled = false
+
+// WebViewContainer에서 로드
+if erudaModeEnabled {
+    // 에르다 스크립트 주입
+    let erudaScript = "..."  // eruda/package.json에서 빌드된 번들
+    webView.evaluateJavaScript(erudaScript)
+}
+```
+
+**특징**:
+- ✅ 기본 비활성화 (UX 개선)
+- ✅ 사용자가 원할 때 Settings에서 활성화
+- ✅ 폐쇄 시 오버레이 상태 유지 (재오픈 빠름)
+- ✅ DevTools와 중복되지 않게 배치
+
+**활성화 UI**:
+```
+Settings → "Eruda Mode" 토글 on → WebView 새로고침 → 오른쪽 하단에 에르다 아이콘
+```
 
 ### CSS Property Override 표시 (Sources DevTools)
 
@@ -866,3 +923,101 @@ xcodebuild -exportArchive -archivePath /tmp/wina.xcarchive \
 ### Export Compliance
 
 `ITSAppUsesNonExemptEncryption = NO` 설정됨 → 수출 규정 질문 자동 스킵 (HTTPS만 사용, 자체 암호화 없음)
+
+---
+
+## 개발 팁 & 트러블슈팅
+
+### Xcode 빌드 실패
+
+**Problem**: `Unable to boot simulator` 또는 시뮬레이터 인식 실패
+```bash
+# 해결
+xcrun simctl erase all         # 모든 시뮬레이터 초기화
+xcrun simctl list devices      # 시뮬레이터 목록 확인
+killall "Simulator"            # 시뮬레이터 강제 종료
+```
+
+**Problem**: `Swift.Runtime error: SIGABRT` 또는 런타임 크래시
+```bash
+# 1. Derived Data 삭제
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
+
+# 2. Build folder 삭제
+xcodebuild clean -project wina.xcodeproj
+
+# 3. 재빌드
+open wina.xcodeproj && Cmd+R
+```
+
+### SwiftLint 이슈
+
+**Problem**: `unable to read file` 에러
+```bash
+# SwiftLint 재설치
+brew uninstall swiftlint && brew install swiftlint
+```
+
+**Problem**: 자동 수정 후에도 실패
+```bash
+# 스타일 자동 수정 + 다시 린트
+swiftlint lint --fix && swiftlint lint
+```
+
+### WebView 디버깅
+
+**Problem**: JavaScript 주입 실패 (CORS 에러)
+- ✅ Inline 스크립트만 평가 가능
+- ❌ 외부 URL에서 fetch 불가 (WKWebView 정책)
+- 해결: `evaluateJavaScript()` 사용, 외부 리소스는 웹페이지에 맡기기
+
+**Problem**: 이전 세션 데이터가 남음
+```swift
+// Settings에서 "Clean Start" 체크 → WebView 새로 생성
+// 또는 수동으로:
+defaults delete com.wallnut.wina  // AppStorage 초기화
+```
+
+### 네트워크 모니터링 안 됨
+
+**Cause**: `preserveLog` 비활성화 또는 WebView 새로고침
+- 해결: Settings → "Preserve Network Log" 활성화
+- 또는: Console/Network 탭 열어둔 상태에서 URL 로드
+
+### 성능 문제
+
+**Slow Rendering**: 뷰 복잡도 확인
+```bash
+# Xcode Debug View Hierarchy (Cmd+Shift+Y) 사용
+# LazyVStack으로 자동 렌더링 (1000+ 항목)
+```
+
+**High Memory**: DevTools 자주 열기
+```swift
+// NetworkManager/StorageManager 캐시 정리
+networkManager.clearCache()
+storageManager.clearCache()
+```
+
+---
+
+## 버전 호환성
+
+| 도구 | 버전 | 필수 여부 |
+|------|------|---------|
+| Xcode | 16.1+ | ✅ 필수 |
+| iOS Target | 26.1 (Tahoe)+ | ✅ 필수 |
+| SwiftLint | 0.62.2+ | ✅ 필수 (pre-commit) |
+| swift-format | 6.2.1+ | 🟡 선택 (복잡한 뷰 제외) |
+| Google Mobile Ads SDK | 11.0+ | ✅ 필수 (광고) |
+| Runestone | (최신) | ✅ 필수 (Sources 뷰) |
+
+---
+
+## 리소스 & 참고
+
+- **StoreKit 2**: https://developer.apple.com/documentation/storekit
+- **WKWebView**: https://developer.apple.com/documentation/webkit/wkwebview
+- **SwiftUI**: https://developer.apple.com/xcode/swiftui/
+- **Google AdMob**: https://admob.google.com
+- **Eruda Console**: https://eruda.liriliri.io/
