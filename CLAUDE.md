@@ -74,24 +74,27 @@ wina/
 ├── ContentView+URLInput.swift           # URL input handling
 ├── ContentViewSheets.swift              # Sheet presentations
 ├── Features/
-│   ├── Ad/              # AdManager (Google AdMob interstitial)
+│   ├── About/           # AboutView, StoreManager (IAP)
 │   ├── Accessibility/   # AccessibilityAuditView (axe-core 기반)
+│   ├── Ad/              # AdManager (Google AdMob interstitial + banner)
 │   ├── AppBar/          # OverlayMenuBars, 버튼들
-│   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView, EmulationSettingsView
 │   ├── Console/         # ConsoleManager + UI (JS console 캡처 + %c styling + array chunking)
-│   ├── Network/         # NetworkManager + UI (fetch/XHR + scroll buttons + domain filtering)
-│   ├── Storage/         # StorageManager + UI (localStorage/sessionStorage/cookies, SWR 패턴)
-│   ├── Performance/     # Web Vitals + Navigation Timing
-│   ├── Sources/         # DOM Tree, Stylesheets, Scripts, CSS specificity override tracking
-│   ├── Resources/       # Network 탭 리소스 타이밍 & 크기
 │   ├── Info/            # SharedInfoWebView, API Capability 감지, 벤치마크
+│   ├── Network/         # NetworkManager + UI (fetch/XHR + scroll buttons + domain filtering)
+│   ├── Performance/     # Web Vitals + Navigation Timing
+│   ├── Resources/       # Network 탭 리소스 타이밍 & 크기
+│   ├── SearchText/      # SearchTextOverlay (in-page text search, Cmd+F style)
+│   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView, EmulationSettingsView
+│   ├── Snippets/        # SnippetsView (JavaScript snippet execution)
+│   ├── Sources/         # DOM Tree, Stylesheets, Scripts, CSS specificity override tracking
+│   ├── Storage/         # StorageManager + UI (localStorage/sessionStorage/cookies, SWR 패턴)
 │   ├── UserAgent/       # UA 커스터마이징
-│   ├── WebView/         # WebViewContainer, WebViewNavigator, WebViewScripts
-│   └── About/           # AboutView, StoreManager (IAP)
+│   └── WebView/         # WebViewContainer, WebViewNavigator, WebViewScripts
 ├── Shared/
-│   ├── Components/      # GlassIconButton, GlassActionButton, ChipButton, InfoPopoverButton, SettingToggleRow, DevToolsHeader, FlowLayout, JsonEditor/
+│   ├── Components/      # GlassIconButton, GlassActionButton, ChipButton, ScrollNavigationButtons, ShareSheet, JsonEditor/
 │   ├── Constants/       # BarConstants (레이아웃 상수)
-│   └── Extensions/      # ColorExtensions, DeviceUtilities, URLValidator, SheetModifiers
+│   ├── Extensions/      # ColorExtensions, DeviceUtilities, URLValidator, SheetModifiers
+│   └── URLStorageManager.swift  # Bookmarks & history (singleton)
 └── Resources/Icons/
 ```
 
@@ -599,17 +602,19 @@ Key points:
 |---------|-----------|
 | Circular icon button | `GlassIconButton` (.regular 44×44, .small 28×28) |
 | Action button | `GlassActionButton` (.default, .destructive, .primary) |
-| Copy button | `CopyButton`, `CopyIconButton`, `CopiedFeedbackToast` |
+| Copy button | `CopyButton` (text + feedback toast) |
 | Type badge | `TypeBadge` |
 | Chip/tag | `ChipButton`, `ToggleChipButton` |
 | Info button | `InfoPopoverButton` (Generic ShapeStyle) |
-| Deprecation warning | `DeprecatedPopoverButton` |
 | Security restriction | `SecurityRestrictionBanner` |
 | Settings toggle | `SettingToggleRow` |
 | Color picker | `ColorPickerRow` |
 | Auto-wrap layout | `FlowLayout` |
 | DevTools header | `DevToolsHeader` (2-row: title center, buttons split) |
 | WebView size control | `WebViewSizeControl` |
+| Scroll buttons | `ScrollNavigationButtons` (up/down with auto-hide) |
+| Share sheet | `ShareSheet` (UIActivityViewController wrapper) |
+| JSON editor | `JsonEditor/` (syntax-highlighted editing) |
 
 ### DevToolsHeader Layout
 
