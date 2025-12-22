@@ -829,18 +829,20 @@ private struct LogRow: View {
                 }
             }
 
-            // Right side: Type badge + timestamp
+            // Right side: Type badge + repeat count (single line) + timestamp
             VStack(alignment: .trailing, spacing: 4) {
-                // Type badge (icon + label)
-                ConsoleTypeBadge(type: log.type)
+                HStack(spacing: 6) {
+                    if log.repeatCount > 1 {
+                        Text("×\(log.repeatCount)")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.15), in: Capsule())
+                    }
 
-                if log.repeatCount > 1 {
-                    Text("×\(log.repeatCount)")
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.15), in: Capsule())
+                    // Type badge (icon + label)
+                    ConsoleTypeBadge(type: log.type)
                 }
 
                 Text(Self.timeFormatter.string(from: log.timestamp))

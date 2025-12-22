@@ -13,7 +13,12 @@ WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발�
 - **SFSafariViewController**: Safari 쿠키/세션 공유, Content Blocker, Reader Mode, Safari 확장 지원
 - **공통**: URL 테스트, API Capability 감지, 북마크, 반응형 크기 조절
 
-**Recent Focus** (as of Dec 2024):
+**Recent Focus** (as of Dec 22, 2024):
+- ✅ Scroll buttons implementation (NetworkView, PerformanceView, StorageView, AccessibilityAuditView)
+  - glassEffect modifier placement fix: apply to Button, not label
+  - .backport.glassEffect(in: .circle) for iOS compatibility
+  - State-based opacity/disabled visualization with smooth animations
+- ✅ StorageView UX: URL change detection (Timer-based polling) even during drawer interaction
 - Console %c CSS styling (color, background-color, font-weight, font-size)
 - Console array chunking for large outputs (100+ items → collapsed groups)
 - Network tab scroll buttons (bottom-right, Liquid Glass design)
@@ -514,21 +519,80 @@ let props = item["properties"] as? [[String: Any]] ?? []
 let isImportant = propDict["i"] as? Bool ?? false
 ```
 
+### 14. glassEffect Modifier on Button vs Label
+
+**❌ WRONG**: Applying to Image/label inside Button:
+```swift
+Button(
+    action: { action() },
+    label: {
+        Image(systemName: "chevron.up.circle.fill")
+            .font(.system(size: 28))
+            .foregroundStyle(.white)
+            .backport
+            .glassEffect(in: .circle)  // Wrong placement!
+    }
+)
+```
+
+**✅ CORRECT**: Apply to Button itself:
+```swift
+Button(
+    action: { action() },
+    label: {
+        Image(systemName: "chevron.up.circle.fill")
+            .font(.system(size: 28))
+            .foregroundStyle(.white)
+    }
+)
+.backport
+.glassEffect(in: .circle)  // Apply to Button, not label
+```
+
+**Why**: The modifier chain matters. Modifiers on the label don't affect the button's touch area or full background. Apply modifiers to the Button itself for proper Liquid Glass effect and interaction.
+
+**iOS Compatibility**: Always use `.backport.glassEffect()` for iOS < 26 support via SwiftUIBackports.
+
 ---
 
 ## Design System
 
 **Liquid Glass UI** (iOS 26):
 ```swift
-.glassEffect()                            // default
-.glassEffect(in: .capsule)                // capsule
-.glassEffect(in: .circle)                 // circle
-.glassEffect(in: .rect(cornerRadius: 16)) // rounded
+.backport.glassEffect()                            // default
+.backport.glassEffect(in: .capsule)                // capsule
+.backport.glassEffect(in: .circle)                 // circle
+.backport.glassEffect(in: .rect(cornerRadius: 16)) // rounded
 ```
+
+**Important**: Always use `.backport.glassEffect()` for iOS < 26 compatibility via SwiftUIBackports extension.
 
 Principle: Use `.glassEffect()`, maintain system background, use `.primary`/`.secondary` colors.
 
 For inactive/translucent state, use `.opacity(0.3)` (Liquid Glass principle preserves subtle visibility).
+
+**Scroll Button Pattern** (NetworkView, PerformanceView, StorageView, AccessibilityAuditView):
+```swift
+Button(
+    action: { scrollUp(proxy: scrollProxy) },
+    label: {
+        Image(systemName: "chevron.up.circle.fill")
+            .font(.system(size: 28))
+            .foregroundStyle(.white)
+    }
+)
+.backport
+.glassEffect(in: .circle)
+.disabled(!canScroll || scrollOffset <= 20)
+.opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+.animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+```
+
+Key points:
+- Apply `.glassEffect()` to Button, not to Image label inside
+- Use `.backport` for iOS compatibility
+- Combine with `.disabled()` and `.opacity()` for state visualization
+- Use `.animation()` for smooth opacity transitions
 
 ---
 

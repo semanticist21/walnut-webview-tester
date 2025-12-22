@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftUIBackports
 
 // MARK: - Performance Tab
 
@@ -34,40 +35,111 @@ struct PerformanceView: View {
     @State private var selectedTab: PerformanceTab = .metrics
     @State private var searchText: String = ""
     @State private var expandedTypes: Set<ResourceType> = []
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
 
     private var hasData: Bool {
         performanceManager.data.navigation != nil || !performanceManager.data.paints.isEmpty
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            performanceHeader
-            searchBar
-            filterTabs
-
-            Divider()
-
+        Group {
             if performanceManager.isLoading {
                 loadingState
-            } else if let error = performanceManager.lastError, !hasData {
+            } else if let error = performanceManager.lastError {
                 errorState(error)
-            } else if !hasData {
+            } else if performanceManager.data.resources.isEmpty && performanceManager.data.navigation == nil {
                 emptyState
             } else {
-                contentView
+                mainContent
             }
         }
-        .onAppear {
-            if !hasData {
-                onCollect()
+        .background(Color(uiColor: .systemBackground))
+    }
+
+    private var mainContent: some View {
+        ScrollViewReader { proxy in
+            GeometryReader { _ in
+                ScrollView {
+                    GeometryReader { geometryInner in
+                        Color.clear
+                            .onAppear {
+                                scrollViewHeight = geometryInner.size.height
+                            }
+                    }
+                    .frame(height: 0)
+
+                    VStack(spacing: 16) {
+                        coreWebVitalsSection
+                            .id("core-vitals")
+
+                        metricsSection
+                            .id("metrics")
+
+                        resourcesSection
+                            .id("resources")
+
+                        timingSection
+                            .id("timing")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        GeometryReader { geometryContent in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = geometryContent.size.height
+                                }
+                        }
+                    )
+                }
+                .scrollContentBackground(.hidden)
+                .onScrollGeometryChange(for: Double.self) { scrollGeometry in
+                    scrollGeometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    VStack(spacing: 12) {
+                        Button(
+                            action: { scrollUp(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || scrollOffset <= 20)
+                        .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+
+                        Button(
+                            action: { scrollDown(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || (contentHeight - scrollOffset - scrollViewHeight) <= 20)
+                        .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                }
+            }
+            .onAppear {
+                scrollProxy = proxy
             }
         }
-        .task {
-            await AdManager.shared.showInterstitialAd(
-                options: AdOptions(id: "performance_devtools"),
-                adUnitId: AdManager.interstitialAdUnitId
-            )
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Header
@@ -137,24 +209,93 @@ struct PerformanceView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                // Core Web Vitals always shown at top
-                coreWebVitalsSection
+        ScrollViewReader { proxy in
+            GeometryReader { outerGeo in
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        // Core Web Vitals always shown at top
+                        coreWebVitalsSection
+                            .id("core-vitals")
 
-                // Tab content
-                switch selectedTab {
-                case .metrics:
-                    metricsSection
-                case .resources:
-                    resourcesSection
-                case .timing:
-                    timingSection
+                        // Tab content
+                        switch selectedTab {
+                        case .metrics:
+                            metricsSection
+                                .id("metrics")
+                        case .resources:
+                            resourcesSection
+                                .id("resources")
+                        case .timing:
+                            timingSection
+                                .id("timing")
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        GeometryReader { innerGeo in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = innerGeo.size.height
+                                }
+                                .onChange(of: innerGeo.size.height) { _, newHeight in
+                                    contentHeight = newHeight
+                                }
+                        }
+                    )
+                }
+                .background(Color(uiColor: .systemBackground))
+                .scrollContentBackground(.hidden)
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .onAppear {
+                    scrollViewHeight = outerGeo.size.height
+                }
+                .onChange(of: outerGeo.size.height) { _, newHeight in
+                    scrollViewHeight = newHeight
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    VStack(spacing: 4) {
+                        Button(
+                            action: { scrollUp(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                                    .backport
+                                    .glassEffect(in: .circle)
+                            }
+                        )
+                        .disabled(!canScroll || scrollOffset <= 20)
+                        .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+
+                        Button(
+                            action: { scrollDown(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                                    .backport
+                                    .glassEffect(in: .circle)
+                            }
+                        )
+                        .disabled(!canScroll || (contentHeight - scrollOffset - scrollViewHeight) <= 20)
+                        .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
+                    }
+                    .frame(height: 28 * 2 + 4)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 12)
                 }
             }
-            .padding(16)
+            .onAppear {
+                scrollProxy = proxy
+            }
         }
-        .background(Color(uiColor: .systemBackground))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Core Web Vitals Section
@@ -409,6 +550,35 @@ struct PerformanceView: View {
     private func formatCLS(_ value: Double) -> String {
         guard value >= 0 else { return "N/A" }
         return String(format: "%.3f", value)
+    }
+
+    // MARK: - Scroll Helpers
+
+    private var canScroll: Bool {
+        contentHeight > scrollViewHeight + 20
+    }
+
+    private func scrollUp(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo("core-vitals", anchor: .top)
+        }
+    }
+
+    private func scrollDown(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        let lastID: String
+        switch selectedTab {
+        case .metrics:
+            lastID = "metrics"
+        case .resources:
+            lastID = "resources"
+        case .timing:
+            lastID = "timing"
+        }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(lastID, anchor: .bottom)
+        }
     }
 }
 

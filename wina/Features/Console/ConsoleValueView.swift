@@ -56,7 +56,7 @@ struct ConsoleValueView: View {
             // Children (expanded)
             if isExpanded {
                 children
-                    .padding(.leading, 8)
+                    .padding(.leading, 4)
             }
         }
     }
@@ -112,7 +112,9 @@ struct ConsoleValueView: View {
                                 .font(.system(size: 12, weight: isPrototype ? .regular : .semibold, design: .monospaced))
                                 .foregroundStyle(isPrototype ? .secondary : keyColor)
                                 .italic(isPrototype)
-                                .frame(maxWidth: 150, alignment: .trailing)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.leading, 4)
 
                             Text(":")
                                 .font(.system(size: 12, design: .monospaced))
@@ -137,7 +139,9 @@ struct ConsoleValueView: View {
                             Text("[\(index)]")
                                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(keyColor)
-                                .frame(maxWidth: 150, alignment: .trailing)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.leading, 4)
 
                             Text(":")
                                 .font(.system(size: 12, design: .monospaced))
@@ -152,7 +156,7 @@ struct ConsoleValueView: View {
                     Text("… \(arr.totalCount - arr.elements.count) more items")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.tertiary)
-                        .padding(.leading, 8)
+                        .padding(.leading, 4)
                 }
             }
 
@@ -163,7 +167,9 @@ struct ConsoleValueView: View {
                         Text(entry.key)
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .foregroundStyle(keyColor)
-                            .frame(maxWidth: 150, alignment: .trailing)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.leading, 4)
 
                         Text("→")
                             .font(.system(size: 12, design: .monospaced))
@@ -181,7 +187,9 @@ struct ConsoleValueView: View {
                         Text("(\(index))")
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .foregroundStyle(keyColor)
-                            .frame(maxWidth: 150, alignment: .trailing)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.leading, 4)
 
                         ConsoleValueView(value: element)
                     }
@@ -264,7 +272,9 @@ private struct ArrayChunkView: View {
                             Text("[\(globalIdx)]")
                                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(Color(red: 0.2, green: 0.4, blue: 0.8))
-                                .frame(maxWidth: 150, alignment: .trailing)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.leading, 4)
 
                             Text(":")
                                 .font(.system(size: 12, design: .monospaced))
@@ -274,7 +284,7 @@ private struct ArrayChunkView: View {
                         }
                     }
                 }
-                .padding(.leading, 8)
+                .padding(.leading, 4)
                 .padding(.vertical, 4)
             }
         }

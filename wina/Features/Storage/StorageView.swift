@@ -386,6 +386,10 @@ struct StorageView: View {
     @State private var showAddSheet: Bool = false
     @State private var lastObservedURL: URL?
     @State private var urlCheckTimer: Timer?
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
 
     private var filteredItems: [StorageItem] {
         var result: [StorageItem]
@@ -649,27 +653,112 @@ struct StorageView: View {
 
     // MARK: - Item List
 
+    private var canScroll: Bool {
+        contentHeight > scrollViewHeight + 20
+    }
+
+    private func scrollUp(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        guard !filteredItems.isEmpty else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo("item-\(filteredItems.first!.id)", anchor: .top)
+        }
+    }
+
+    private func scrollDown(proxy: ScrollViewProxy?) {
+        guard let proxy else { return }
+        guard !filteredItems.isEmpty else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo("item-\(filteredItems.last!.id)", anchor: .bottom)
+        }
+    }
+
     private var itemList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(filteredItems) { item in
-                    StorageItemRow(
-                        item: item,
-                        keyColumnWidth: keyColumnWidth,
-                        storageTypeColumnWidth: storageTypeColumnWidth,
-                        searchText: searchText,
-                        showsStorageType: showsAllStorage,
-                        onEdit: { selectedItem = $0 },
-                        onDelete: { deleteItem($0) },
-                        onCopy: { copyToClipboard($0) },
-                        onCopyKeyValue: { copyKeyValue($0) }
+        ScrollViewReader { proxy in
+            GeometryReader { outerGeo in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredItems) { item in
+                            StorageItemRow(
+                                item: item,
+                                keyColumnWidth: keyColumnWidth,
+                                storageTypeColumnWidth: storageTypeColumnWidth,
+                                searchText: searchText,
+                                showsStorageType: showsAllStorage,
+                                onEdit: { selectedItem = $0 },
+                                onDelete: { deleteItem($0) },
+                                onCopy: { copyToClipboard($0) },
+                                onCopyKeyValue: { copyKeyValue($0) }
+                            )
+                            .id("item-\(item.id)")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        GeometryReader { innerGeo in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = innerGeo.size.height
+                                }
+                                .onChange(of: innerGeo.size.height) { _, newHeight in
+                                    contentHeight = newHeight
+                                }
+                        }
                     )
                 }
+                .background(Color(uiColor: .systemBackground))
+                .scrollContentBackground(.hidden)
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .onAppear {
+                    scrollViewHeight = outerGeo.size.height
+                }
+                .onChange(of: outerGeo.size.height) { _, newHeight in
+                    scrollViewHeight = newHeight
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    VStack(spacing: 4) {
+                        Button(
+                            action: { scrollUp(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || scrollOffset <= 20)
+                        .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+
+                        Button(
+                            action: { scrollDown(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || (contentHeight - scrollOffset - scrollViewHeight) <= 20)
+                        .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
+                    }
+                    .frame(height: 28 * 2 + 4)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 12)
+                }
             }
-            .frame(maxWidth: .infinity)
+            .onAppear {
+                scrollProxy = proxy
+            }
         }
-        .background(Color(uiColor: .systemBackground))
-        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func deleteItem(_ item: StorageItem) {

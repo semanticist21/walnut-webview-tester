@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftUIBackports
 
 // MARK: - Accessibility Issue Model
 
@@ -164,6 +165,10 @@ struct AccessibilityAuditView: View {
     @State private var searchText: String = ""
     @State private var copiedFeedback: String?
     @State private var showingShareSheet: Bool = false
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
 
     private var filteredIssues: [AccessibilityIssue] {
         var result = issues
@@ -443,16 +448,101 @@ struct AccessibilityAuditView: View {
     // MARK: - Issues List
 
     private var issuesList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(filteredIssues) { issue in
-                    IssueRow(issue: issue) {
-                        showCopiedFeedback("Copied")
+        ScrollViewReader { proxy in
+            GeometryReader { outerGeo in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredIssues) { issue in
+                            IssueRow(issue: issue) {
+                                showCopiedFeedback("Copied")
+                            }
+                            .id(issue.id)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        GeometryReader { innerGeo in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = innerGeo.size.height
+                                }
+                                .onChange(of: innerGeo.size.height) { _, newHeight in
+                                    contentHeight = newHeight
+                                }
+                        }
+                    )
+                }
+                .background(Color(uiColor: .systemBackground))
+                .scrollContentBackground(.hidden)
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .onAppear {
+                    scrollViewHeight = outerGeo.size.height
+                }
+                .onChange(of: outerGeo.size.height) { _, newHeight in
+                    scrollViewHeight = newHeight
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    VStack(spacing: 4) {
+                        Button(
+                            action: { scrollUp(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || scrollOffset <= 20)
+                        .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+
+                        Button(
+                            action: { scrollDown(proxy: scrollProxy) },
+                            label: {
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                            }
+                        )
+                        .backport
+                        .glassEffect(in: .circle)
+                        .disabled(!canScroll || (contentHeight - scrollOffset - scrollViewHeight) <= 20)
+                        .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
+                        .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
+                    }
+                    .frame(height: 28 * 2 + 4)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 12)
                 }
             }
+            .onAppear {
+                scrollProxy = proxy
+            }
         }
-        .background(Color(uiColor: .systemBackground))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var canScroll: Bool {
+        contentHeight > scrollViewHeight + 20
+    }
+
+    private func scrollUp(proxy: ScrollViewProxy?) {
+        guard let proxy, let firstIssue = filteredIssues.first else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(firstIssue.id, anchor: .top)
+        }
+    }
+
+    private func scrollDown(proxy: ScrollViewProxy?) {
+        guard let proxy, let lastIssue = filteredIssues.last else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(lastIssue.id, anchor: .bottom)
+        }
     }
 
     // MARK: - Audit Logic

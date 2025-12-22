@@ -502,10 +502,10 @@ struct NetworkView: View {
                                 Image(systemName: "chevron.up.circle.fill")
                                     .font(.system(size: 28))
                                     .foregroundStyle(.white)
-                                    .backport
-                                    .glassEffect(in: .circle)
                             }
                         )
+                        .backport
+                        .glassEffect(in: .circle)
                         .disabled(!canScroll || scrollOffset <= 20)
                         .opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
                         .animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
@@ -516,10 +516,10 @@ struct NetworkView: View {
                                 Image(systemName: "chevron.down.circle.fill")
                                     .font(.system(size: 28))
                                     .foregroundStyle(.white)
-                                    .backport
-                                    .glassEffect(in: .circle)
                             }
                         )
+                        .backport
+                        .glassEffect(in: .circle)
                         .disabled(!canScroll || (contentHeight - scrollOffset - scrollViewHeight) <= 20)
                         .opacity(canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20 ? 1 : 0.3)
                         .animation(.easeInOut(duration: 0.2), value: canScroll && (contentHeight - scrollOffset - scrollViewHeight) > 20)
@@ -771,7 +771,7 @@ private struct NetworkRequestRow: View {
             Text(request.responseContentType)
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(request.responseContentTypeColor)
-                .frame(width: 36, alignment: .trailing)
+                .frame(width: 56, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -840,7 +840,7 @@ private struct ResourceRow: View {
             Text(resource.initiatorType.displayName)
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(resource.initiatorType.color)
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: 60, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
