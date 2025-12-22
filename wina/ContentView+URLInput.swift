@@ -27,8 +27,7 @@ extension ContentView {
                 let adSize = currentOrientationAnchoredAdaptiveBanner(width: geometry.size.width)
                 VStack {
                     Spacer()
-                    // TODO: Change to AdManager.bannerAdUnitId for production
-                    BannerAdView(adUnitId: AdManager.testBannerAdUnitId)
+                    BannerAdView(adUnitId: AdManager.bannerAdUnitId)
                         .frame(width: adSize.size.width, height: adSize.size.height)
                 }
             }

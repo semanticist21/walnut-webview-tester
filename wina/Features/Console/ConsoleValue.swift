@@ -368,6 +368,8 @@ extension ConsoleValue {
             return .string(dict["value"] as? String ?? "Symbol()")
         case "bigint":
             return .string(dict["value"] as? String ?? "0n")
+        case "regexp":
+            return .string(dict["value"] as? String ?? "/(?:)/")
         case "circular":
             return .circularReference(dict["path"] as? String ?? "root")
         default:

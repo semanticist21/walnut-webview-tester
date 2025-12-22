@@ -116,6 +116,9 @@ extension WebViewScripts {
                 if (value instanceof Error) {
                     return { type: 'error', message: value.message || String(value), stack: value.stack || null };
                 }
+                if (value instanceof RegExp) {
+                    return { type: 'regexp', value: value.toString() };
+                }
                 if (value instanceof Element) {
                     return {
                         type: 'dom',

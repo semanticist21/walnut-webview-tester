@@ -991,9 +991,18 @@ private struct LogRow: View {
                 }
             }
 
-            // Right side: Type badge + repeat count (single line) + timestamp
+            // Right side: Copy button + Type badge + repeat count (single line) + timestamp
             VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 6) {
+                    // Copy button
+                    CopyIconButton(text: log.message, size: .small) {
+                        copyFeedbackMessage = "Copied"
+                        showCopyFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            showCopyFeedback = false
+                        }
+                    }
+
                     if log.repeatCount > 1 {
                         Text("×\(log.repeatCount)")
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
