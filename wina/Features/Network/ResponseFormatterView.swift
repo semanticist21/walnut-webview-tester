@@ -26,8 +26,6 @@ struct ResponseFormatterView: View {
             ImagePreviewView(base64String: responseBody)
         case .text, .css, .javascript:
             PlainTextView(text: responseBody, language: contentType)
-        default:
-            PlainTextView(text: responseBody, language: .text)
         }
     }
 }
