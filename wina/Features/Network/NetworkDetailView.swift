@@ -14,21 +14,17 @@ import SwiftUIBackports
 struct NetworkDetailView: View {
     let request: NetworkRequest
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab: DetailTab = .headers
+    @State private var selectedTab: DetailTab = .overview
     @State private var copiedFeedback: String?
     @State private var shareItem: NetworkShareContent?
     @State private var shareFileURL: URL?
-
-    // Response search state
-    @State private var responseSearchText: String = ""
-    @State private var currentMatchIndex: Int = 0
-    @State private var totalMatches: Int = 0
 
     // URL expand/collapse state
     @State private var isURLExpanded: Bool = false
     private let urlCollapseThreshold = 80
 
     enum DetailTab: String, CaseIterable {
+        case overview = "Overview"
         case headers = "Headers"
         case request = "Request"
         case response = "Response"
@@ -51,6 +47,8 @@ struct NetworkDetailView: View {
 
                 ScrollView {
                     switch selectedTab {
+                    case .overview:
+                        overviewContent
                     case .headers:
                         headersContent
                     case .request:
@@ -198,6 +196,20 @@ struct NetworkDetailView: View {
         .background(Color(uiColor: .secondarySystemBackground))
     }
 
+    // MARK: - Overview Tab
+
+    @ViewBuilder
+    private var overviewContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Timing visualization
+            NetworkTimingView(request: request)
+
+            // Stack trace - shows where the request originated
+            StackTraceView(stackFrames: request.stackFrames)
+        }
+        .padding()
+    }
+
     // MARK: - Headers Tab
 
     @ViewBuilder
@@ -324,11 +336,16 @@ struct NetworkDetailView: View {
 
             // Request body
             if let body = request.requestBody, !body.isEmpty {
-                let contentType = detectContentType(body: body, headers: request.requestHeaders)
+                let networkContentType = detectContentType(body: body, headers: request.requestHeaders)
+                let responseFormatterType = networkContentType.toResponseContentType()
                 let bodySize = body.data(using: .utf8)?.count ?? 0
                 DetailSection(title: "Request Body", rawText: body, onCopy: copyToClipboard) {
-                    BodyHeaderView(contentType: contentType, size: bodySize)
-                    FormattedBodyView(bodyText: body, contentType: contentType)
+                    BodyHeaderView(contentType: networkContentType, size: bodySize)
+                    ResponseFormatterView(
+                        responseBody: body,
+                        contentType: responseFormatterType
+                    )
+                    .frame(minHeight: 200)
                 }
             } else {
                 emptyState(message: "No request body")
@@ -362,47 +379,25 @@ struct NetworkDetailView: View {
     private var responseContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let body = request.responseBody, !body.isEmpty {
-                // Search bar
-                ResponseSearchBar(
-                    searchText: $responseSearchText,
-                    currentMatch: currentMatchIndex,
-                    totalMatches: totalMatches,
-                    onPrevious: {
-                        if totalMatches > 0 {
-                            currentMatchIndex = (currentMatchIndex - 1 + totalMatches) % totalMatches
-                        }
-                    },
-                    onNext: {
-                        if totalMatches > 0 {
-                            currentMatchIndex = (currentMatchIndex + 1) % totalMatches
-                        }
-                    }
-                )
-                .onChange(of: responseSearchText) { _, _ in
-                    currentMatchIndex = 0
-                }
-
                 VStack(alignment: .leading, spacing: 20) {
-                    let contentType = detectContentType(body: body, headers: request.responseHeaders)
+                    let networkContentType = detectContentType(body: body, headers: request.responseHeaders)
+                    let responseFormatterType = networkContentType.toResponseContentType()
                     let bodySize = body.data(using: .utf8)?.count ?? 0
+
                     DetailSection(
                         title: "Response Body",
                         rawText: body,
                         onCopy: copyToClipboard,
                         onShare: {
-                            shareResponseBodyAsFile(body: body, contentType: contentType)
+                            shareResponseBodyAsFile(body: body, contentType: networkContentType)
                         },
                         content: {
-                            BodyHeaderView(contentType: contentType, size: bodySize)
-                            FormattedBodyView(
-                                bodyText: body,
-                                contentType: contentType,
-                                searchText: responseSearchText,
-                                currentMatchIndex: currentMatchIndex,
-                                onMatchCountChanged: { count in
-                                    totalMatches = count
-                                }
+                            BodyHeaderView(contentType: networkContentType, size: bodySize)
+                            ResponseFormatterView(
+                                responseBody: body,
+                                contentType: responseFormatterType
                             )
+                            .frame(minHeight: 200)
                         }
                     )
                 }
@@ -882,170 +877,23 @@ struct ResponseSearchBar: View {
     }
 }
 
-// MARK: - Formatted Body View
+// MARK: - Content Type Mapping
 
-struct FormattedBodyView: View {
-    let bodyText: String
-    let contentType: NetworkContentType
-    var searchText: String = ""
-    var currentMatchIndex: Int = 0
-    var onMatchCountChanged: ((Int) -> Void)?
-    @State private var showTreeView: Bool = true
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // JSON: Show tree/raw toggle and appropriate view
-            if contentType == .json && searchText.isEmpty {
-                // Toggle between Tree and Raw view
-                HStack {
-                    Spacer()
-                    Picker("View Mode", selection: $showTreeView) {
-                        Text("Tree").tag(true)
-                        Text("Raw").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 120)
-                    .padding(.trailing, 12)
-                    .padding(.top, 8)
-                }
-
-                if showTreeView {
-                    JSONTreeView(jsonString: bodyText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    SelectableTextView(text: formattedBody)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            } else if !searchText.isEmpty {
-                SearchableTextView(
-                    text: formattedBody,
-                    searchText: searchText,
-                    currentMatchIndex: currentMatchIndex,
-                    onMatchCountChanged: onMatchCountChanged
-                )
-                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 400, alignment: .leading)
-            } else {
-                SelectableTextView(text: formattedBody)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .background(Color(uiColor: .tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var formattedBody: String {
-        switch contentType {
+extension NetworkContentType {
+    /// Maps NetworkContentType to ResponseContentType for the ResponseFormatterView
+    func toResponseContentType() -> ResponseContentType {
+        switch self {
         case .json:
-            return formatJSON(bodyText)
-        case .html, .xml:
-            return formatMarkup(bodyText)
-        case .formUrlEncoded:
-            return formatFormData(bodyText)
+            return .json
+        case .html:
+            return .html
+        case .xml:
+            return .xml
         case .text:
-            return bodyText
+            return .text
+        case .formUrlEncoded:
+            // Form-encoded data is displayed as plain text
+            return .text
         }
-    }
-
-    private func formatJSON(_ jsonString: String) -> String {
-        guard let data = jsonString.data(using: .utf8),
-              let jsonObject = try? JSONSerialization.jsonObject(with: data),
-              let prettyData = try? JSONSerialization.data(
-                  withJSONObject: jsonObject,
-                  options: [.prettyPrinted, .sortedKeys]
-              ),
-              let prettyString = String(data: prettyData, encoding: .utf8) else {
-            return jsonString
-        }
-        return prettyString
-    }
-
-    private func formatMarkup(_ markup: String) -> String {
-        // Try to use SwiftSoup for HTML parsing
-        do {
-            let document = try SwiftSoup.parse(markup)
-            // Use SwiftSoup's output settings for indentation
-            document.outputSettings()
-                .indentAmount(indentAmount: 2)
-                .outline(outlineMode: false)
-            let formatted = try document.html()
-            return formatted
-        } catch {
-            // Fallback to manual formatting if SwiftSoup fails
-            return formatMarkupManual(markup)
-        }
-    }
-
-    private func formatMarkupManual(_ markup: String) -> String {
-        var result = ""
-        var indentLevel = 0
-        let indentString = "  "
-
-        // Normalize: add newlines around tags
-        let normalized = markup
-            .replacingOccurrences(of: ">", with: ">\n")
-            .replacingOccurrences(of: "<", with: "\n<")
-
-        let lines = normalized.components(separatedBy: "\n")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-
-        for line in lines {
-            // Check if it's a closing tag
-            if line.hasPrefix("</") {
-                indentLevel = max(0, indentLevel - 1)
-                result += String(repeating: indentString, count: indentLevel) + line + "\n"
-            }
-            // Self-closing tag or DOCTYPE/comment
-            else if line.hasSuffix("/>") ||
-                        line.hasPrefix("<!") ||
-                        line.hasPrefix("<?") {
-                result += String(repeating: indentString, count: indentLevel) + line + "\n"
-            }
-            // Opening tag
-            else if line.hasPrefix("<") && !line.hasPrefix("</") {
-                result += String(repeating: indentString, count: indentLevel) + line + "\n"
-                // Don't indent for void elements
-                let voidElements = [
-                    "area", "base", "br", "col", "embed", "hr", "img",
-                    "input", "link", "meta", "param", "source", "track", "wbr"
-                ]
-                let tagName = extractTagName(from: line)
-                if !voidElements.contains(tagName.lowercased()) {
-                    indentLevel += 1
-                }
-            }
-            // Text content
-            else {
-                result += String(repeating: indentString, count: indentLevel) + line + "\n"
-            }
-        }
-
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func extractTagName(from tag: String) -> String {
-        var name = tag
-            .trimmingCharacters(in: .whitespaces)
-            .replacingOccurrences(of: "<", with: "")
-            .replacingOccurrences(of: ">", with: "")
-            .replacingOccurrences(of: "/", with: "")
-
-        // Get just the tag name (before any attributes)
-        if let spaceIndex = name.firstIndex(of: " ") {
-            name = String(name[..<spaceIndex])
-        }
-        return name
-    }
-
-    private func formatFormData(_ formString: String) -> String {
-        formString
-            .components(separatedBy: "&")
-            .map { pair -> String in
-                let parts = pair.components(separatedBy: "=")
-                let key = parts.first?.removingPercentEncoding ?? parts.first ?? ""
-                let value = parts.count > 1 ? (parts[1].removingPercentEncoding ?? parts[1]) : ""
-                return "\(key) = \(value)"
-            }
-            .joined(separator: "\n")
     }
 }

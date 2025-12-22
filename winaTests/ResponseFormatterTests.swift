@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import wina
 
 final class ResponseFormatterTests: XCTestCase {

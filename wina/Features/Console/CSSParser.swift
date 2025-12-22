@@ -149,9 +149,7 @@ struct CSSParser {
 
         guard hexString.count == 6 else { return nil }
 
-        var rgb: UInt32 = 0
-        let scanner = Scanner(string: String(hexString))
-        guard scanner.scanHexInt32(&rgb) else { return nil }
+        guard let rgb = UInt32(String(hexString), radix: 16) else { return nil }
         
         let r = Double((rgb >> 16) & 0xFF) / 255.0
         let g = Double((rgb >> 8) & 0xFF) / 255.0

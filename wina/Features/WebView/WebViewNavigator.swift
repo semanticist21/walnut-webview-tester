@@ -252,7 +252,7 @@ class WebViewNavigator {
     /// Inject Eruda console into the current page
     /// Eruda is loaded from bundled JS file to bypass CSP restrictions
     func injectEruda() async {
-        guard let webView else { return }
+        guard webView != nil else { return }
 
         // Check if Eruda is already loaded
         let checkEruda = "typeof eruda !== 'undefined'"

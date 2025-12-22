@@ -125,12 +125,9 @@ struct JSONLineView: View {
     let line: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Line number (optional, for future enhancement)
-            Text(highlightedContent)
-                .font(.system(size: 11, design: .monospaced))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        highlightedContent
+            .font(.system(size: 11, design: .monospaced))
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -315,11 +312,9 @@ struct HTMLLineView: View {
     let line: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Text(highlightedContent)
-                .font(.system(size: 11, design: .monospaced))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        highlightedContent
+            .font(.system(size: 11, design: .monospaced))
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

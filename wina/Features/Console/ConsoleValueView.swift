@@ -166,7 +166,7 @@ struct ConsoleValueView: View {
         case .undefined: return ("questionmark.circle.fill", "undefined")
         case .object: return ("curlybraces", "obj")
         case .array: return ("square.fill", "arr")
-        case .function(let name): return ("function", "ƒ")
+        case .function: return ("function", "ƒ")
         case .date: return ("calendar", "date")
         case .domElement(let tag, _): return ("tag.fill", "<\(tag)>")
         case .map: return ("map.fill", "map")
