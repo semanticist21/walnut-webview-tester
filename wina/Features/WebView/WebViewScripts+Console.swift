@@ -483,6 +483,74 @@ extension WebViewScripts {
                 originalDir.apply(console, arguments);
             };
 
+            // console.time / timeLog / timeEnd
+            const timers = {};
+            const originalTime = console.time;
+            console.time = function(label) {
+                const timerLabel = label === undefined ? 'default' : String(label);
+                timers[timerLabel] = performance.now();
+                originalTime.apply(console, arguments);
+            };
+
+            const originalTimeLog = console.timeLog;
+            console.timeLog = function(label, ...args) {
+                const timerLabel = label === undefined ? 'default' : String(label);
+                const startTime = timers[timerLabel];
+                if (startTime !== undefined) {
+                    const elapsed = performance.now() - startTime;
+                    const msg = timerLabel + ': ' + elapsed.toFixed(3) + 'ms';
+                    try {
+                        sendMessage({
+                            type: 'log',
+                            message: args.length > 0 ? msg + ' ' + args.map(formatArg).join(' ') : msg,
+                            source: getCallerSource()
+                        });
+                    } catch(e) {}
+                }
+                originalTimeLog.apply(console, arguments);
+            };
+
+            const originalTimeEnd = console.timeEnd;
+            console.timeEnd = function(label) {
+                const timerLabel = label === undefined ? 'default' : String(label);
+                const startTime = timers[timerLabel];
+                if (startTime !== undefined) {
+                    const elapsed = performance.now() - startTime;
+                    delete timers[timerLabel];
+                    try {
+                        sendMessage({
+                            type: 'log',
+                            message: timerLabel + ': ' + elapsed.toFixed(3) + 'ms',
+                            source: getCallerSource()
+                        });
+                    } catch(e) {}
+                }
+                originalTimeEnd.apply(console, arguments);
+            };
+
+            // console.count / countReset
+            const counters = {};
+            const originalCount = console.count;
+            console.count = function(label) {
+                const counterLabel = label === undefined ? 'default' : String(label);
+                counters[counterLabel] = (counters[counterLabel] || 0) + 1;
+                try {
+                    sendMessage({
+                        type: 'log',
+                        message: counterLabel + ': ' + counters[counterLabel],
+                        source: getCallerSource()
+                    });
+                } catch(e) {}
+                originalCount.apply(console, arguments);
+            };
+
+            const originalCountReset = console.countReset;
+            console.countReset = function(label) {
+                const counterLabel = label === undefined ? 'default' : String(label);
+                counters[counterLabel] = 0;
+                originalCountReset.apply(console, arguments);
+            };
+
             // Capture uncaught errors
             window.addEventListener('error', function(e) {
                 let source = null;
