@@ -518,21 +518,6 @@ struct SourcesView: View {
                     }
                     .buttonStyle(.plain)
                 }
-
-                // Clear button
-                if !breadcrumbPath.isEmpty {
-                    Button {
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            breadcrumbPath = []
-                        }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.leading, 8)
-                }
             }
             .frame(height: 32)
         }
