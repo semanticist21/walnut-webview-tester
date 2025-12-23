@@ -477,17 +477,7 @@ struct SnippetsView: View {
                     resetAllSnippets()
                 }
             ],
-            rightButtons: [
-                .init(
-                    icon: "checkmark.circle",
-                    activeIcon: "checkmark.circle.fill",
-                    color: .secondary,
-                    activeColor: .green,
-                    isActive: activeCount > 0
-                ) {
-                    // Just indicator, no action
-                }
-            ]
+            rightButtons: []
         )
     }
 

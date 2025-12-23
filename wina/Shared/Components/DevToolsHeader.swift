@@ -85,22 +85,20 @@ struct DevToolsHeader: View {
 
     @ViewBuilder
     private func buttonGroup(_ buttons: [HeaderButton]) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             ForEach(buttons) { button in
                 Button {
                     button.action()
                 } label: {
                     Image(systemName: button.currentIcon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(button.currentColor)
-                        .frame(width: 44, height: 44)
+                        .font(.system(size: 17))
+                        .foregroundStyle(button.currentColor.opacity(button.isDisabled ? 0.4 : 0.8))
+                        .frame(width: 40, height: 40)
                         .contentShape(Circle())
                 }
                 .disabled(button.isDisabled)
             }
         }
-        .padding(.horizontal, 6)
-        .backport.glassEffect(in: .capsule)
     }
 }
 

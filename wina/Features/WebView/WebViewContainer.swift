@@ -760,6 +760,34 @@ struct WKWebViewRepresentable: UIViewRepresentable {
             loadingObservation = nil
         }
 
+        // MARK: - Clear Strategy
+
+        private func applyClearStrategy(currentURL: URL?, newURL: URL?) {
+            let strategyRaw = UserDefaults.standard.string(forKey: "logClearStrategy") ?? LogClearStrategy.keep.rawValue
+            let strategy = LogClearStrategy(rawValue: strategyRaw) ?? .keep
+
+            switch strategy {
+            case .keep:
+                // Never auto-clear
+                return
+            case .page:
+                // Clear on every navigation
+                clearAllLogs()
+            case .origin:
+                // Clear only when origin changes
+                guard let currentHost = currentURL?.host,
+                      let newHost = newURL?.host,
+                      currentHost != newHost else { return }
+                clearAllLogs()
+            }
+        }
+
+        private func clearAllLogs() {
+            navigator?.consoleManager.clear()
+            navigator?.networkManager.clear()
+            navigator?.resourceManager.clear()
+        }
+
         // Track pending document request (only one at a time for main frame)
         private var pendingDocumentRequestId: String?
 

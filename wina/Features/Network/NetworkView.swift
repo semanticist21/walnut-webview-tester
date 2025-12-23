@@ -844,28 +844,27 @@ private struct NetworkSettingsSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Clear Strategy") {
-                    Picker("On Navigation", selection: clearStrategy) {
-                        ForEach(LogClearStrategy.allCases, id: \.self) { strategy in
-                            Text(strategy.displayName).tag(strategy)
+                Section("Logging") {
+                    HStack {
+                        Picker("Clear Strategy", selection: clearStrategy) {
+                            ForEach(LogClearStrategy.allCases, id: \.self) { strategy in
+                                Text(strategy.displayName).tag(strategy)
+                            }
                         }
+                        InfoPopoverButton(
+                            text: """
+                            When to clear logs during navigation:
+                            • Keep All: Manual clear only
+                            • Same Origin: Clear when leaving domain
+                            • Each Page: Clear on every navigation
+                            """
+                        )
                     }
-                }
 
-                Section {
-                    Text(clearStrategy.wrappedValue.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section("Reload Behavior") {
-                    Toggle("Preserve Log on Reload", isOn: $preserveLog)
-                }
-
-                Section {
-                    Text("Keep logs when the page is reloaded (separate from navigation strategy).")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        Toggle("Preserve on Reload", isOn: $preserveLog)
+                        InfoPopoverButton(text: "Keep logs when the page is reloaded.")
+                    }
                 }
             }
             .navigationTitle("Network Settings")

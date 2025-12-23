@@ -234,7 +234,7 @@ struct ContentView: View {
                 .devToolsSheet()
         }
         .sheet(isPresented: $showSnippets) {
-            SnippetsSettingsView(navigator: webViewNavigator)
+            SnippetsView(navigator: webViewNavigator)
                 .devToolsSheet()
         }
         .overlay {
