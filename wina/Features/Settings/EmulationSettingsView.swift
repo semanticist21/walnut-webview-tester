@@ -44,6 +44,15 @@ struct EmulationSettingsView: View {
         List {
             Section {
                 HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Overrides CSS media queries. Requires page reload to apply.")
+                        .font(.subheadline)
+                }
+            }
+
+            Section {
+                HStack {
                     Picker("Color Scheme", selection: $colorScheme) {
                         ForEach(EmulatedColorScheme.allCases) { scheme in
                             Text(scheme.label).tag(scheme)
@@ -66,8 +75,6 @@ struct EmulationSettingsView: View {
                     Toggle("Reduced Transparency", isOn: $reducedTransparency)
                     InfoPopoverButton(text: "prefers-reduced-transparency\n\nDisables blur and transparency effects.")
                 }
-            } header: {
-                Text("Overrides CSS media queries. Requires page reload to apply.")
             }
 
             Section {
