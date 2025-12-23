@@ -34,48 +34,48 @@ struct NetworkRequestStatusTests {
         )
     }
 
-    @Test("Status 2xx is success (green)")
-    func testStatus2xxIsGreen() {
+    @Test("Status 2xx is success (secondary)")
+    func testStatus2xxIsSecondary() {
         let request200 = makeRequest(status: 200)
         let request201 = makeRequest(status: 201)
         let request204 = makeRequest(status: 204)
 
-        #expect(request200.statusColor == .green)
-        #expect(request201.statusColor == .green)
-        #expect(request204.statusColor == .green)
+        #expect(request200.statusColor == .secondary)
+        #expect(request201.statusColor == .secondary)
+        #expect(request204.statusColor == .secondary)
     }
 
-    @Test("Status 3xx is redirect (blue)")
-    func testStatus3xxIsBlue() {
+    @Test("Status 3xx is redirect (secondary)")
+    func testStatus3xxIsSecondary() {
         let request301 = makeRequest(status: 301)
         let request302 = makeRequest(status: 302)
         let request304 = makeRequest(status: 304)
 
-        #expect(request301.statusColor == .blue)
-        #expect(request302.statusColor == .blue)
-        #expect(request304.statusColor == .blue)
+        #expect(request301.statusColor == .secondary)
+        #expect(request302.statusColor == .secondary)
+        #expect(request304.statusColor == .secondary)
     }
 
-    @Test("Status 4xx is client error (orange)")
-    func testStatus4xxIsOrange() {
+    @Test("Status 4xx is client error (orange with opacity)")
+    func testStatus4xxIsOrangeOpacity() {
         let request400 = makeRequest(status: 400)
         let request404 = makeRequest(status: 404)
         let request403 = makeRequest(status: 403)
 
-        #expect(request400.statusColor == .orange)
-        #expect(request404.statusColor == .orange)
-        #expect(request403.statusColor == .orange)
+        #expect(request400.statusColor == .orange.opacity(0.8))
+        #expect(request404.statusColor == .orange.opacity(0.8))
+        #expect(request403.statusColor == .orange.opacity(0.8))
     }
 
-    @Test("Status 5xx is server error (red)")
-    func testStatus5xxIsRed() {
+    @Test("Status 5xx is server error (red with opacity)")
+    func testStatus5xxIsRedOpacity() {
         let request500 = makeRequest(status: 500)
         let request502 = makeRequest(status: 502)
         let request503 = makeRequest(status: 503)
 
-        #expect(request500.statusColor == .red)
-        #expect(request502.statusColor == .red)
-        #expect(request503.statusColor == .red)
+        #expect(request500.statusColor == .red.opacity(0.8))
+        #expect(request502.statusColor == .red.opacity(0.8))
+        #expect(request503.statusColor == .red.opacity(0.8))
     }
 
     @Test("Nil status is secondary")

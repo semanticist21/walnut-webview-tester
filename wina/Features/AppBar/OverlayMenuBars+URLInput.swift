@@ -19,6 +19,7 @@ struct URLInputOverlayView: View {
     let onURLChange: (String) -> Void
 
     @FocusState private var urlInputFocused: Bool
+    @State private var showCopiedFeedback = false
 
     private var urlValidationState: URLValidationState {
         guard !urlInputText.isEmpty else { return .empty }
@@ -77,6 +78,27 @@ struct URLInputOverlayView: View {
 
     private var bookmarkRow: some View {
         HStack {
+            // Copy current URL button
+            if let currentURL, !currentURL.isEmpty {
+                Button {
+                    UIPasteboard.general.string = currentURL
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showCopiedFeedback = true
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        showCopiedFeedback = false
+                    }
+                } label: {
+                    Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 16))
+                        .foregroundStyle(showCopiedFeedback ? .green : .secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Circle())
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+            }
+
             Spacer()
 
             Button {
@@ -106,61 +128,67 @@ struct URLInputOverlayView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.trailing, 6)
+        .padding(.horizontal, 6)
     }
 
     // MARK: - URL Input Row
 
     private var urlInputRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: urlValidationState.iconName)
-                .foregroundStyle(urlValidationState.iconColor)
-                .font(.system(size: 14))
-                .contentTransition(.symbolEffect(.replace))
-                .animation(.easeOut(duration: 0.2), value: urlValidationState)
+        HStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: urlValidationState.iconName)
+                    .foregroundStyle(urlValidationState.iconColor)
+                    .font(.system(size: 14))
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(.easeOut(duration: 0.2), value: urlValidationState)
 
-            // URL TextField
-            TextField("Enter URL", text: $urlInputText)
-                .textFieldStyle(.plain)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .keyboardType(.URL)
-                .submitLabel(.go)
-                .focused($urlInputFocused)
-                .onSubmit {
-                    submitURL()
+                // URL TextField
+                TextField("Enter URL", text: $urlInputText)
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+                    .submitLabel(.go)
+                    .focused($urlInputFocused)
+                    .onSubmit {
+                        submitURL()
+                    }
+
+                // Clear button
+                if !urlInputText.isEmpty {
+                    Button {
+                        urlInputText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .padding(8)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .frame(maxWidth: urlValidationState == .valid ? .infinity : nil)
+            .backport.glassEffect(in: .capsule)
 
-            // Clear button
-            if !urlInputText.isEmpty {
+            // Go button - matching Home design
+            if urlValidationState == .valid {
                 Button {
-                    urlInputText = ""
+                    submitURL()
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .frame(width: 28, height: 28)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 48, height: 48)
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .backport.glassEffect(in: .circle)
+                .transition(.opacity.animation(.easeOut(duration: 0.15)))
             }
-
-            // Go button
-            Button {
-                submitURL()
-            } label: {
-                Image(systemName: "arrow.right.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(urlValidationState == .valid ? .blue : .secondary)
-                    .frame(width: 32, height: 32)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .disabled(urlValidationState != .valid)
         }
-        .padding(.leading, 18)
-        .padding(.trailing, 10)
-        .padding(.vertical, 10)
-        .backport.glassEffect(in: .capsule)
+        .animation(.easeOut(duration: 0.25), value: urlValidationState)
     }
 
     private func submitURL() {
@@ -196,11 +224,8 @@ struct URLInputOverlayView: View {
 
     private func historyRow(url: String, isLast: Bool) -> some View {
         Button {
-            guard URLValidator.isValidURL(url) else { return }
+            // Only fill input, user submits manually
             urlInputText = url
-            urlStorage.addToHistory(url)
-            onURLChange(url)
-            showURLInput = false
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "clock.arrow.circlepath")

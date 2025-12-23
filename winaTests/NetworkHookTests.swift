@@ -75,7 +75,7 @@ final class NetworkHookTests: XCTestCase {
         // Look for regex that matches "at functionName (fileName:line:col)"
         let script = normalizedScript()
         XCTAssertTrue(
-            script.contains("line.match(/at\\s+(.*?)\\s+\\(([^:]+):(\\d+):(\\d+)\\)/)"),
+            script.contains("line.match(/^at\\s+(.*?)\\s+\\((.+):(\\d+):(\\d+)\\)$/)"),
             "Script should parse named function stack format"
         )
     }
@@ -84,7 +84,7 @@ final class NetworkHookTests: XCTestCase {
         // Should handle "at https://url:line:col" format
         let script = normalizedScript()
         XCTAssertTrue(
-            script.contains("line.match(/at\\s+([^\\s]+):(\\d+):(\\d+)/)"),
+            script.contains("line.match(/^at\\s+(.+):(\\d+):(\\d+)$/)"),
             "Script should parse anonymous function format"
         )
     }

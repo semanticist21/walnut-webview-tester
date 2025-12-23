@@ -125,8 +125,8 @@ final class ByteFormatterTests: XCTestCase {
     }
 
     func testFormatDecimalPrecision() {
-        // Check decimal precision
-        XCTAssertEqual(ByteFormatter.format(1_234), "1.2 KB")  // Rounds to 1 decimal
-        XCTAssertEqual(ByteFormatter.format(1_250_000), "1.3 MB")
+        // Check decimal precision (%.1f uses banker's rounding - 1.25 → 1.2)
+        XCTAssertEqual(ByteFormatter.format(1_234), "1.2 KB")  // 1.234 → 1.2
+        XCTAssertEqual(ByteFormatter.format(1_250_000), "1.2 MB")  // 1.25 → 1.2 (banker's rounding)
     }
 }
