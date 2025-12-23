@@ -308,6 +308,7 @@ struct ContentView: View {
                     webViewNavigator.networkManager.clear()
                     webViewNavigator.resourceManager.clear()
                     webViewNavigator.performanceManager.clear()
+                    webViewNavigator.accessibilityManager.clear()
                     storageManager.clear()
 
                     // 3. Create fresh navigator instance for completely new session
