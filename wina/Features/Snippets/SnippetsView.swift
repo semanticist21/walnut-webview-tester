@@ -354,9 +354,12 @@ class SnippetsManager {
 
 struct SnippetsSettingsView: View {
     let navigator: WebViewNavigator
-    @State private var snippetsManager = SnippetsManager()
     @State private var executionResult: String?
     @State private var showResult: Bool = false
+
+    private var snippetsManager: SnippetsManager {
+        navigator.snippetsManager
+    }
 
     var body: some View {
         List {

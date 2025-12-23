@@ -39,6 +39,17 @@ struct OverlayMenuBars: View {
     @State private var isKeyboardVisible: Bool = false
     @State private var showPhotoPermissionAlert: Bool = false
 
+    // Toolbar customization
+    @AppStorage("toolbarItemsOrder") private var toolbarItemsOrderData = Data()
+
+    private var visibleToolbarItems: [DevToolsMenuItem] {
+        guard let items = try? JSONDecoder().decode([ToolbarItemState].self, from: toolbarItemsOrderData),
+              !items.isEmpty else {
+            return DevToolsMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
     private let topBarHeight: CGFloat = BarConstants.barHeight
     private let bottomBarHeight: CGFloat = BarConstants.barHeight
     private let topHandleVisible: CGFloat = 6  // Tiny peek for top bar
@@ -214,53 +225,17 @@ struct OverlayMenuBars: View {
 
                         // WKWebView-only buttons
                         if !useSafariVC {
-                            // DevTools buttons (hidden when Eruda mode is enabled)
-                            if !erudaModeEnabled {
-                                BottomBarIconButton(icon: "terminal") {
-                                    showSearchText = false  // 검색바 자동 닫기
-                                    showConsole = true
+                            // DevTools buttons based on user customization
+                            // Eruda mode hides DevTools except Search and Screenshot
+                            ForEach(visibleToolbarItems) { item in
+                                // Skip DevTools items when Eruda mode is enabled
+                                if erudaModeEnabled && !item.isAlwaysVisible {
+                                    EmptyView()
+                                } else {
+                                    BottomBarIconButton(icon: item.icon) {
+                                        handleToolbarItemTap(item)
+                                    }
                                 }
-
-                                BottomBarIconButton(icon: "chevron.left.forwardslash.chevron.right") {
-                                    showSearchText = false
-                                    showEditor = true
-                                }
-
-                                BottomBarIconButton(icon: "network") {
-                                    showSearchText = false
-                                    showNetwork = true
-                                }
-
-                                BottomBarIconButton(icon: "externaldrive") {
-                                    showSearchText = false
-                                    showStorage = true
-                                }
-
-                                BottomBarIconButton(icon: "gauge.with.dots.needle.bottom.50percent") {
-                                    showSearchText = false
-                                    showPerformance = true
-                                }
-
-                                BottomBarIconButton(icon: "accessibility") {
-                                    showSearchText = false
-                                    showAccessibility = true
-                                }
-
-                                // Snippets button
-                                BottomBarIconButton(icon: "scroll") {
-                                    showSearchText = false
-                                    showSnippets = true
-                                }
-                            }
-
-                            // Search in page button
-                            BottomBarIconButton(icon: "doc.text.magnifyingglass") {
-                                showSearchText.toggle()  // 토글로 변경 (열려있으면 닫기)
-                            }
-
-                            // Screenshot button (always visible)
-                            BottomBarIconButton(icon: "camera") {
-                                takeScreenshotWithFeedback()
                             }
                         }
                     }
@@ -279,6 +254,38 @@ struct OverlayMenuBars: View {
             .padding(.bottom, -(geometry.safeAreaInsets.bottom * BarConstants.bottomBarSafeAreaRatio))
             .offset(y: bottomOffset)
             .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+    }
+
+    // MARK: - Toolbar Item Actions
+
+    private func handleToolbarItemTap(_ item: DevToolsMenuItem) {
+        switch item {
+        case .console:
+            showSearchText = false
+            showConsole = true
+        case .sources:
+            showSearchText = false
+            showEditor = true
+        case .network:
+            showSearchText = false
+            showNetwork = true
+        case .storage:
+            showSearchText = false
+            showStorage = true
+        case .performance:
+            showSearchText = false
+            showPerformance = true
+        case .accessibility:
+            showSearchText = false
+            showAccessibility = true
+        case .snippets:
+            showSearchText = false
+            showSnippets = true
+        case .searchInPage:
+            showSearchText.toggle()
+        case .screenshot:
+            takeScreenshotWithFeedback()
         }
     }
 

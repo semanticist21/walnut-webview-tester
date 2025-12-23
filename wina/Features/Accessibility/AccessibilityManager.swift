@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import Observation
 
 // MARK: - Accessibility Manager
 
 /// sheet 닫혀도 audit 결과 유지하는 매니저
+@Observable
 class AccessibilityManager {
     var issues: [AccessibilityIssue] = []
     var isScanning: Bool = false

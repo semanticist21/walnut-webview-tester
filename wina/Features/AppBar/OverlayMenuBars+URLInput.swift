@@ -20,6 +20,11 @@ struct URLInputOverlayView: View {
 
     @FocusState private var urlInputFocused: Bool
 
+    private var urlValidationState: URLValidationState {
+        guard !urlInputText.isEmpty else { return .empty }
+        return URLValidator.isValidURL(urlInputText) ? .valid : .invalid
+    }
+
     var body: some View {
         ZStack {
             // Dimmed background
@@ -32,6 +37,9 @@ struct URLInputOverlayView: View {
 
             // Input card
             VStack(spacing: 8) {
+                // Bookmark controls (moved up to free input space)
+                bookmarkRow
+
                 // URL input row
                 urlInputRow
 
@@ -39,7 +47,7 @@ struct URLInputOverlayView: View {
                 ScrollView {
                     historySection
                 }
-                .frame(height: 160)  // ~4 items (40px each)
+                .frame(height: 220)  // Taller list for better scan
                 .scrollBounceBehavior(.basedOnSize)
 
                 // Cancel button
@@ -65,10 +73,50 @@ struct URLInputOverlayView: View {
         }
     }
 
+    // MARK: - Bookmark Row
+
+    private var bookmarkRow: some View {
+        HStack {
+            Spacer()
+
+            Button {
+                urlInputFocused = false
+                showURLInput = false
+                showBookmarks = true
+            } label: {
+                Image(systemName: "bookmark")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+
+            if let currentURL, !currentURL.isEmpty {
+                let isBookmarked = urlStorage.isBookmarked(currentURL)
+                Button {
+                    urlStorage.toggleBookmark(currentURL)
+                } label: {
+                    Image(systemName: isBookmarked ? "star.fill" : "star")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isBookmarked ? .yellow : .secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.trailing, 6)
+    }
+
     // MARK: - URL Input Row
 
     private var urlInputRow: some View {
         HStack(spacing: 8) {
+            Image(systemName: urlValidationState.iconName)
+                .foregroundStyle(urlValidationState.iconColor)
+                .font(.system(size: 14))
+
             // URL TextField
             TextField("Enter URL", text: $urlInputText)
                 .textFieldStyle(.plain)
@@ -94,47 +142,18 @@ struct URLInputOverlayView: View {
                 .buttonStyle(.plain)
             }
 
-            // Bookmark button - opens bookmark modal
-            Button {
-                urlInputFocused = false
-                showURLInput = false
-                showBookmarks = true
-            } label: {
-                Image(systemName: "bookmark")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-
-            // Bookmark toggle for current URL
-            if let currentURL, !currentURL.isEmpty {
-                let isBookmarked = urlStorage.isBookmarked(currentURL)
-                Button {
-                    urlStorage.toggleBookmark(currentURL)
-                } label: {
-                    Image(systemName: isBookmarked ? "star.fill" : "star")
-                        .font(.system(size: 16))
-                        .foregroundStyle(isBookmarked ? .yellow : .secondary)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-            }
-
             // Go button
             Button {
                 submitURL()
             } label: {
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(urlInputText.isEmpty ? .secondary : .blue)
+                    .foregroundColor(urlValidationState == .valid ? .blue : .secondary)
                     .frame(width: 32, height: 32)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .disabled(urlInputText.isEmpty)
+            .disabled(urlValidationState != .valid)
         }
         .padding(.leading, 18)
         .padding(.trailing, 10)
@@ -143,7 +162,7 @@ struct URLInputOverlayView: View {
     }
 
     private func submitURL() {
-        guard !urlInputText.isEmpty else { return }
+        guard urlValidationState == .valid else { return }
         urlStorage.addToHistory(urlInputText)
         onURLChange(urlInputText)
         showURLInput = false
@@ -175,6 +194,7 @@ struct URLInputOverlayView: View {
 
     private func historyRow(url: String, isLast: Bool) -> some View {
         Button {
+            guard URLValidator.isValidURL(url) else { return }
             urlInputText = url
             urlStorage.addToHistory(url)
             onURLChange(url)

@@ -272,6 +272,16 @@ struct LoadedSettingsView: View {
                         )
                     }
 
+                    NavigationLink {
+                        ToolbarSettingsView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "menubar.rectangle",
+                            iconColor: .indigo,
+                            title: "Toolbar",
+                            description: "Customize DevTools buttons"
+                        )
+                    }
                 }
 
                 Section {

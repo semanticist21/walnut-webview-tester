@@ -66,6 +66,8 @@ struct EmulationSettingsView: View {
                     Toggle("Reduced Transparency", isOn: $reducedTransparency)
                     InfoPopoverButton(text: "prefers-reduced-transparency\n\nDisables blur and transparency effects.")
                 }
+            } header: {
+                Text("Overrides CSS media queries. Requires page reload to apply.")
             }
 
             Section {

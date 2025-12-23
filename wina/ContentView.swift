@@ -34,6 +34,8 @@ struct ContentView: View {
     @State var validationTask: Task<Void, Never>?
     @State private var webViewNavigator = WebViewNavigator()
     @State private var storageManager = StorageManager()
+    @State private var showSafariUnsupportedAlert = false
+    @State private var safariUnsupportedURL = ""
     @FocusState var textFieldFocused: Bool
 
     // Shared URL storage
@@ -121,6 +123,7 @@ struct ContentView: View {
                         }
                     },
                     onURLChange: { newURL in
+                        guard validateSafariURLIfNeeded(newURL) else { return }
                         // Add to history
                         urlStorage.addToHistory(newURL)
 
@@ -245,6 +248,11 @@ struct ContentView: View {
         .sheet(isPresented: $showAbout) {
             AboutView()
         }
+        .alert("Unsupported URL", isPresented: $showSafariUnsupportedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("SafariVC supports only http and https URLs.\n\n\(safariUnsupportedURL)")
+        }
         // Recreate SafariVC when configuration settings change
         .onChange(of: safariEntersReaderIfAvailable) { _, _ in
             if useSafariWebView && showWebView {
@@ -282,6 +290,7 @@ struct ContentView: View {
 
     func submitURL() {
         guard !urlText.isEmpty else { return }
+        guard validateSafariURLIfNeeded(urlText) else { return }
 
         // Add to history via shared storage
         urlStorage.addToHistory(urlText)
@@ -338,6 +347,16 @@ struct ContentView: View {
                 showWebView = true
             }
         }
+    }
+
+    private func validateSafariURLIfNeeded(_ url: String) -> Bool {
+        guard useSafariWebView else { return true }
+        guard URLValidator.isSupportedSafariURL(url) else {
+            safariUnsupportedURL = url
+            showSafariUnsupportedAlert = true
+            return false
+        }
+        return true
     }
 
     func removeURL(_ url: String) {

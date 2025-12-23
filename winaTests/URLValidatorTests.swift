@@ -58,6 +58,20 @@ final class URLValidationTests: XCTestCase {
         XCTAssertTrue(URLValidator.isValidURL("http://localhost:3000"))
     }
 
+    // MARK: - SafariVC URL Scheme Tests
+
+    func testSafariSupportedSchemes() {
+        XCTAssertTrue(URLValidator.isSupportedSafariURL("https://example.com"))
+        XCTAssertTrue(URLValidator.isSupportedSafariURL("http://example.com"))
+        XCTAssertTrue(URLValidator.isSupportedSafariURL("example.com"))
+    }
+
+    func testSafariUnsupportedSchemes() {
+        XCTAssertFalse(URLValidator.isSupportedSafariURL("about:blank"))
+        XCTAssertFalse(URLValidator.isSupportedSafariURL("file:///path/to/file.html"))
+        XCTAssertFalse(URLValidator.isSupportedSafariURL("myapp://deep-link"))
+    }
+
     // MARK: - Localhost Tests
 
     func testLocalhost() {

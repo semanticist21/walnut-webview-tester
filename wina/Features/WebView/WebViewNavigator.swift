@@ -38,6 +38,7 @@ class WebViewNavigator {
     let performanceManager = PerformanceManager()
     let resourceManager = ResourceManager()
     let accessibilityManager = AccessibilityManager()
+    let snippetsManager = SnippetsManager()
 
     private weak var webView: WKWebView?
     private var canGoBackObservation: NSKeyValueObservation?
@@ -141,12 +142,14 @@ class WebViewNavigator {
     }
 
     /// Evaluate JavaScript on the attached WebView
+    @MainActor
     func evaluateJavaScript(_ script: String) async -> Any? {
         guard let webView else { return nil }
         return try? await webView.evaluateJavaScript(script)
     }
 
     /// Evaluate async JavaScript (supports Promises)
+    @MainActor
     func callAsyncJavaScript(_ script: String) async -> Any? {
         guard let webView else { return nil }
         return try? await webView.callAsyncJavaScript(
@@ -180,6 +183,7 @@ class WebViewNavigator {
 
     /// Take a screenshot of the WebView and save to Photos
     /// Assumes permission is already granted (call checkPhotoLibraryPermission first)
+    @MainActor
     func takeScreenshot() async -> ScreenshotResult {
         guard let webView else { return .failed }
 
@@ -213,6 +217,7 @@ class WebViewNavigator {
         }
     }
 
+    @MainActor
     private func captureSnapshot(from webView: WKWebView) async -> UIImage? {
         await withCheckedContinuation { continuation in
             webView.takeSnapshot(with: nil) { image, _ in

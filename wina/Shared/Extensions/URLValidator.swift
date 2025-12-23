@@ -99,6 +99,22 @@ enum URLValidator {
         return "https://" + trimmed
     }
 
+    /// Checks whether the URL string is supported by SFSafariViewController.
+    /// SafariVC only accepts http/https URLs.
+    static func isSupportedSafariURL(_ string: String) -> Bool {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: trimmed), let scheme = url.scheme?.lowercased() {
+            return scheme == "http" || scheme == "https"
+        }
+
+        let normalized = normalizeURL(trimmed)
+        guard let url = URL(string: normalized),
+              let scheme = url.scheme?.lowercased() else {
+            return false
+        }
+        return scheme == "http" || scheme == "https"
+    }
+
     /// Extracts the host from a URL string
     /// - Parameter string: URL string
     /// - Returns: Host string or nil if invalid

@@ -1030,8 +1030,10 @@ struct SafariWebView: UIViewControllerRepresentable {
     @AppStorage("safariBarTintColorHex") var barTintColorHex = ""
 
     func makeUIViewController(context: Context) -> SFSafariViewController {
-        guard let url = URL(string: urlString) else {
-            return SFSafariViewController(url: URL(string: "about:blank")!)
+        guard let url = URL(string: urlString),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            return SFSafariViewController(url: URL(string: "https://example.com")!)
         }
         let config = SFSafariViewController.Configuration()
         config.entersReaderIfAvailable = entersReaderIfAvailable
