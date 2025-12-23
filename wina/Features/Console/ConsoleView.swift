@@ -427,6 +427,11 @@ struct ConsoleView: View {
     @State private var commandHistory: [String] = []
     @State private var historyIndex: Int = -1
     @FocusState private var isInputFocused: Bool
+    // Scroll navigation state
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
 
     private var filteredLogs: [ConsoleLog] {
         var result = consoleManager.logs
@@ -641,25 +646,73 @@ extension ConsoleView {
     // MARK: - Log List
 
     private var logList: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(filteredLogs) { log in
-                        LogRow(log: log, consoleManager: consoleManager)
-                            .id(log.id)
+        GeometryReader { outerGeo in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredLogs) { log in
+                            LogRow(log: log, consoleManager: consoleManager)
+                                .id(log.id)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    // 콘텐츠 높이 측정
+                    .background(
+                        GeometryReader { innerGeo in
+                            Color.clear
+                                .onAppear {
+                                    contentHeight = innerGeo.size.height
+                                }
+                                .onChange(of: innerGeo.size.height) { _, newHeight in
+                                    contentHeight = newHeight
+                                }
+                        }
+                    )
+                }
+                .background(Color(uiColor: .systemBackground))
+                .scrollContentBackground(.hidden)
+                // 스크롤 오프셋 추적
+                .onScrollGeometryChange(for: Double.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    scrollOffset = newValue
+                }
+                .onAppear {
+                    scrollViewHeight = outerGeo.size.height
+                    scrollProxy = proxy
+                }
+                .onChange(of: consoleManager.logs.count) { _, _ in
+                    if let lastLog = filteredLogs.last {
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            proxy.scrollTo(lastLog.id, anchor: .bottom)
+                        }
                     }
                 }
-                .frame(maxWidth: .infinity)
+                // 스크롤 네비게이션 버튼 오버레이
+                .scrollNavigationOverlay(
+                    scrollOffset: scrollOffset,
+                    contentHeight: contentHeight,
+                    viewportHeight: scrollViewHeight,
+                    onScrollUp: { scrollUp(proxy: scrollProxy) },
+                    onScrollDown: { scrollDown(proxy: scrollProxy) }
+                )
             }
-            .background(Color(uiColor: .systemBackground))
-            .scrollContentBackground(.hidden)
-            .onChange(of: consoleManager.logs.count) { _, _ in
-                if let lastLog = filteredLogs.last {
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        proxy.scrollTo(lastLog.id, anchor: .bottom)
-                    }
-                }
-            }
+        }
+    }
+
+    // MARK: - Scroll Navigation
+
+    private func scrollUp(proxy: ScrollViewProxy?) {
+        guard let proxy, let firstLog = filteredLogs.first else { return }
+        withAnimation(.easeOut(duration: 0.3)) {
+            proxy.scrollTo(firstLog.id, anchor: .top)
+        }
+    }
+
+    private func scrollDown(proxy: ScrollViewProxy?) {
+        guard let proxy, let lastLog = filteredLogs.last else { return }
+        withAnimation(.easeOut(duration: 0.3)) {
+            proxy.scrollTo(lastLog.id, anchor: .bottom)
         }
     }
 
