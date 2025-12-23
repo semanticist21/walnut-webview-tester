@@ -10,6 +10,59 @@ import XCTest
 import WebKit
 @testable import wina
 
+// MARK: - WKWebView Test Helpers
+
+private enum TestWebViewLoader {
+    static let baseURL = URL(string: "https://example.com")!
+    static let loadTimeoutSeconds: Double = 5
+}
+
+/// Proper async WKWebView loading delegate (replaces flaky Task.sleep)
+@MainActor
+private final class TestNavigationDelegate: NSObject, WKNavigationDelegate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var timeoutTask: Task<Void, Never>?
+
+    func waitForLoad(webView: WKWebView, html: String) async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            timeoutTask?.cancel()
+            timeoutTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(TestWebViewLoader.loadTimeoutSeconds))
+                await MainActor.run {
+                    self?.finishIfNeeded()
+                }
+            }
+            webView.loadHTMLString(html, baseURL: TestWebViewLoader.baseURL)
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        finishIfNeeded()
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        finishIfNeeded()
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        didFailProvisionalNavigation navigation: WKNavigation!,
+        withError error: Error
+    ) {
+        finishIfNeeded()
+    }
+
+    private func finishIfNeeded() {
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        if let continuation {
+            continuation.resume()
+            self.continuation = nil
+        }
+    }
+}
+
 // MARK: - Search Text JavaScript Script Tests
 
 final class SearchTextScriptTests: XCTestCase {
@@ -142,13 +195,18 @@ final class SearchTextJSONResponseTests: XCTestCase {
 final class SearchTextDOMIntegrationTests: XCTestCase {
 
     var webView: WKWebView!
+    private var navigationDelegate: TestNavigationDelegate?
 
     override func setUp() async throws {
         try await super.setUp()
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+        navigationDelegate = TestNavigationDelegate()
+        webView.navigationDelegate = navigationDelegate
     }
 
     override func tearDown() async throws {
+        webView.navigationDelegate = nil
+        navigationDelegate = nil
         webView = nil
         try await super.tearDown()
     }
@@ -156,8 +214,7 @@ final class SearchTextDOMIntegrationTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func loadTestHTML(_ html: String) async {
-        webView.loadHTMLString(html, baseURL: nil)
-        try? await Task.sleep(for: .milliseconds(500))
+        await navigationDelegate?.waitForLoad(webView: webView, html: html)
     }
 
     private func executeScript(_ script: String) async -> Any? {
@@ -753,13 +810,18 @@ final class SearchTextDOMIntegrationTests: XCTestCase {
 final class SearchTextPerformanceTests: XCTestCase {
 
     var webView: WKWebView!
+    private var navigationDelegate: TestNavigationDelegate?
 
     override func setUp() async throws {
         try await super.setUp()
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+        navigationDelegate = TestNavigationDelegate()
+        webView.navigationDelegate = navigationDelegate
     }
 
     override func tearDown() async throws {
+        webView.navigationDelegate = nil
+        navigationDelegate = nil
         webView = nil
         try await super.tearDown()
     }
@@ -772,8 +834,7 @@ final class SearchTextPerformanceTests: XCTestCase {
         }
         let testHTML = "<html><body>\(paragraphs)</body></html>"
 
-        webView.loadHTMLString(testHTML, baseURL: nil)
-        try? await Task.sleep(for: .milliseconds(500))
+        await navigationDelegate?.waitForLoad(webView: webView, html: testHTML)
 
         let searchScript = """
         (function() {
@@ -802,8 +863,7 @@ final class SearchTextPerformanceTests: XCTestCase {
 
     func testMultipleSearchesDoNotLeak() async {
         let testHTML = "<html><body><p>word word word</p></body></html>"
-        webView.loadHTMLString(testHTML, baseURL: nil)
-        try? await Task.sleep(for: .milliseconds(500))
+        await navigationDelegate?.waitForLoad(webView: webView, html: testHTML)
 
         let searchScript = """
         (function() {

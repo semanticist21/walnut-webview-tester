@@ -1,33 +1,34 @@
 import XCTest
 @testable import wina
 
+@MainActor
 final class ConsoleManagerTests: XCTestCase {
 
     var manager: ConsoleManager!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         manager = ConsoleManager()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         manager = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
-    /// Main thread에서 로그가 추가될 때까지 대기
-    private func waitForLogs(_ expectedCount: Int, timeout: TimeInterval = 0.5) {
+    /// async context에서 로그가 추가될 때까지 대기 (flaky RunLoop polling 대신 Task.sleep 사용)
+    private func waitForLogs(_ expectedCount: Int, timeout: TimeInterval = 2.0) async {
         let deadline = Date().addingTimeInterval(timeout)
         while manager.logs.count < expectedCount && Date() < deadline {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+            try? await Task.sleep(for: .milliseconds(50))
         }
     }
 
     // MARK: - Timer Tests
 
-    func testTimerStart() {
+    func testTimerStart() async {
         manager.time(label: "test")
-        waitForLogs(1)
+        await waitForLogs(1)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 1)
@@ -36,35 +37,35 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertTrue(logs[0].message.contains("started"))
     }
 
-    func testTimerEnd() {
+    func testTimerEnd() async {
         manager.time(label: "fetchData")
-        waitForLogs(1)
+        await waitForLogs(1)
 
-        // 약간의 지연을 주어 시간이 경과하도록
-        usleep(100_000)  // 100ms
+        // Task.sleep 사용 (usleep 대신)
+        try? await Task.sleep(for: .milliseconds(150))
 
         manager.timeEnd(label: "fetchData")
-        waitForLogs(2)
+        await waitForLogs(2)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 2)
         XCTAssertEqual(logs[1].type, .timeEnd)
         XCTAssertEqual(logs[1].timerLabel, "fetchData")
         XCTAssertNotNil(logs[1].timerElapsed)
-        XCTAssertGreaterThan(logs[1].timerElapsed ?? 0, 0.05)  // 최소 50ms
+        XCTAssertGreaterThan(logs[1].timerElapsed ?? 0, 0.1)  // 최소 100ms (CI 안정성 위해 증가)
     }
 
-    func testTimeLogMidway() {
+    func testTimeLogMidway() async {
         manager.time(label: "process")
-        waitForLogs(1)
+        await waitForLogs(1)
 
-        usleep(50_000)  // 50ms
+        try? await Task.sleep(for: .milliseconds(80))
         manager.timeLog(label: "process")
-        waitForLogs(2)
+        await waitForLogs(2)
 
-        usleep(50_000)  // 추가 50ms
+        try? await Task.sleep(for: .milliseconds(80))
         manager.timeEnd(label: "process")
-        waitForLogs(3)
+        await waitForLogs(3)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 3)
@@ -77,9 +78,9 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertGreaterThan(timeEndElapsed, timeLogElapsed)
     }
 
-    func testTimerNotFound() {
+    func testTimerNotFound() async {
         manager.timeEnd(label: "nonexistent")
-        waitForLogs(1)
+        await waitForLogs(1)
 
         let logs = manager.logs
         XCTAssertGreaterThan(logs.count, 0)
@@ -89,11 +90,11 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertTrue(errorLog?.message.contains("not found") ?? false)
     }
 
-    func testMultipleTimers() {
+    func testMultipleTimers() async {
         manager.time(label: "timer1")
         manager.time(label: "timer2")
         manager.time(label: "timer3")
-        waitForLogs(3)
+        await waitForLogs(3)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 3)
@@ -104,11 +105,11 @@ final class ConsoleManagerTests: XCTestCase {
 
     // MARK: - Count Tests
 
-    func testCountDefault() {
+    func testCountDefault() async {
         manager.count()
         manager.count()
         manager.count()
-        waitForLogs(3)
+        await waitForLogs(3)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 3)
@@ -118,13 +119,13 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertEqual(logs[2].countValue, 3)
     }
 
-    func testCountWithLabel() {
+    func testCountWithLabel() async {
         manager.count(label: "clicks")
         manager.count(label: "views")
         manager.count(label: "clicks")
         manager.count(label: "views")
         manager.count(label: "clicks")
-        waitForLogs(5)
+        await waitForLogs(5)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 5)
@@ -141,17 +142,17 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertEqual(viewLogs[1].countValue, 2)
     }
 
-    func testCountReset() {
+    func testCountReset() async {
         manager.count(label: "attempts")
         manager.count(label: "attempts")
         manager.count(label: "attempts")
-        waitForLogs(3)
+        await waitForLogs(3)
 
         manager.countReset(label: "attempts")
-        waitForLogs(4)
+        await waitForLogs(4)
 
         manager.count(label: "attempts")
-        waitForLogs(5)
+        await waitForLogs(5)
 
         let logs = manager.logs
         let countLogs = logs.filter { $0.type == .count && $0.countLabel == "attempts" }
@@ -170,9 +171,9 @@ final class ConsoleManagerTests: XCTestCase {
         XCTAssertEqual(logs.count, 0)  // 실패하지 않으므로 로그 없음
     }
 
-    func testAssertFalse() {
+    func testAssertFalse() async {
         manager.assert(false, message: "This is an error")
-        waitForLogs(1)
+        await waitForLogs(1)
 
         let logs = manager.logs
         XCTAssertEqual(logs.count, 1)
@@ -182,16 +183,16 @@ final class ConsoleManagerTests: XCTestCase {
 
     // MARK: - Clear Tests
 
-    func testClearResetsContexts() {
+    func testClearResetsContexts() async {
         manager.time(label: "test")
         manager.count(label: "test")
-        waitForLogs(2)
+        await waitForLogs(2)
 
         manager.clear()
 
         // 타이머 컨텍스트도 초기화되어야 함
         manager.timeEnd(label: "test")
-        waitForLogs(3)
+        await waitForLogs(3)
 
         let logs = manager.logs
         let errorLog = logs.first(where: { $0.type == .error })
@@ -200,26 +201,26 @@ final class ConsoleManagerTests: XCTestCase {
 
     // MARK: - Integration Tests
 
-    func testComplexScenario() {
+    func testComplexScenario() async {
         // 복잡한 시나리오: 여러 메서드 조합
         manager.time(label: "operation")
 
         manager.count(label: "step1")
         manager.count(label: "step1")
-        waitForLogs(3)
+        await waitForLogs(3)
 
-        usleep(50_000)
+        try? await Task.sleep(for: .milliseconds(80))
         manager.timeLog(label: "operation")
-        waitForLogs(4)
+        await waitForLogs(4)
 
         manager.count(label: "step2")
         manager.count(label: "step2")
         manager.count(label: "step2")
-        waitForLogs(7)
+        await waitForLogs(7)
 
-        usleep(50_000)
+        try? await Task.sleep(for: .milliseconds(80))
         manager.timeEnd(label: "operation")
-        waitForLogs(8)
+        await waitForLogs(8)
 
         manager.assert(manager.logs.count > 5, message: "Should have multiple logs")
 
@@ -236,39 +237,37 @@ final class ConsoleManagerTests: XCTestCase {
 
     // MARK: - Thread Safety Tests
 
-    func testConcurrentTimer() {
-        let queue = DispatchQueue.global()
-        let group = DispatchGroup()
-
-        for i in 0..<10 {
-            queue.async(group: group) {
-                let label = "timer\(i)"
-                self.manager.time(label: label)
-                usleep(UInt32.random(in: 10_000..<50_000))
-                self.manager.timeEnd(label: label)
+    func testConcurrentTimer() async {
+        // actor-isolated 환경에서 concurrent 테스트를 위해 Task 그룹 사용
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<10 {
+                group.addTask { @MainActor in
+                    let label = "timer\(i)"
+                    self.manager.time(label: label)
+                    try? await Task.sleep(for: .milliseconds(Int.random(in: 20..<80)))
+                    self.manager.timeEnd(label: label)
+                }
             }
         }
 
-        group.wait()
-        waitForLogs(20)  // 10 timers * 2 (start + end)
+        await waitForLogs(20)  // 10 timers * 2 (start + end)
 
         let logs = manager.logs
         let timerLogs = logs.filter { $0.type == .time || $0.type == .timeEnd }
         XCTAssertGreaterThan(timerLogs.count, 0)
     }
 
-    func testConcurrentCount() {
-        let queue = DispatchQueue.global()
-        let group = DispatchGroup()
-
-        for _ in 0..<100 {
-            queue.async(group: group) {
-                self.manager.count(label: "concurrent")
+    func testConcurrentCount() async {
+        // actor-isolated 환경에서 concurrent 테스트
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<100 {
+                group.addTask { @MainActor in
+                    self.manager.count(label: "concurrent")
+                }
             }
         }
 
-        group.wait()
-        waitForLogs(50)  // Wait for at least 50 logs
+        await waitForLogs(50)  // Wait for at least 50 logs
 
         let logs = manager.logs
         let countLogs = logs.filter { $0.countLabel == "concurrent" }

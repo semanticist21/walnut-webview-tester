@@ -54,6 +54,211 @@ final class StorageManagerTests: XCTestCase {
 
         XCTAssertEqual(cookieKeys, [])
     }
+
+    // MARK: - localStorage/sessionStorage Parsing Tests
+
+    @MainActor
+    func testRefreshParsesLocalStorageItems() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = """
+        [{"key":"user","value":"john"},{"key":"theme","value":"dark"}]
+        """
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        let localStorageItems = manager.items
+            .filter { $0.storageType == .localStorage }
+
+        XCTAssertEqual(localStorageItems.count, 2)
+
+        let userItem = localStorageItems.first { $0.key == "user" }
+        XCTAssertEqual(userItem?.value, "john")
+    }
+
+    @MainActor
+    func testRefreshParsesSessionStorageItems() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        // The mock returns same value for all JS calls; in reality they're separate
+        mock.jsResult = """
+        [{"key":"session_id","value":"abc123"}]
+        """
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        // Since mock returns same for all, we'll have duplicates
+        // but the parsing should work
+        let hasSessionItems = manager.items.contains { $0.key == "session_id" }
+        XCTAssertTrue(hasSessionItems)
+    }
+
+    @MainActor
+    func testRefreshHandlesEmptyStorage() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = "[]"
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        XCTAssertTrue(manager.items.isEmpty)
+        XCTAssertNil(manager.errorMessage)
+    }
+
+    @MainActor
+    func testRefreshHandlesInvalidJSON() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = "not valid json"
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        // Should not crash, items should be empty
+        XCTAssertTrue(manager.items.isEmpty)
+    }
+
+    // MARK: - SWR Pattern Tests
+
+    @MainActor
+    func testRefreshUpdatesLastRefreshTime() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = "[]"
+        mock.cookies = []
+
+        XCTAssertNil(manager.lastRefreshTime)
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        XCTAssertNotNil(manager.lastRefreshTime)
+    }
+
+    @MainActor
+    func testRefreshClearsItemsOnURLChange() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = """
+        [{"key":"key1","value":"value1"}]
+        """
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://first.com"))
+
+        XCTAssertFalse(manager.items.isEmpty)
+
+        // Change URL - items should be cleared before new fetch
+        await manager.refresh(pageURL: URL(string: "https://second.com"))
+
+        // After refresh, new items are loaded
+        XCTAssertEqual(manager.currentURL?.host, "second.com")
+    }
+
+    // MARK: - Navigator Not Set Tests
+
+    @MainActor
+    func testRefreshWithoutNavigatorSetsError() async {
+        let manager = StorageManager()
+
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        XCTAssertEqual(manager.errorMessage, "WebView not connected")
+    }
+
+    // MARK: - Delete Operations Tests
+
+    @MainActor
+    func testRemoveItemForLocalStorage() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = true
+
+        manager.setNavigator(mock)
+        let result = await manager.removeItem(key: "test_key", type: .localStorage)
+
+        XCTAssertTrue(result)
+        XCTAssertTrue(mock.scripts.last?.contains("removeItem") ?? false)
+    }
+
+    @MainActor
+    func testRemoveItemForSessionStorage() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = true
+
+        manager.setNavigator(mock)
+        let result = await manager.removeItem(key: "test_key", type: .sessionStorage)
+
+        XCTAssertTrue(result)
+        XCTAssertTrue(mock.scripts.last?.contains("sessionStorage") ?? false)
+    }
+
+    @MainActor
+    func testClearStorageForLocalStorage() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = true
+
+        manager.setNavigator(mock)
+        let result = await manager.clearStorage(type: .localStorage)
+
+        XCTAssertTrue(result)
+        XCTAssertTrue(mock.scripts.last?.contains("localStorage.clear()") ?? false)
+    }
+
+    @MainActor
+    func testClearResetAllState() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = """
+        [{"key":"key1","value":"value1"}]
+        """
+        mock.cookies = []
+
+        manager.setNavigator(mock)
+        await manager.refresh(pageURL: URL(string: "https://example.com"))
+
+        XCTAssertFalse(manager.items.isEmpty)
+
+        manager.clear()
+
+        XCTAssertTrue(manager.items.isEmpty)
+        XCTAssertNil(manager.lastRefreshTime)
+        XCTAssertNil(manager.errorMessage)
+    }
+
+    // MARK: - Set Item Tests
+
+    @MainActor
+    func testSetItemForLocalStorage() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+        mock.jsResult = true
+
+        manager.setNavigator(mock)
+        let result = await manager.setItem(key: "newKey", value: "newValue", type: .localStorage)
+
+        XCTAssertTrue(result)
+        XCTAssertTrue(mock.scripts.last?.contains("localStorage.setItem") ?? false)
+    }
+
+    @MainActor
+    func testSetItemWithoutNavigatorReturnsFalse() async {
+        let manager = StorageManager()
+
+        let result = await manager.setItem(key: "key", value: "value", type: .localStorage)
+
+        XCTAssertFalse(result)
+    }
 }
 
 private final class MockStorageNavigator: StorageNavigator {

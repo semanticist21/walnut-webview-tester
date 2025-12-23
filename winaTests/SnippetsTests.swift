@@ -1007,13 +1007,10 @@ final class SnippetEdgeCaseTests: XCTestCase {
         let headingSnippet = SnippetsManager.defaultSnippets.first { $0.id == "highlight_headings" }!
         let editSnippet = SnippetsManager.defaultSnippets.first { $0.id == "edit_page" }!
 
-        // Activate all three with small delays between
+        // Activate all three - no delays needed between async JS evaluations
         _ = try? await webView.evaluateJavaScript(borderSnippet.script)
-        try? await Task.sleep(for: .milliseconds(100))
         _ = try? await webView.evaluateJavaScript(headingSnippet.script)
-        try? await Task.sleep(for: .milliseconds(100))
         _ = try? await webView.evaluateJavaScript(editSnippet.script)
-        try? await Task.sleep(for: .milliseconds(100))
 
         // Verify all are active
         let borderExists = try? await webView.evaluateJavaScript(
