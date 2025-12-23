@@ -523,7 +523,7 @@ struct SourcesView: View {
         }
         .contentMargins(.horizontal, 12, for: .scrollContent)
         .scrollBounceBehavior(.basedOnSize)
-        .defaultScrollAnchor(.trailing)
+        .defaultScrollAnchor(.leading)
         .background(.ultraThinMaterial)
     }
 
