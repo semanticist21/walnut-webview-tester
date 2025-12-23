@@ -282,6 +282,17 @@ struct LoadedSettingsView: View {
                             description: "Customize DevTools buttons"
                         )
                     }
+
+                    NavigationLink {
+                        AppBarSettingsView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "menubar.arrow.up.rectangle",
+                            iconColor: .teal,
+                            title: "App Bar",
+                            description: "Customize navigation buttons"
+                        )
+                    }
                 }
 
                 Section {
