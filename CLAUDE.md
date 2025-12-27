@@ -41,9 +41,6 @@ swift format format --in-place wina/SomeFile.swift
 
 # Analyzer (separate, optional)
 xcodebuild analyze -project wina.xcodeproj -scheme wina -destination generic/platform=iOS
-
-# Check for print() - must be 0 results
-swiftlint lint | grep "no_print_in_production"
 ```
 
 **Workflow**:
@@ -131,101 +128,16 @@ func resetToDefaults() { localValue = false }  // 저장 X
 - JavaScript hook injection → WKScriptMessageHandler → @Observable Manager → SwiftUI binding
 
 **DevTools Managers** (`WebViewNavigator`에 포함):
-- `ConsoleManager` - console.log, console.dir, console.time, %c formatting, styled segments
-- `NetworkManager` - fetch/XHR interception, resource timing, cross-origin filtering
-- `StorageManager` - localStorage, sessionStorage, cookies (with SWR pattern)
+- `ConsoleManager` - console.log/dir/time, %c formatting, array chunking
+- `NetworkManager` - fetch/XHR interception, resource timing
+- `StorageManager` - localStorage, sessionStorage, cookies (SWR pattern)
 
 **Key Files** (WebViewScripts series):
 - `WebViewScripts.swift` - Base hook injection
-- `WebViewScripts+Console.swift` - console methods + %c CSS parsing + styledSegments JSON
+- `WebViewScripts+Console.swift` - console methods + %c CSS parsing
 - `WebViewScripts+Network.swift` - fetch/XHR + timing API
 - `WebViewScripts+Emulation.swift` - User agent, viewport
 - `WebViewScripts+Resource.swift` - Static resource tracking
-
-**Important**: No `print()` in managers. Use `os_log` or `Logger` (SwiftLint enforces: `no_print_in_production`)
-
-### Console Features
-
-#### Smart Quotes Sanitization
-iOS keyboard auto-converts straight quotes to curly quotes, causing JS syntax errors. The console input sanitizes them:
-```swift
-// Converts: ' ' " " → ' "
-private func sanitizeSmartQuotes(_ input: String) -> String {
-    input
-        .replacingOccurrences(of: "\u{2018}", with: "'")  // '
-        .replacingOccurrences(of: "\u{2019}", with: "'")  // '
-        .replacingOccurrences(of: "\u{201C}", with: "\"") // "
-        .replacingOccurrences(of: "\u{201D}", with: "\"") // "
-}
-```
-
-#### %c CSS Styling
-```javascript
-console.log("%cRed Bold", "color: red; font-weight: bold");
-console.log("%cSuccess%cDetailed", "color: green", "color: gray");
-```
-
-Supported CSS:
-- `color: <color-name | hex>` - text color (red, #FF0000)
-- `background-color: <color>` - background
-- `font-weight: bold` - bold text
-- `font-size: <number>px` - font size
-
-**Implementation**: `formatConsoleMessage()` detects %c → `parseCSS()` parses → `styledSegments` JSON → ConsoleValueView renders with SwiftUI modifiers
-
-#### Array Chunking
-Large arrays (100+ items) auto-divide into 100-item chunks with collapsed UI:
-```swift
-var chunks: [(range: Range<Int>, label: String, elements: [ConsoleValue])]? {
-    guard elements.count > chunkSize else { return nil }
-    // [0...99], [100...199], etc. with item counts
-}
-```
-
-Shows preview + collapsed chunks, user expands as needed. Memory efficient for 10K+ items.
-
-#### console.time/timeLog/timeEnd
-```javascript
-console.time("fetch");  // start
-console.timeLog("fetch");  // "fetch: 123.456ms" (continue timing)
-console.timeEnd("fetch");  // "fetch: 456.789ms" (delete timer)
-```
-
-Timer maintained across timeLog, only deleted on timeEnd. 3-digit millisecond precision.
-
-### Network Tab Architecture
-
-**NetworkManager struct**:
-```swift
-struct NetworkRequest: Identifiable {
-    let id: UUID
-    let method: String
-    let url: String
-    let status: Int?
-    let duration: Double?  // milliseconds
-    let resourceType: String  // xhr, fetch, image, etc
-    let requestHeaders, responseHeaders: [String: String]
-    let requestBody, responseBody: String?
-    let initiator: String?  // script file:line
-}
-```
-
-### 스크린샷 (WKWebView only)
-
-```swift
-func takeScreenshot() async -> Bool {
-    guard let webView else { return false }
-    return await withCheckedContinuation { continuation in
-        webView.takeSnapshot(with: nil) { image, _ in
-            guard let image else { return continuation.resume(returning: false) }
-            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-            continuation.resume(returning: true)
-        }
-    }
-}
-```
-
-Flash effect via navigator.showScreenshotFlash state. Sound: `AudioServicesPlaySystemSound(1108)`. Requires `NSPhotoLibraryAddUsageDescription` in Info.plist.
 
 ### JavaScript String Escape
 
@@ -251,58 +163,6 @@ var id: String { path.joined(separator: ".") }
 let id = UUID()  // new UUID every time
 ```
 
-### StoreKit 2 IAP (StoreManager)
-
-Singleton initialized at app start. Best practices:
-```swift
-// winaApp.swift
-_ = StoreManager.shared
-
-// StoreManager
-@Observable
-final class StoreManager {
-    static let shared = StoreManager()
-    private init() {
-        updateListenerTask = listenForTransactions()
-        Task {
-            await processUnfinishedTransactions()
-            await checkEntitlements()
-        }
-    }
-}
-```
-
-**Checklist**:
-- ✅ `Transaction.updates` listener (app start)
-- ✅ `Transaction.unfinished` processing
-- ✅ `transaction.finish()` always called
-- ✅ `revocationDate` check (refunds)
-- ✅ `Task.detached` background execution
-
-### Theme/ColorScheme
-
-System default → user toggle Light↔Dark:
-```swift
-// winaApp.swift
-@AppStorage("colorSchemeOverride") private var colorSchemeOverride: String?
-// nil = system, "light" = light, "dark" = dark
-```
-
-### BarConstants (중앙화된 레이아웃)
-
-```swift
-enum BarConstants {
-    static let barHeight: CGFloat = 64
-    static let horizontalPadding: CGFloat = 8
-    static let bottomBarSafeAreaRatio: CGFloat = 0.5
-    static let webViewOffsetRatio: CGFloat = 0.375
-    static let additionalSpacing: CGFloat = 64  // "App" preset
-    static var totalUIHeight: CGFloat { barHeight * 2 + additionalSpacing }
-}
-```
-
-Always use for layout (not hardcoded values).
-
 ### Sheet Modifiers
 
 Two styles (Shared/Extensions/SheetModifiers.swift):
@@ -312,277 +172,37 @@ Two styles (Shared/Extensions/SheetModifiers.swift):
 | `.devToolsSheet()` | DevTools | Resizable (35%, medium, large), iPad `.form` |
 | `.fullSizeSheet()` | Settings/Info | Always large, `.page` sizing |
 
-```swift
-.sheet(isPresented: $showConsole) {
-    ConsoleView(...)
-        .devToolsSheet()  // resizable
-}
+### StoreKit 2 IAP (StoreManager)
 
-.sheet(isPresented: $showSettings) {
-    SettingsView(...)
-        .fullSizeSheet()  // always full
-}
-```
+Singleton initialized at app start:
+- ✅ `Transaction.updates` listener (app start)
+- ✅ `Transaction.unfinished` processing
+- ✅ `transaction.finish()` always called
+- ✅ `revocationDate` check (refunds)
 
 ### AdManager (Interstitial + Banner)
 
-**Interstitial** (full-screen, per-session per-id):
 ```swift
+// Interstitial (per-session per-id, 30% probability)
 await AdManager.shared.showInterstitialAd(
-    options: AdOptions(id: "feature_name"),  // 30% probability default
+    options: AdOptions(id: "feature_name"),
     adUnitId: AdManager.interstitialAdUnitId
 )
-```
 
-Check order: `isAdRemoved` → `shownAdIds` → probability → load
-
-**Banner** (bottom fixed, non-premium only):
-```swift
+// Banner (non-premium only)
 if !StoreManager.shared.isAdRemoved {
     BannerAdView().frame(height: 50)
 }
 ```
 
-### Eruda Mode (in-page console)
-
-WKWebView only. Third-party debugging tool, parallel with DevTools.
-```swift
-@AppStorage("erudaModeEnabled") var erudaModeEnabled = false
-
-if erudaModeEnabled {
-    let erudaScript = "..."  // injected bundle
-    webView.evaluateJavaScript(erudaScript)
-}
-```
-
-Features: opt-in, preserves state on close, no DevTools overlap.
-
----
-
-## ⚠️ Common Pitfalls
-
-### 1. `.buttonStyle(.plain)` Touch Area
-
-`.plain` only touches icon pixels:
-```swift
-// ❌ No touch
-Button { } label: {
-    Image(systemName: "xmark")
-        .frame(width: 44, height: 44)
-}.buttonStyle(.plain)
-
-// ✅ Fix
-.contentShape(Circle())  // Enable full area
-```
-
-### 2. Compiler Type-Check Failure
-
-Complex view expressions in `body`:
-```swift
-// ✅ Extract to @ViewBuilder
-@ViewBuilder
-private var complexPart: some View { ... }
-var body: some View { VStack { complexPart } }
-```
-
-### 3. ZStack Overlay Gesture Conflict
-
-Spacer captures touch:
-```swift
-// ✅ Use frame instead
-HStack { buttons }
-    .frame(maxHeight: .infinity, alignment: .top)
-```
-
-### 4. WebView Gesture Priority
-
-```swift
-// ✅ Overlay gesture priority
-.highPriorityGesture(isOverlayMode ? dragGesture : nil)
-```
-
-### 5. @Observable Array Element Updates
-
-Changing struct properties individually doesn't trigger UI update:
-```swift
-// ❌ No update
-requests[index].status = 200
-
-// ✅ Replace entire struct
-var updated = requests[index]
-updated.status = 200
-requests[index] = updated
-```
-
-### 6. UIViewRepresentable Height Calculation
-
-Use `sizeThatFits` for intrinsic size:
-```swift
-// ✅ iOS 16+
-func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
-    guard let width = proposal.width, width > 0 else { return nil }
-    let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-    return CGSize(width: width, height: size.height)
-}
-```
-
-### 7. Equatable Property Comparison
-
-Must compare all mutable properties:
-```swift
-// ✅ Include all fields that can change
-static func == (lhs: Request, rhs: Request) -> Bool {
-    lhs.id == rhs.id &&
-    lhs.status == rhs.status &&
-    lhs.endTime == rhs.endTime
-}
-```
-
-### 8. Layout Shift in Empty State
-
-ScrollView behavior differs from VStack:
-```swift
-// ✅ Wrap in ScrollView for consistent layout
-var emptyState: some View {
-    GeometryReader { geometry in
-        ScrollView {
-            VStack(spacing: 8) {
-                Spacer(minLength: 0)
-                Text("No data")
-                Spacer(minLength: 0)
-            }
-            .frame(width: geometry.size.width)
-            .frame(minHeight: geometry.size.height)
-        }
-    }
-}
-```
-
-### 9. Sheet Internal Scroll Priority
-
-Enable scroll priority with `.presentationContentInteraction(.scrolls)`:
-```swift
-.sheet(item: $item) {
-    ScrollView { content }
-        .presentationDetents([.medium, .large])
-        .presentationContentInteraction(.scrolls)
-}
-```
-
-### 10. JSONSerialization Fragment Strings
-
-Top-level string needs `.fragmentsAllowed`:
-```swift
-// ✅ Option needed for String
-JSONSerialization.data(withJSONObject: "string", options: .fragmentsAllowed)
-```
-
-### 11. Color.secondary/tertiary Type Mismatch
-
-These return `ShapeStyle`, not `Color`:
-```swift
-// ✅ Use explicit Color
-var color: Color {
-    case .string: return .gray
-    case .empty: return .gray.opacity(0.5)
-}
-
-// ✅ But fine in foregroundStyle
-.foregroundStyle(.secondary)
-```
-
-### 12. LazyVStack Limitations
-
-Can't do bidirectional scroll + text selection:
-```swift
-// ✅ Use UIScrollView + UITextView for HTML/code
-struct HTMLTextView: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIScrollView {
-        let scrollView = UIScrollView()
-        let textView = UITextView()
-        textView.isScrollEnabled = false
-        textView.textContainer.widthTracksTextView = false
-        scrollView.addSubview(textView)
-        return scrollView
-    }
-}
-```
-
-Caution: UITextView loads entire text in memory. Cap large text at maxLines.
-
-### 13. JavaScript Type Casting
-
-Use `[String: Any]` not `[String: String]`:
-```swift
-// ✅ Preserves Bool, Int types
-let props = item["properties"] as? [[String: Any]] ?? []
-let isImportant = propDict["i"] as? Bool ?? false
-```
-
-### 14. glassEffect Modifier on Button vs Label
-
-**❌ WRONG**: Applying to Image/label inside Button:
-```swift
-Button(
-    action: { action() },
-    label: {
-        Image(systemName: "chevron.up.circle.fill")
-            .font(.system(size: 28))
-            .foregroundStyle(.white)
-            .backport
-            .glassEffect(in: .circle)  // Wrong placement!
-    }
-)
-```
-
-**✅ CORRECT**: Apply to Button itself:
-```swift
-Button(
-    action: { action() },
-    label: {
-        Image(systemName: "chevron.up.circle.fill")
-            .font(.system(size: 28))
-            .foregroundStyle(.white)
-    }
-)
-.backport
-.glassEffect(in: .circle)  // Apply to Button, not label
-```
-
-**Why**: The modifier chain matters. Modifiers on the label don't affect the button's touch area or full background. Apply modifiers to the Button itself for proper Liquid Glass effect and interaction.
-
-**iOS Compatibility**: Always use `.backport.glassEffect()` for iOS < 26 support via SwiftUIBackports.
-
-### 15. Manager Class Missing @Observable
-
-DevTools Manager 클래스에 `@Observable` 누락 시 상태 변경이 UI에 반영되지 않음:
-```swift
-// ❌ UI 업데이트 안됨 - 버튼 눌러도 로딩 스피너 안 보임
-class SomeManager {
-    var isLoading: Bool = false  // 변경해도 View가 모름
-}
-
-// ✅ 정상 작동
-import Observation
-
-@Observable
-class SomeManager {
-    var isLoading: Bool = false  // 변경 시 View 자동 업데이트
-}
-```
-
-**증상**: Run Audit 등 버튼 누르면 화면 멈춤 → sheet 닫았다 열면 결과 나타남
-
-**체크리스트** (모든 DevTools Manager):
-- ConsoleManager, StorageManager, NetworkManager ✅
-- ResourceManager, PerformanceManager, SourcesManager ✅
-- SnippetsManager, AccessibilityManager ✅
-
 ---
 
 ## Design System
 
-**Liquid Glass UI** (iOS 26):
+### Liquid Glass UI (iOS 26)
+
+**Always use `.backport.glassEffect()` for iOS < 26 compatibility via SwiftUIBackports.**
+
 ```swift
 .backport.glassEffect()                            // default
 .backport.glassEffect(in: .capsule)                // capsule
@@ -590,34 +210,38 @@ class SomeManager {
 .backport.glassEffect(in: .rect(cornerRadius: 16)) // rounded
 ```
 
-**Important**: Always use `.backport.glassEffect()` for iOS < 26 compatibility via SwiftUIBackports extension.
-
-Principle: Use `.glassEffect()`, maintain system background, use `.primary`/`.secondary` colors.
-
-For inactive/translucent state, use `.opacity(0.3)` (Liquid Glass principle preserves subtle visibility).
-
-**Scroll Button Pattern** (NetworkView, PerformanceView, StorageView, AccessibilityAuditView):
+**Critical: Apply to Button, not to label inside**
 ```swift
-Button(
-    action: { scrollUp(proxy: scrollProxy) },
-    label: {
-        Image(systemName: "chevron.up.circle.fill")
-            .font(.system(size: 28))
-            .foregroundStyle(.white)
-    }
-)
-.backport
-.glassEffect(in: .circle)
-.disabled(!canScroll || scrollOffset <= 20)
-.opacity(canScroll && scrollOffset > 20 ? 1 : 0.3)
-.animation(.easeInOut(duration: 0.2), value: canScroll && scrollOffset > 20)
+// ❌ WRONG - modifier on label
+Button { action() } label: {
+    Image(systemName: "chevron.up.circle.fill")
+        .backport.glassEffect(in: .circle)  // Wrong!
+}
+
+// ✅ CORRECT - modifier on Button
+Button { action() } label: {
+    Image(systemName: "chevron.up.circle.fill")
+}
+.backport.glassEffect(in: .circle)  // Correct!
 ```
 
-Key points:
-- Apply `.glassEffect()` to Button, not to Image label inside
-- Use `.backport` for iOS compatibility
-- Combine with `.disabled()` and `.opacity()` for state visualization
-- Use `.animation()` for smooth opacity transitions
+**State visualization pattern**:
+```swift
+.disabled(!canScroll)
+.opacity(canScroll ? 1 : 0.3)  // Liquid Glass preserves subtle visibility
+.animation(.easeInOut(duration: 0.2), value: canScroll)
+```
+
+### BarConstants (중앙화된 레이아웃)
+
+```swift
+enum BarConstants {
+    static let barHeight: CGFloat = 64
+    static let horizontalPadding: CGFloat = 8
+    static let bottomBarSafeAreaRatio: CGFloat = 0.5
+    static let additionalSpacing: CGFloat = 64  // "App" preset
+}
+```
 
 ---
 
@@ -628,28 +252,12 @@ Key points:
 | Circular icon button | `GlassIconButton` (.regular 44×44, .small 28×28) |
 | Action button | `GlassActionButton` (.default, .destructive, .primary) |
 | Copy button | `CopyButton` (text + feedback toast) |
-| Type badge | `TypeBadge` |
 | Chip/tag | `ChipButton`, `ToggleChipButton` |
-| Info button | `InfoPopoverButton` (Generic ShapeStyle) |
-| Security restriction | `SecurityRestrictionBanner` |
-| Settings toggle | `SettingToggleRow` |
-| Color picker | `ColorPickerRow` |
-| Auto-wrap layout | `FlowLayout` |
+| Info button | `InfoPopoverButton` |
 | DevTools header | `DevToolsHeader` (2-row: title center, buttons split) |
-| WebView size control | `WebViewSizeControl` |
 | Scroll buttons | `ScrollNavigationButtons` (up/down with auto-hide) |
 | Share sheet | `ShareSheet` (UIActivityViewController wrapper) |
 | JSON editor | `JsonEditor/` (syntax-highlighted editing) |
-
-### DevToolsHeader Layout
-
-2-row structure keeps title from shifting:
-```
-        [Title]              ← Row 1: center
-[Left Buttons] ⟷ [Right Buttons]  ← Row 2: split
-```
-
-Left: Close → Actions. Right: Toggles.
 
 ---
 
@@ -664,22 +272,19 @@ Left: Close → Actions. Right: Toggles.
 
 - **Logging**: `os_log` or `Logger` (not `print()` - enforced by SwiftLint)
 - 1 file 1 component, ~150 lines ideal
-- Feature-local helpers: `private` in same file
-- Protocols: separate Extension
 - Sections: `// MARK: -`
-- **No barrel exports** (no index.swift exporting everything)
+- **No barrel exports** (no index.swift)
 
 ---
 
 ## Localization (Korean)
 
 **Settings 메뉴 번역 규칙**:
-- **타이틀**: 영어 원문 유지 (App Settings, Live Settings, Configuration, Emulation, Permissions, Toolbar, App Bar 등)
-- **설명**: 자연스러운 문장형 한국어 ("설정을 바꾸면 바로 반영돼요", "개발자 도구 버튼을 원하는 대로 배치해요")
+- **타이틀**: 영어 원문 유지 (App Settings, Configuration, Emulation 등)
+- **설명**: 자연스러운 문장형 한국어
 
 **LocalizedStringKey 패턴**:
 - 컴포넌트 파라미터는 `LocalizedStringKey` 사용 (자동 로컬라이제이션)
-- 동적 문자열(파일명, 가격 등)은 `String` convenience init 추가
 - `Text(stringVariable)` where `stringVariable: String` → 로컬라이제이션 안됨
 - `Text(localizedKey)` where `localizedKey: LocalizedStringKey` → 로컬라이제이션 됨
 
@@ -687,40 +292,87 @@ Left: Close → Actions. Right: Toggles.
 
 ## SwiftLint Configuration
 
-See `.swiftlint.yml` for rules. Key points:
+See `.swiftlint.yml` for full rules. Key settings:
 
-**Disabled** (handled by swift-format or too noisy):
-- trailing_whitespace, trailing_comma, opening_brace, colon, comma, line_length, multiline_arguments
+**Disabled** (handled by swift-format):
+- trailing_whitespace, trailing_comma, opening_brace, colon, comma, line_length
 
-**Enabled rules** emphasize clarity:
-- cyclomatic_complexity (warning: 15, error: 25)
-- file_length (warning: 1000, error: 3000)
-- function_body_length (warning: 100, error: 300)
-- identifier_name (min: 2, excluded: i, j, k, id, ok, etc)
+**Limits**:
+| Rule | Warning | Error |
+|------|---------|-------|
+| cyclomatic_complexity | 15 | 25 |
+| file_length | 1000 | 3000 |
+| function_body_length | 100 | 300 |
+| type_body_length | 500 | 800 |
+| function_parameter_count | 6 | 8 |
 
-**Custom rules**:
-- `no_print_in_production` - use `os_log` or `Logger`
+**Custom rule**: `no_print_in_production` - use `os_log` or `Logger`
 
 ---
 
-## Performance Notes
+## Common Pitfalls
 
-### Array Rendering
-- <100 items: render all
-- 100-10K items: chunked (100 per group, collapsed by default)
-- 10K+ items: smooth interaction after initial load (~200-500ms for 1000 chunks)
+### 1. `.buttonStyle(.plain)` Touch Area
+```swift
+// ❌ Only touches icon pixels
+Button { }.buttonStyle(.plain)
 
-### Memory Management
-- @Observable patterns preferred (no retain cycle issues vs ObservableObject)
-- [weak self] in closures
-- Remove observers in deinit
-- Lazy var for deferred initialization
+// ✅ Fix - enable full area
+.contentShape(Circle())
+```
 
-### SwiftUI
-- @State scope: minimal
-- 1000+ items: LazyVStack (but watch bidirectional scroll/selection limits)
-- Avoid Reflection, force unwrap (!), synchronous network calls
-- Value types (struct) > classes for models
+### 2. Compiler Type-Check Failure
+```swift
+// ✅ Extract complex views to @ViewBuilder
+@ViewBuilder
+private var complexPart: some View { ... }
+```
+
+### 3. @Observable Array Element Updates
+```swift
+// ❌ No update
+requests[index].status = 200
+
+// ✅ Replace entire struct
+var updated = requests[index]
+updated.status = 200
+requests[index] = updated
+```
+
+### 4. Manager Class Missing @Observable
+```swift
+// ❌ UI 업데이트 안됨
+class SomeManager { var isLoading = false }
+
+// ✅ 정상 작동
+@Observable
+class SomeManager { var isLoading = false }
+```
+
+### 5. JSONSerialization Fragment Strings
+```swift
+// ✅ Option needed for top-level String
+JSONSerialization.data(withJSONObject: "string", options: .fragmentsAllowed)
+```
+
+### 6. Sheet Internal Scroll Priority
+```swift
+.sheet(item: $item) {
+    ScrollView { content }
+        .presentationDetents([.medium, .large])
+        .presentationContentInteraction(.scrolls)  // Enable scroll priority
+}
+```
+
+### 7. Color.secondary/tertiary Type Mismatch
+```swift
+// These return ShapeStyle, not Color
+// ✅ Use explicit Color for type requirements
+var color: Color { .gray }
+
+// ✅ But fine in foregroundStyle
+.foregroundStyle(.secondary)
+```
 
 ---
 
@@ -730,7 +382,6 @@ See `.swiftlint.yml` for rules. Key points:
 ```bash
 rm -rf ~/Library/Developer/Xcode/DerivedData/*
 xcodebuild clean -project wina.xcodeproj
-open wina.xcodeproj && Cmd+R
 ```
 
 ### SwiftLint "Unable to Read File"
@@ -741,17 +392,10 @@ brew uninstall swiftlint && brew install swiftlint
 ### WebView JavaScript Injection Fails
 - Only inline scripts work (external fetch blocked by CORS)
 - Use `evaluateJavaScript()` only
-- Console logging works: `console.log()` hooks captured
 
 ### Network Monitoring Missing
 - Enable "Preserve Network Log" toggle
-- Keep console/network tabs open during load
 - SafariVC: network data unavailable (security)
-
-### High Memory Usage
-- Close DevTools periodically
-- Check ConsoleManager/NetworkManager cache sizes
-- Consider clearing on app background
 
 ---
 
@@ -762,6 +406,6 @@ brew uninstall swiftlint && brew install swiftlint
 | Xcode | 16.0+ | ✅ |
 | iOS Target | 18.4+ | ✅ |
 | SwiftLint | 0.62.2+ | ✅ (pre-commit) |
-| swift-format | 6.2.1+ | 🟡 (optional, avoid complex SwiftUI) |
-| Google Mobile Ads | 11.0+ | ✅ (ads) |
-| Runestone | latest | ✅ (Sources view) |
+| swift-format | 6.2.1+ | 🟡 (optional) |
+| Google Mobile Ads | 11.0+ | ✅ |
+| Runestone | latest | ✅ |
