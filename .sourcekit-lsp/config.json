@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/swiftlang/sourcekit-lsp/refs/heads/release/6.2/config.schema.json",
+  "swiftPM": {
+    "configuration": "debug"
+  },
+  "compilationDatabase": {
+    "searchPaths": [
+      "~/Library/Developer/Xcode/DerivedData/wina-gbdcahefizqnqnbajquneluadqlz/Build"
+    ]
+  }
+}
