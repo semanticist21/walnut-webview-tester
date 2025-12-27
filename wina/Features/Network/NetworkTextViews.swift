@@ -205,28 +205,29 @@ struct SearchableTextView: UIViewRepresentable {
 // MARK: - JSON Tree View (Chrome DevTools Style)
 
 enum JSONNode: Identifiable {
-    case null(key: String?)
-    case bool(key: String?, value: Bool)
-    case number(key: String?, value: Double)
-    case string(key: String?, value: String)
-    case array(key: String?, values: [JSONNode])
-    case object(key: String?, pairs: [(String, JSONNode)])
+    case null(key: String?, path: [String])
+    case bool(key: String?, value: Bool, path: [String])
+    case number(key: String?, value: Double, path: [String])
+    case string(key: String?, value: String, path: [String])
+    case array(key: String?, values: [JSONNode], path: [String])
+    case object(key: String?, pairs: [(String, JSONNode)], path: [String])
 
     var id: String {
         switch self {
-        case .null(let key): return "null-\(key ?? "root")-\(UUID().uuidString)"
-        case .bool(let key, _): return "bool-\(key ?? "root")-\(UUID().uuidString)"
-        case .number(let key, _): return "number-\(key ?? "root")-\(UUID().uuidString)"
-        case .string(let key, _): return "string-\(key ?? "root")-\(UUID().uuidString)"
-        case .array(let key, _): return "array-\(key ?? "root")-\(UUID().uuidString)"
-        case .object(let key, _): return "object-\(key ?? "root")-\(UUID().uuidString)"
+        case .null(_, let path),
+             .bool(_, _, let path),
+             .number(_, _, let path),
+             .string(_, _, let path),
+             .array(_, _, let path),
+             .object(_, _, let path):
+            return path.joined(separator: ".")
         }
     }
 
     var key: String? {
         switch self {
-        case .null(let key), .bool(let key, _), .number(let key, _),
-             .string(let key, _), .array(let key, _), .object(let key, _):
+        case .null(let key, _), .bool(let key, _, _), .number(let key, _, _),
+             .string(let key, _, _), .array(let key, _, _), .object(let key, _, _):
             return key
         }
     }
@@ -240,30 +241,36 @@ enum JSONNode: Identifiable {
 
     var childCount: Int {
         switch self {
-        case .array(_, let values): return values.count
-        case .object(_, let pairs): return pairs.count
+        case .array(_, let values, _): return values.count
+        case .object(_, let pairs, _): return pairs.count
         default: return 0
         }
     }
 
-    static func parse(_ json: Any, key: String? = nil) -> JSONNode {
+    static func parse(_ json: Any, key: String? = nil, path: [String] = ["root"]) -> JSONNode {
         switch json {
         case is NSNull:
-            return .null(key: key)
+            return .null(key: key, path: path)
         case let bool as Bool:
-            return .bool(key: key, value: bool)
+            return .bool(key: key, value: bool, path: path)
         case let number as NSNumber:
-            return .number(key: key, value: number.doubleValue)
+            return .number(key: key, value: number.doubleValue, path: path)
         case let string as String:
-            return .string(key: key, value: string)
+            return .string(key: key, value: string, path: path)
         case let array as [Any]:
-            let nodes = array.enumerated().map { parse($1, key: "[\($0)]") }
-            return .array(key: key, values: nodes)
+            let nodes = array.enumerated().map { index, value in
+                let childKey = "[\(index)]"
+                return parse(value, key: childKey, path: path + [childKey])
+            }
+            return .array(key: key, values: nodes, path: path)
         case let dict as [String: Any]:
-            let pairs = dict.sorted { $0.key < $1.key }.map { ($0.key, parse($0.value, key: $0.key)) }
-            return .object(key: key, pairs: pairs)
+            let pairs = dict.sorted { $0.key < $1.key }.map { entry in
+                let childKey = entry.key
+                return (childKey, parse(entry.value, key: childKey, path: path + [childKey]))
+            }
+            return .object(key: key, pairs: pairs, path: path)
         default:
-            return .string(key: key, value: String(describing: json))
+            return .string(key: key, value: String(describing: json), path: path)
         }
     }
 }
@@ -358,24 +365,24 @@ struct JSONNodeView: View {
             Text("null")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(primitiveColor)
-        case .bool(_, let value):
+        case .bool(_, let value, _):
             Text(value ? "true" : "false")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(primitiveColor)
-        case .number(_, let value):
+        case .number(_, let value, _):
             Text(formatNumber(value))
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(primitiveColor)
-        case .string(_, let value):
+        case .string(_, let value, _):
             Text("\"\(value)\"")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(stringColor)
                 .lineLimit(isExpanded ? nil : 1)
-        case .array(_, let values):
+        case .array(_, let values, _):
             Text("Array[\(values.count)]")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.primary.opacity(0.5))
-        case .object(_, let pairs):
+        case .object(_, let pairs, _):
             Text("Object{\(pairs.count)}")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.primary.opacity(0.5))
@@ -385,7 +392,7 @@ struct JSONNodeView: View {
     @ViewBuilder
     private var childrenView: some View {
         switch node {
-        case .array(_, let values):
+        case .array(_, let values, _):
             ForEach(Array(values.enumerated()), id: \.offset) { index, childNode in
                 JSONNodeView(
                     node: childNode,
@@ -393,7 +400,7 @@ struct JSONNodeView: View {
                     isLast: index == values.count - 1
                 )
             }
-        case .object(_, let pairs):
+        case .object(_, let pairs, _):
             ForEach(Array(pairs.enumerated()), id: \.offset) { index, pair in
                 JSONNodeView(
                     node: pair.1,

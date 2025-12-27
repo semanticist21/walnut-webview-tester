@@ -117,6 +117,24 @@ final class SearchTextScriptTests: XCTestCase {
         XCTAssertTrue(escaped.contains("\n"))
     }
 
+    func testSearchScriptUsesRegexEscaping() {
+        let script = SearchTextOverlay.searchScript(for: "a.b")
+        XCTAssertNotNil(script)
+        let expected = #"replace(/[.*+?^${}()|[\]\\]/g, '\\$&')"#
+        XCTAssertTrue(script?.contains(expected) == true)
+    }
+
+    func testSearchScriptUsesJSONSerializationForKeyword() throws {
+        let keyword = "say \"hello\""
+        let data = try XCTUnwrap(
+            try JSONSerialization.data(withJSONObject: keyword, options: .fragmentsAllowed)
+        )
+        let jsonKeyword = try XCTUnwrap(String(data: data, encoding: .utf8))
+        let script = try XCTUnwrap(SearchTextOverlay.searchScript(for: keyword))
+
+        XCTAssertTrue(script.contains("const keyword = \(jsonKeyword);"))
+    }
+
     // MARK: - Helper
 
     private func escapeForJS(_ text: String) -> String {

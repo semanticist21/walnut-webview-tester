@@ -126,9 +126,9 @@ extension ContentView {
                                 .foregroundStyle(.primary)
                                 .frame(width: 48, height: 48)
                                 .contentShape(Circle())
-                                .backport.glassEffect(in: .circle)
                         }
                         .buttonStyle(.plain)
+                        .backport.glassEffect(in: .circle)
                         .transition(.opacity.animation(.easeOut(duration: 0.15)))
                     }
                 }

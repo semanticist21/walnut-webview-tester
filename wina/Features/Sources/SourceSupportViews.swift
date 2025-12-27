@@ -42,7 +42,7 @@ struct SourceInfoRow: View {
             } label: {
                 Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 12))
-                    .foregroundStyle(showCopied ? .green : .tertiary)
+                    .foregroundStyle(showCopied ? .green : Color.secondary)
                     .frame(width: 28, height: 28)
                     .contentShape(Circle())
             }
@@ -87,7 +87,7 @@ struct AttributeRow: View {
             } label: {
                 Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 12))
-                    .foregroundStyle(showCopied ? .green : .tertiary)
+                    .foregroundStyle(showCopied ? .green : Color.secondary)
                     .frame(width: 28, height: 28)
                     .contentShape(Circle())
             }
@@ -126,7 +126,7 @@ struct CSSPropertyRow: View {
                 .foregroundStyle(.primary)
             Text(":")
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.secondary)
 
             // Color preview swatches (before value) - supports multiple colors
             ForEach(Array(extractedColors.enumerated()), id: \.offset) { _, color in
@@ -155,7 +155,7 @@ struct CSSPropertyRow: View {
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.secondary)
                         .frame(width: 20, height: 20)
                         .contentShape(Circle())
                 }
@@ -178,7 +178,7 @@ struct CSSPropertyRow: View {
             } label: {
                 Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 10))
-                    .foregroundStyle(showCopied ? .green : .tertiary)
+                    .foregroundStyle(showCopied ? .green : Color.secondary)
                     .frame(width: 24, height: 24)
                     .contentShape(Circle())
             }
@@ -218,7 +218,7 @@ struct ExpandableURLView: View {
         VStack(spacing: 8) {
             Text("Source URL:")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.secondary)
 
             Button {
                 if isLongURL {
@@ -231,7 +231,7 @@ struct ExpandableURLView: View {
                     if isLongURL {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Color.secondary)
                     }
 
                     Text(displayURL)

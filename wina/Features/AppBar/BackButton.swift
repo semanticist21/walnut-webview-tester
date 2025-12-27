@@ -32,9 +32,9 @@ struct WebBackButton: View {
                 .foregroundStyle(isEnabled ? .primary : .tertiary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
-                .backport.glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .backport.glassEffect(in: .circle)
         .disabled(!isEnabled)
         .accessibilityLabel("Go back")
         .accessibilityAddTraits(.isButton)
@@ -53,9 +53,9 @@ struct WebForwardButton: View {
                 .foregroundStyle(isEnabled ? .primary : .tertiary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
-                .backport.glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .backport.glassEffect(in: .circle)
         .disabled(!isEnabled)
         .accessibilityLabel("Go forward")
         .accessibilityAddTraits(.isButton)
@@ -74,9 +74,9 @@ struct InitialURLButton: View {
                 .foregroundStyle(isEnabled ? .primary : .tertiary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
-                .backport.glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .backport.glassEffect(in: .circle)
         .disabled(!isEnabled)
         .accessibilityLabel("Go to initial URL")
         .accessibilityAddTraits(.isButton)

@@ -41,9 +41,9 @@ struct GlassIconButton: View {
                 .foregroundStyle(color.opacity(isDisabled ? 0.3 : 1.0))
                 .frame(width: size.frame, height: size.frame)
                 .contentShape(Circle())
-                .backport.glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .backport.glassEffect(in: .circle)
         .disabled(isDisabled)
         .accessibilityLabel(accessibilityLabel ?? "Button")
         .accessibilityAddTraits(.isButton)

@@ -425,9 +425,9 @@ private struct BottomBarIconButton: View {
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
-                .backport.glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .backport.glassEffect(in: .circle)
     }
 }
 

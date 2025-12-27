@@ -8,6 +8,16 @@
 import Foundation
 import SwiftUI
 
+private func formattedByteCount(_ bytes: Int) -> String {
+    let formatted = ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+    guard !formatted.contains(" ") else { return formatted }
+    return formatted.replacingOccurrences(
+        of: "([0-9])([A-Za-z])",
+        with: "$1 $2",
+        options: .regularExpression
+    )
+}
+
 // MARK: - Resource Entry
 
 struct ResourceEntry: Identifiable, Equatable {
@@ -38,7 +48,7 @@ struct ResourceEntry: Identifiable, Equatable {
         let size = transferSize > 0 ? transferSize :
                    (encodedBodySize > 0 ? encodedBodySize : decodedBodySize)
         guard size > 0 else { return "—" }
-        return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+        return formattedByteCount(size)
     }
 
     var displayDuration: String {
@@ -243,6 +253,6 @@ struct ResourceStats {
 
     var displayTotalSize: String {
         guard totalSize > 0 else { return "—" }
-        return ByteCountFormatter.string(fromByteCount: Int64(totalSize), countStyle: .file)
+        return formattedByteCount(totalSize)
     }
 }

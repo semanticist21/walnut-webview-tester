@@ -136,12 +136,35 @@ struct SearchTextOverlay: View {
         guard !searchText.isEmpty else { return }
         isSearching = true
 
-        let escapedText = searchText
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\'")
-            .replacingOccurrences(of: "\"", with: "\\\"")
+        guard let script = Self.searchScript(for: searchText) else {
+            isSearching = false
+            return
+        }
 
-        let script = """
+        Task {
+            let result = await navigator.evaluateJavaScript(script)
+            await MainActor.run {
+                isSearching = false
+                if let jsonString = result as? String,
+                   let data = jsonString.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    matchCount = json["count"] as? Int ?? 0
+                    currentIndex = json["index"] as? Int ?? 0
+                }
+            }
+        }
+    }
+
+    static func searchScript(for keyword: String) -> String? {
+        guard let keywordData = try? JSONSerialization.data(
+            withJSONObject: keyword,
+            options: .fragmentsAllowed
+        ),
+        let jsonKeyword = String(data: keywordData, encoding: .utf8) else {
+            return nil
+        }
+
+        return """
         (function() {
             // Remove previous highlights
             document.querySelectorAll('.__wina_search_highlight__').forEach(el => {
@@ -150,10 +173,11 @@ struct SearchTextOverlay: View {
                 parent.normalize();
             });
 
-            const keyword = '\(escapedText)';
+            const keyword = \(jsonKeyword);
             if (!keyword) return JSON.stringify({count: 0, index: 0});
 
-            const regex = new RegExp(keyword, 'gi');
+            const escapedKeyword = keyword.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+            const regex = new RegExp(escapedKeyword, 'gi');
             let matchCount = 0;
             const elements = [];
 
@@ -195,19 +219,6 @@ struct SearchTextOverlay: View {
             return JSON.stringify({count: matchCount, index: 0});
         })();
         """
-
-        Task {
-            let result = await navigator.evaluateJavaScript(script)
-            await MainActor.run {
-                isSearching = false
-                if let jsonString = result as? String,
-                   let data = jsonString.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    matchCount = json["count"] as? Int ?? 0
-                    currentIndex = json["index"] as? Int ?? 0
-                }
-            }
-        }
     }
 
     private func navigateToNext() {

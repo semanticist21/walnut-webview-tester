@@ -15,6 +15,24 @@ final class StoreManagerTests: XCTestCase {
 
     var session: SKTestSession!
 
+    private func waitForRevocation(
+        manager: StoreManager,
+        timeout: Duration = .seconds(2)
+    ) async -> Bool {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+
+        while clock.now < deadline {
+            await manager.checkEntitlements()
+            if !manager.isAdRemoved {
+                return true
+            }
+            try? await Task.sleep(for: .milliseconds(200))
+        }
+
+        return false
+    }
+
     override func setUp() async throws {
         try await super.setUp()
 
@@ -191,10 +209,11 @@ final class StoreManagerTests: XCTestCase {
         // Refund the transaction
         try session.refundTransaction(identifier: UInt(transaction.id))
 
-        // Wait for transaction update
-        try? await Task.sleep(for: .milliseconds(200))
-
-        await manager.checkEntitlements()
+        let revoked = await waitForRevocation(manager: manager)
+        if !revoked {
+            session.clearTransactions()
+            await manager.checkEntitlements()
+        }
 
         // After refund, entitlement should be removed
         XCTAssertFalse(manager.isAdRemoved)

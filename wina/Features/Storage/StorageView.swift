@@ -299,7 +299,15 @@ class StorageManager {
         case .cookies:
             let escapedKey = key.replacingOccurrences(of: "=", with: "%3D")
             let escapedValue = value.replacingOccurrences(of: ";", with: "%3B")
-            script = "document.cookie = '\(escapedKey)=\(escapedValue)'; true;"
+            let cookieString = "\(escapedKey)=\(escapedValue)"
+            guard let cookieData = try? JSONSerialization.data(
+                withJSONObject: cookieString,
+                options: .fragmentsAllowed
+            ),
+            let jsonCookie = String(data: cookieData, encoding: .utf8) else {
+                return false
+            }
+            script = "document.cookie = \(jsonCookie); true;"
         }
 
         let result = await navigator.evaluateJavaScript(script)
@@ -317,14 +325,17 @@ class StorageManager {
             return true
         }
 
-        let escapedKey = key.replacingOccurrences(of: "'", with: "\\'")
+        guard let keyData = try? JSONSerialization.data(withJSONObject: key, options: .fragmentsAllowed),
+              let jsonKey = String(data: keyData, encoding: .utf8) else {
+            return false
+        }
 
         let script: String
         switch type {
         case .localStorage:
-            script = "localStorage.removeItem('\(escapedKey)'); true;"
+            script = "localStorage.removeItem(\(jsonKey)); true;"
         case .sessionStorage:
-            script = "sessionStorage.removeItem('\(escapedKey)'); true;"
+            script = "sessionStorage.removeItem(\(jsonKey)); true;"
         case .cookies:
             return false  // Handled above
         }

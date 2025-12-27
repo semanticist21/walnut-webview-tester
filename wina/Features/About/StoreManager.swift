@@ -74,16 +74,47 @@ final class StoreManager {
     /// Check current entitlements (call on app launch)
     @MainActor
     func checkEntitlements() async {
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result {
-                if transaction.productID == productID {
-                    isAdRemoved = true
-                    return
+        await processUnfinishedTransactions()
+
+        var latestHistoryTransaction: Transaction?
+        for await result in Transaction.all {
+            if case .verified(let transaction) = result,
+               transaction.productID == productID {
+                if let current = latestHistoryTransaction {
+                    if transaction.signedDate > current.signedDate {
+                        latestHistoryTransaction = transaction
+                    }
+                } else {
+                    latestHistoryTransaction = transaction
                 }
             }
         }
-        // No valid entitlement found
-        isAdRemoved = false
+
+        if let historyTransaction = latestHistoryTransaction,
+           historyTransaction.revocationDate != nil {
+            isAdRemoved = false
+            return
+        }
+
+        if let latestResult = await Transaction.latest(for: productID),
+           case .verified(let transaction) = latestResult,
+           transaction.revocationDate != nil {
+            isAdRemoved = false
+            return
+        }
+
+        var hasActiveEntitlement = false
+
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result,
+               transaction.productID == productID,
+               transaction.revocationDate == nil {
+                hasActiveEntitlement = true
+                break
+            }
+        }
+
+        isAdRemoved = hasActiveEntitlement
     }
 
     // MARK: - Purchase
