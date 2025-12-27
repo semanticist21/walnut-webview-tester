@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2732" viewBox="0 0 2048 2732">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A1D23"/>
+      <stop offset="50%" style="stop-color:#13161B"/>
+      <stop offset="100%" style="stop-color:#0D1117"/>
+    </linearGradient>
+
+    <!-- Accent Gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00BCD4"/>
+      <stop offset="100%" style="stop-color:#4DD0E1"/>
+    </linearGradient>
+
+    <!-- Device Shadow -->
+    <filter id="deviceShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="20" stdDeviation="50" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Glow Effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Device Frame -->
+    <linearGradient id="deviceFrame" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2D3139"/>
+      <stop offset="100%" style="stop-color:#1A1D23"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="2048" height="2732" fill="url(#bgGradient)"/>
+
+  <!-- Subtle Grid Pattern -->
+  <g opacity="0.025">
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#00BCD4" stroke-width="1"/>
+    </pattern>
+    <rect width="2048" height="2732" fill="url(#grid)"/>
+  </g>
+
+  <!-- Decorative Glow Orbs -->
+  <circle cx="1800" cy="400" r="400" fill="#00BCD4" opacity="0.06" filter="url(#glow)"/>
+  <circle cx="248" cy="2300" r="350" fill="#4DD0E1" opacity="0.05" filter="url(#glow)"/>
+
+  <!-- ===== TEXT AREA ===== -->
+
+  <!-- Main Headline -->
+  <text x="1024" y="280"
+        font-family="-apple-system, SF Pro Display, Helvetica Neue, sans-serif"
+        font-size="88"
+        font-weight="700"
+        fill="#FFFFFF"
+        text-anchor="middle"
+        letter-spacing="-2">
+    WebView Testing
+  </text>
+
+  <!-- Subheadline -->
+  <text x="1024" y="380"
+        font-family="-apple-system, SF Pro Text, Helvetica Neue, sans-serif"
+        font-size="44"
+        font-weight="400"
+        fill="#8B949E"
+        text-anchor="middle">
+    Professional Developer Tools for iOS
+  </text>
+
+  <!-- Accent Line -->
+  <rect x="874" y="440" width="300" height="5" rx="2.5" fill="url(#accentGradient)"/>
+
+  <!-- ===== DEVICE MOCKUP ===== -->
+
+  <g filter="url(#deviceShadow)">
+    <!-- iPad Frame -->
+    <rect x="274" y="550" width="1500" height="2000" rx="50" fill="url(#deviceFrame)"/>
+
+    <!-- Screen Area -->
+    <rect x="294" y="570" width="1460" height="1960" rx="35" fill="#000000"/>
+
+    <!-- Screenshot Placeholder -->
+    <rect x="294" y="570" width="1460" height="1960" rx="35"
+          fill="none"
+          stroke="#00BCD4"
+          stroke-width="3"
+          stroke-dasharray="15,12"
+          opacity="0.4"/>
+
+    <text x="1024" y="1550"
+          font-family="-apple-system, SF Pro Text, Helvetica Neue, sans-serif"
+          font-size="40"
+          fill="#4DD0E1"
+          text-anchor="middle"
+          opacity="0.5">
+      iPad Screenshot
+    </text>
+    <text x="1024" y="1610"
+          font-family="-apple-system, SF Pro Text, Helvetica Neue, sans-serif"
+          font-size="30"
+          fill="#8B949E"
+          text-anchor="middle"
+          opacity="0.3">
+      1460 × 1960 px
+    </text>
+
+    <!-- Camera -->
+    <circle cx="1024" cy="595" r="12" fill="#1A1D23"/>
+  </g>
+
+  <!-- ===== BOTTOM AREA ===== -->
+
+  <!-- Feature Pills -->
+  <g transform="translate(1024, 2620)">
+    <g transform="translate(-500, 0)">
+      <rect x="-70" y="-22" width="140" height="44" rx="22" fill="#21262D"/>
+      <text y="8"
+            font-family="-apple-system, SF Pro Text, sans-serif"
+            font-size="24"
+            fill="#00BCD4"
+            text-anchor="middle">
+        Console
+      </text>
+    </g>
+
+    <g transform="translate(-250, 0)">
+      <rect x="-70" y="-22" width="140" height="44" rx="22" fill="#21262D"/>
+      <text y="8"
+            font-family="-apple-system, SF Pro Text, sans-serif"
+            font-size="24"
+            fill="#00BCD4"
+            text-anchor="middle">
+        Network
+      </text>
+    </g>
+
+    <g transform="translate(0, 0)">
+      <rect x="-70" y="-22" width="140" height="44" rx="22" fill="#21262D"/>
+      <text y="8"
+            font-family="-apple-system, SF Pro Text, sans-serif"
+            font-size="24"
+            fill="#00BCD4"
+            text-anchor="middle">
+        Storage
+      </text>
+    </g>
+
+    <g transform="translate(250, 0)">
+      <rect x="-90" y="-22" width="180" height="44" rx="22" fill="#21262D"/>
+      <text y="8"
+            font-family="-apple-system, SF Pro Text, sans-serif"
+            font-size="24"
+            fill="#00BCD4"
+            text-anchor="middle">
+        Performance
+      </text>
+    </g>
+
+    <g transform="translate(500, 0)">
+      <rect x="-70" y="-22" width="140" height="44" rx="22" fill="#21262D"/>
+      <text y="8"
+            font-family="-apple-system, SF Pro Text, sans-serif"
+            font-size="24"
+            fill="#00BCD4"
+            text-anchor="middle">
+        Sources
+      </text>
+    </g>
+  </g>
+</svg>
