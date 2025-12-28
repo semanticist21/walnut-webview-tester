@@ -1,0 +1,15 @@
+# Appfile for fastlane
+# https://docs.fastlane.tools/advanced/Appfile/
+
+# App Store Connect API Key (preferred over password auth)
+app_store_connect_api_key(
+  key_id: "74HC92L9NA",
+  issuer_id: "a7524762-b1db-463b-84a8-bbee51a37cc2",
+  key_filepath: "/Users/semanticist/Documents/API/AuthKey_74HC92L9NA.p8"
+)
+
+# App identifier
+app_identifier("com.kobbokkom.wina")
+
+# Apple ID (Team ID)
+team_id("X6M5USK89L")

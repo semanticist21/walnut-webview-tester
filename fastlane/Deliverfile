@@ -1,0 +1,23 @@
+# Deliverfile for fastlane deliver
+# https://docs.fastlane.tools/actions/deliver/
+
+# App identifier
+app_identifier("com.kobbokkom.wina")
+
+# Skip metadata upload (screenshots only)
+skip_metadata(true)
+
+# Screenshots path
+screenshots_path("./fastlane/screenshots")
+
+# Overwrite existing screenshots
+overwrite_screenshots(true)
+
+# Don't submit for review automatically
+submit_for_review(false)
+
+# Skip binary upload
+skip_binary_upload(true)
+
+# Force upload even if no changes detected
+force(true)
