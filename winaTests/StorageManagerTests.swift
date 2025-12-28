@@ -265,6 +265,8 @@ private final class MockStorageNavigator: StorageNavigator {
     var jsResult: Any?
     var cookies: [HTTPCookie] = []
     private(set) var scripts: [String] = []
+    private(set) var deletedCookies: [(name: String, domain: String?, path: String?)] = []
+    private(set) var setCookies: [HTTPCookie] = []
 
     func evaluateJavaScript(_ script: String) async -> Any? {
         scripts.append(script)
@@ -275,7 +277,12 @@ private final class MockStorageNavigator: StorageNavigator {
         cookies
     }
 
-    func deleteCookie(name: String) async {
+    func setCookie(_ cookie: HTTPCookie) async {
+        setCookies.append(cookie)
+    }
+
+    func deleteCookie(name: String, domain: String?, path: String?) async {
+        deletedCookies.append((name: name, domain: domain, path: path))
     }
 
     func deleteAllCookies() async {

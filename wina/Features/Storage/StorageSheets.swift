@@ -22,6 +22,7 @@ struct StorageEditSheet: View {
     @State private var isDeleting: Bool = false
     @State private var showJsonEditor: Bool = false
     @State private var copiedFeedback: String?
+    @State private var isURLDecoded: Bool = true
 
     private var isValueJson: Bool {
         JsonParser.isValidJson(editedValue)
@@ -78,8 +79,19 @@ struct StorageEditSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                // Info section (Type + Size)
+                // Info section (Storage + Type + Size + Domain)
                 Section("Info") {
+                    LabeledContent("Storage") {
+                        HStack(spacing: 4) {
+                            Image(systemName: item.storageType.icon)
+                                .font(.system(size: 12))
+                            Text(item.storageType.label)
+                        }
+                        .foregroundStyle(item.storageType.tintColor)
+                    }
+                    if isCookie, let domain = item.cookieMetadata?.domain {
+                        LabeledContent("Domain", value: domain)
+                    }
                     HStack {
                         Text("Type")
                         Spacer()
@@ -102,7 +114,6 @@ struct StorageEditSheet: View {
                 // Cookie metadata section
                 if let metadata = item.cookieMetadata {
                     Section("Cookie Attributes") {
-                        LabeledContent("Domain", value: metadata.domain)
                         LabeledContent("Path", value: metadata.path)
 
                         if let expires = metadata.expiresDate {
@@ -158,18 +169,23 @@ struct StorageEditSheet: View {
                         .frame(minHeight: 120)
 
                     if isCookie {
-                        HStack(spacing: 8) {
-                            HeaderActionButton(label: "Encode", icon: "arrow.right.circle") {
+                        Picker("URL Encoding", selection: $isURLDecoded) {
+                            Text("Encoded").tag(false)
+                            Text("Decoded").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: isURLDecoded) { oldValue, newValue in
+                            if newValue && !oldValue {
+                                // Switching to decoded view
+                                if let decoded = editedValue.removingPercentEncoding {
+                                    editedValue = decoded
+                                }
+                            } else if !newValue && oldValue {
+                                // Switching to encoded view
                                 if let encoded = editedValue.addingPercentEncoding(
                                     withAllowedCharacters: .urlQueryAllowed
                                 ) {
                                     editedValue = encoded
-                                }
-                            }
-
-                            HeaderActionButton(label: "Decode", icon: "arrow.left.circle") {
-                                if let decoded = editedValue.removingPercentEncoding {
-                                    editedValue = decoded
                                 }
                             }
                         }
@@ -241,7 +257,12 @@ struct StorageEditSheet: View {
             }
             .onAppear {
                 editedKey = item.key
-                editedValue = item.value
+                // Default to decoded view for cookies
+                if isCookie, let decoded = item.value.removingPercentEncoding {
+                    editedValue = decoded
+                } else {
+                    editedValue = item.value
+                }
             }
             .overlay(alignment: .bottom) {
                 if let feedback = copiedFeedback {
@@ -269,8 +290,17 @@ struct StorageEditSheet: View {
         isSaving = true
         Task {
             var success = false
+
+            // If viewing decoded, re-encode before saving
+            var finalValue = editedValue
+            if isURLDecoded, isCookie {
+                finalValue = editedValue.addingPercentEncoding(
+                    withAllowedCharacters: .urlQueryAllowed
+                ) ?? editedValue
+            }
+
             // Minify JSON before saving (storage typically stores compact JSON)
-            let valueToSave = JsonParser.minify(editedValue) ?? editedValue
+            let valueToSave = JsonParser.minify(finalValue) ?? finalValue
 
             if keyChanged {
                 // Key changed: remove old key first, then set new key

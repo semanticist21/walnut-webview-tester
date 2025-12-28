@@ -660,7 +660,6 @@ struct StorageView: View {
     // MARK: - Table Header
 
     private let keyColumnWidth: CGFloat = 140
-    private let storageTypeColumnWidth: CGFloat = 72
 
     private var tableHeader: some View {
         HStack(spacing: 12) {
@@ -675,13 +674,6 @@ struct StorageView: View {
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-            if showsAllStorage {
-                Text("Storage")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: storageTypeColumnWidth, alignment: .trailing)
-            }
 
             // Placeholder for chevron alignment
             Image(systemName: "chevron.right")
@@ -794,9 +786,7 @@ struct StorageView: View {
                                     StorageItemRow(
                                         item: item,
                                         keyColumnWidth: keyColumnWidth,
-                                        storageTypeColumnWidth: storageTypeColumnWidth,
                                         searchText: searchText,
-                                        showsStorageType: showsAllStorage,
                                         onEdit: { selectedItem = $0 },
                                         onDelete: { deleteItem($0) },
                                         onCopy: { copyToClipboard($0) },
@@ -810,9 +800,7 @@ struct StorageView: View {
                                 StorageItemRow(
                                     item: item,
                                     keyColumnWidth: keyColumnWidth,
-                                    storageTypeColumnWidth: storageTypeColumnWidth,
                                     searchText: searchText,
-                                    showsStorageType: showsAllStorage,
                                     onEdit: { selectedItem = $0 },
                                     onDelete: { deleteItem($0) },
                                     onCopy: { copyToClipboard($0) },
@@ -921,9 +909,7 @@ struct StorageView: View {
 private struct StorageItemRow: View {
     let item: StorageItem
     let keyColumnWidth: CGFloat
-    let storageTypeColumnWidth: CGFloat
     let searchText: String
-    let showsStorageType: Bool
     let onEdit: (StorageItem) -> Void
     let onDelete: (StorageItem) -> Void
     let onCopy: (String) -> Void
@@ -1034,13 +1020,6 @@ private struct StorageItemRow: View {
                 Text(valueType.label)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(valueType.color)
-            }
-
-            if showsStorageType {
-                Text(item.storageType.label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(item.storageType.tintColor)
-                    .frame(width: storageTypeColumnWidth, alignment: .trailing)
             }
 
             // Chevron indicator

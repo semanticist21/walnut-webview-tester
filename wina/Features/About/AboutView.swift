@@ -131,15 +131,10 @@ struct AboutView: View {
             .navigationTitle(Text(verbatim: "About"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
