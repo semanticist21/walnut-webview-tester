@@ -24,6 +24,7 @@
     "*.xcodeproj/**",
     "*.xcassets/**",
     "Pods/**",
-    "DerivedData/**"
+    "DerivedData/**",
+    "wina/Localizable.xcstrings"
   ]
 }
