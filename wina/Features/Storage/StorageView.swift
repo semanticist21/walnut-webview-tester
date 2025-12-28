@@ -145,7 +145,8 @@ enum StorageValueType {
 protocol StorageNavigator: AnyObject {
     func evaluateJavaScript(_ script: String) async -> Any?
     func getAllCookies() async -> [HTTPCookie]
-    func deleteCookie(name: String) async
+    func setCookie(_ cookie: HTTPCookie) async
+    func deleteCookie(name: String, domain: String?, path: String?) async
     func deleteAllCookies() async
 }
 
@@ -162,7 +163,7 @@ class StorageManager {
         self.navigator = navigator
     }
 
-    // SWR: Fetch all storage data from WebView (keep stale data while revalidating)
+    // Sync storage with WebView (keep prior data for same page if fetch fails)
     @MainActor
     func refresh(pageURL: URL? = nil) async {
         guard let navigator else {
@@ -170,8 +171,11 @@ class StorageManager {
             return
         }
 
+        let previousItems = items
+        let didChangeURL = pageURL != currentURL
+
         // If URL changed, clear items immediately to avoid stale data flashing
-        if let newURL = pageURL, currentURL != newURL {
+        if let newURL = pageURL, didChangeURL {
             currentURL = newURL
             items.removeAll()
         }
@@ -185,11 +189,15 @@ class StorageManager {
         // Fetch localStorage
         if let localData = await fetchStorage(type: .localStorage, navigator: navigator) {
             newItems.append(contentsOf: localData)
+        } else if !didChangeURL {
+            newItems.append(contentsOf: previousItems.filter { $0.storageType == .localStorage })
         }
 
         // Fetch sessionStorage
         if let sessionData = await fetchStorage(type: .sessionStorage, navigator: navigator) {
             newItems.append(contentsOf: sessionData)
+        } else if !didChangeURL {
+            newItems.append(contentsOf: previousItems.filter { $0.storageType == .sessionStorage })
         }
 
         // Fetch cookies
@@ -198,6 +206,8 @@ class StorageManager {
             pageURL: pageURL
         ) {
             newItems.append(contentsOf: cookieData)
+        } else if !didChangeURL {
+            newItems.append(contentsOf: previousItems.filter { $0.storageType == .cookies })
         }
 
         // Update items atomically
@@ -254,21 +264,11 @@ class StorageManager {
         navigator: StorageNavigator,
         pageURL: URL?
     ) async -> [StorageItem]? {
-        // Use native WKHTTPCookieStore for full cookie metadata
+        // Use native WKHTTPCookieStore for full cookie metadata (global cookie list)
         let cookies = await navigator.getAllCookies()
-        let host = pageURL?.host?.lowercased()
+        _ = pageURL
 
-        let filteredCookies = cookies.filter { cookie in
-            guard let host else { return false }
-            let domain = cookie.domain.lowercased()
-            if domain.hasPrefix(".") {
-                let trimmed = domain.dropFirst()
-                return host == trimmed || host.hasSuffix(".\(trimmed)")
-            }
-            return host == domain
-        }
-
-        return filteredCookies.map { cookie in
+        return cookies.map { cookie in
             StorageItem(
                 key: cookie.name,
                 value: cookie.value,
@@ -280,7 +280,12 @@ class StorageManager {
 
     // Set item in storage
     @MainActor
-    func setItem(key: String, value: String, type: StorageItem.StorageType) async -> Bool {
+    func setItem(
+        key: String,
+        value: String,
+        type: StorageItem.StorageType,
+        cookieMetadata: CookieMetadata? = nil
+    ) async -> Bool {
         guard let navigator else { return false }
 
         // Use JSON encoding for safe JavaScript string escaping
@@ -297,6 +302,16 @@ class StorageManager {
         case .sessionStorage:
             script = "sessionStorage.setItem(\(jsonKey), \(jsonValue)); true;"
         case .cookies:
+            // Prefer native cookie set when we know domain/path metadata.
+            if let cookieMetadata,
+               let cookie = makeCookie(
+                name: key,
+                value: value,
+                metadata: cookieMetadata
+               ) {
+                await navigator.setCookie(cookie)
+                return true
+            }
             let escapedKey = key.replacingOccurrences(of: "=", with: "%3D")
             let escapedValue = value.replacingOccurrences(of: ";", with: "%3B")
             let cookieString = "\(escapedKey)=\(escapedValue)"
@@ -316,12 +331,21 @@ class StorageManager {
 
     // Remove item from storage
     @MainActor
-    func removeItem(key: String, type: StorageItem.StorageType) async -> Bool {
+    func removeItem(
+        key: String,
+        type: StorageItem.StorageType,
+        cookieMetadata: CookieMetadata? = nil
+    ) async -> Bool {
         guard let navigator else { return false }
 
         // Use native WKHTTPCookieStore for cookies (more reliable)
         if type == .cookies {
-            await navigator.deleteCookie(name: key)
+            // Match by name + optional domain/path to avoid cross-domain deletes.
+            await navigator.deleteCookie(
+                name: key,
+                domain: cookieMetadata?.domain,
+                path: cookieMetadata?.path
+            )
             return true
         }
 
@@ -374,6 +398,34 @@ class StorageManager {
         lastRefreshTime = nil
         errorMessage = nil
     }
+
+    private func makeCookie(
+        name: String,
+        value: String,
+        metadata: CookieMetadata
+    ) -> HTTPCookie? {
+        var properties: [HTTPCookiePropertyKey: Any] = [
+            .domain: metadata.domain,
+            .path: metadata.path,
+            .name: name,
+            .value: value
+        ]
+
+        if let expiresDate = metadata.expiresDate {
+            properties[.expires] = expiresDate
+        }
+        if metadata.isSecure {
+            properties[.secure] = "TRUE"
+        }
+        if metadata.isHTTPOnly {
+            properties[HTTPCookiePropertyKey("HttpOnly")] = "TRUE"
+        }
+        if let sameSitePolicy = metadata.sameSitePolicy {
+            properties[.sameSitePolicy] = sameSitePolicy
+        }
+
+        return HTTPCookie(properties: properties)
+    }
 }
 
 extension WebViewNavigator: StorageNavigator {}
@@ -413,17 +465,37 @@ struct StorageView: View {
 
         if !searchText.isEmpty {
             result = result.filter {
-                $0.key.localizedCaseInsensitiveContains(searchText)
+                let matchesKeyValue = $0.key.localizedCaseInsensitiveContains(searchText)
                     || $0.value.localizedCaseInsensitiveContains(searchText)
+                if $0.storageType == .cookies, let metadata = $0.cookieMetadata {
+                    return matchesKeyValue
+                        || metadata.domain.localizedCaseInsensitiveContains(searchText)
+                        || metadata.path.localizedCaseInsensitiveContains(searchText)
+                }
+                return matchesKeyValue
             }
         }
 
         return result.sorted { lhs, rhs in
             if showsAllStorage, lhs.storageType != rhs.storageType {
-                return lhs.storageType.sortOrder < rhs.storageType.sortOrder
-            }
-            return lhs.key < rhs.key
+            return lhs.storageType.sortOrder < rhs.storageType.sortOrder
         }
+        return lhs.key < rhs.key
+    }
+
+    private var cookieGroups: [(domain: String, items: [StorageItem])] {
+        // Group by domain for cookie-only view to reduce visual noise.
+        let cookies = filteredItems.filter { $0.storageType == .cookies }
+        let grouped = Dictionary(grouping: cookies) { item in
+            item.cookieMetadata?.domain.lowercased() ?? ""
+        }
+        return grouped.keys.sorted().compactMap { domainKey in
+            guard let items = grouped[domainKey], !items.isEmpty else { return nil }
+            let displayDomain = items.first?.cookieMetadata?.domain ?? domainKey
+            let sortedItems = items.sorted { $0.key < $1.key }
+            return (displayDomain, sortedItems)
+        }
+    }
     }
 
     var body: some View {
@@ -675,16 +747,38 @@ struct StorageView: View {
     private func scrollUp(proxy: ScrollViewProxy?) {
         guard let proxy else { return }
         guard !filteredItems.isEmpty else { return }
+        guard let firstItem = filteredItems.first else { return }
         withAnimation(.easeOut(duration: 0.2)) {
-            proxy.scrollTo("item-\(filteredItems.first!.id)", anchor: .top)
+            proxy.scrollTo("item-\(firstItem.id)", anchor: .top)
         }
     }
 
     private func scrollDown(proxy: ScrollViewProxy?) {
         guard let proxy else { return }
         guard !filteredItems.isEmpty else { return }
+        guard let lastItem = filteredItems.last else { return }
         withAnimation(.easeOut(duration: 0.2)) {
-            proxy.scrollTo("item-\(filteredItems.last!.id)", anchor: .bottom)
+            proxy.scrollTo("item-\(lastItem.id)", anchor: .bottom)
+        }
+    }
+
+    @ViewBuilder
+    private func cookieGroupHeader(domain: String, count: Int) -> some View {
+        HStack {
+            Text(domain.isEmpty ? "(no domain)" : domain)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text("\(count)")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Color(uiColor: .secondarySystemBackground))
+        .overlay(alignment: .bottom) {
+            Divider()
+                .padding(.leading, 16)
         }
     }
 
@@ -693,19 +787,39 @@ struct StorageView: View {
             GeometryReader { outerGeo in
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(filteredItems) { item in
-                            StorageItemRow(
-                                item: item,
-                                keyColumnWidth: keyColumnWidth,
-                                storageTypeColumnWidth: storageTypeColumnWidth,
-                                searchText: searchText,
-                                showsStorageType: showsAllStorage,
-                                onEdit: { selectedItem = $0 },
-                                onDelete: { deleteItem($0) },
-                                onCopy: { copyToClipboard($0) },
-                                onCopyKeyValue: { copyKeyValue($0) }
-                            )
-                            .id("item-\(item.id)")
+                        if selectedType == .cookies && !showsAllStorage {
+                            ForEach(cookieGroups, id: \.domain) { group in
+                                cookieGroupHeader(domain: group.domain, count: group.items.count)
+                                ForEach(group.items) { item in
+                                    StorageItemRow(
+                                        item: item,
+                                        keyColumnWidth: keyColumnWidth,
+                                        storageTypeColumnWidth: storageTypeColumnWidth,
+                                        searchText: searchText,
+                                        showsStorageType: showsAllStorage,
+                                        onEdit: { selectedItem = $0 },
+                                        onDelete: { deleteItem($0) },
+                                        onCopy: { copyToClipboard($0) },
+                                        onCopyKeyValue: { copyKeyValue($0) }
+                                    )
+                                    .id("item-\(item.id)")
+                                }
+                            }
+                        } else {
+                            ForEach(filteredItems) { item in
+                                StorageItemRow(
+                                    item: item,
+                                    keyColumnWidth: keyColumnWidth,
+                                    storageTypeColumnWidth: storageTypeColumnWidth,
+                                    searchText: searchText,
+                                    showsStorageType: showsAllStorage,
+                                    onEdit: { selectedItem = $0 },
+                                    onDelete: { deleteItem($0) },
+                                    onCopy: { copyToClipboard($0) },
+                                    onCopyKeyValue: { copyKeyValue($0) }
+                                )
+                                .id("item-\(item.id)")
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -751,7 +865,11 @@ struct StorageView: View {
 
     private func deleteItem(_ item: StorageItem) {
         Task {
-            if await storageManager.removeItem(key: item.key, type: item.storageType) {
+            if await storageManager.removeItem(
+                key: item.key,
+                type: item.storageType,
+                cookieMetadata: item.cookieMetadata
+            ) {
                 await storageManager.refresh(pageURL: navigator?.currentURL)
             }
         }

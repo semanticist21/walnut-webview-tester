@@ -41,6 +41,19 @@ struct StorageEditSheet: View {
 
     private var isDuplicateKey: Bool {
         guard keyChanged else { return false }
+        if item.storageType == .cookies {
+            // Cookie keys can duplicate across domains/paths.
+            guard let metadata = item.cookieMetadata else { return false }
+            let existingKeys = storageManager.items
+                .filter {
+                    $0.storageType == .cookies
+                        && $0.key != item.key
+                        && $0.cookieMetadata?.domain == metadata.domain
+                        && $0.cookieMetadata?.path == metadata.path
+                }
+                .map(\.key)
+            return existingKeys.contains(editedKey)
+        }
         let existingKeys = storageManager.items
             .filter { $0.storageType == item.storageType && $0.key != item.key }
             .map(\.key)
@@ -261,12 +274,17 @@ struct StorageEditSheet: View {
 
             if keyChanged {
                 // Key changed: remove old key first, then set new key
-                let removed = await storageManager.removeItem(key: item.key, type: item.storageType)
+                let removed = await storageManager.removeItem(
+                    key: item.key,
+                    type: item.storageType,
+                    cookieMetadata: item.cookieMetadata
+                )
                 if removed {
                     success = await storageManager.setItem(
                         key: editedKey,
                         value: valueToSave,
-                        type: item.storageType
+                        type: item.storageType,
+                        cookieMetadata: item.cookieMetadata
                     )
                 }
             } else {
@@ -274,7 +292,8 @@ struct StorageEditSheet: View {
                 success = await storageManager.setItem(
                     key: editedKey,
                     value: valueToSave,
-                    type: item.storageType
+                    type: item.storageType,
+                    cookieMetadata: item.cookieMetadata
                 )
             }
 
@@ -289,7 +308,11 @@ struct StorageEditSheet: View {
     private func deleteItem() {
         isDeleting = true
         Task {
-            if await storageManager.removeItem(key: item.key, type: item.storageType) {
+            if await storageManager.removeItem(
+                key: item.key,
+                type: item.storageType,
+                cookieMetadata: item.cookieMetadata
+            ) {
                 onDelete()
                 dismiss()
             }
@@ -319,6 +342,9 @@ struct StorageAddSheet: View {
     private var isDuplicateKey: Bool {
         // Skip duplicate check after successful save (items already updated)
         guard !didSave else { return false }
+        if storageType == .cookies {
+            return false
+        }
         let existingKeys = storageManager.items
             .filter { $0.storageType == storageType }
             .map(\.key)

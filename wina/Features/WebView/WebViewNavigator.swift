@@ -226,12 +226,26 @@ class WebViewNavigator {
         }
     }
 
-    /// Delete a specific cookie by name using native WKHTTPCookieStore
-    func deleteCookie(name: String) async {
+    /// Set a cookie using native WKHTTPCookieStore
+    func setCookie(_ cookie: HTTPCookie) async {
+        guard let webView else { return }
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+        await cookieStore.setCookie(cookie)
+    }
+
+    /// Delete a specific cookie by name/domain/path using native WKHTTPCookieStore
+    func deleteCookie(name: String, domain: String?, path: String?) async {
         guard let webView else { return }
         let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
         let cookies = await cookieStore.allCookies()
         for cookie in cookies where cookie.name == name {
+            // Narrow by domain/path when provided to avoid over-deleting.
+            if let domain, cookie.domain.caseInsensitiveCompare(domain) != .orderedSame {
+                continue
+            }
+            if let path, cookie.path != path {
+                continue
+            }
             await cookieStore.deleteCookie(cookie)
         }
     }
