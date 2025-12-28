@@ -737,10 +737,18 @@ struct StorageView: View {
 
     // MARK: - Table Header
 
+    private let typeColumnWidth: CGFloat = 24
     private let keyColumnWidth: CGFloat = 140
 
     private var tableHeader: some View {
         HStack(spacing: 12) {
+            if showsAllStorage {
+                Image(systemName: "tag")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: typeColumnWidth, alignment: .center)
+            }
+
             Text("Key")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -861,12 +869,14 @@ struct StorageView: View {
                             ForEach(group.items) { item in
                                 StorageItemRow(
                                     item: item,
+                                    typeColumnWidth: typeColumnWidth,
                                     keyColumnWidth: keyColumnWidth,
                                     searchText: searchText,
                                     onEdit: { selectedItem = $0 },
                                     onDelete: { deleteItem($0) },
                                     onCopy: { copyToClipboard($0) },
-                                    onCopyKeyValue: { copyKeyValue($0) }
+                                    onCopyKeyValue: { copyKeyValue($0) },
+                                    showsTypeIcon: showsAllStorage
                                 )
                                 .id("item-\(item.id)")
                                 .listRowInsets(EdgeInsets())
@@ -883,12 +893,14 @@ struct StorageView: View {
                     ForEach(filteredItems) { item in
                         StorageItemRow(
                             item: item,
+                            typeColumnWidth: typeColumnWidth,
                             keyColumnWidth: keyColumnWidth,
                             searchText: searchText,
                             onEdit: { selectedItem = $0 },
                             onDelete: { deleteItem($0) },
                             onCopy: { copyToClipboard($0) },
-                            onCopyKeyValue: { copyKeyValue($0) }
+                            onCopyKeyValue: { copyKeyValue($0) },
+                            showsTypeIcon: showsAllStorage
                         )
                         .id("item-\(item.id)")
                         .listRowInsets(EdgeInsets())
@@ -984,6 +996,7 @@ struct StorageView: View {
 
 private struct StorageItemRow: View {
     let item: StorageItem
+    let typeColumnWidth: CGFloat
     let keyColumnWidth: CGFloat
     let searchText: String
     let onEdit: (StorageItem) -> Void
@@ -991,6 +1004,7 @@ private struct StorageItemRow: View {
     let onCopy: (String) -> Void
     let onCopyKeyValue: (StorageItem) -> Void
     var showsDivider: Bool = true
+    var showsTypeIcon: Bool = false
 
     // MARK: - Value Analysis
 
@@ -1076,6 +1090,14 @@ private struct StorageItemRow: View {
 
     private var rowContent: some View {
         HStack(spacing: 8) {
+            if showsTypeIcon {
+                Image(systemName: item.storageType.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(item.storageType.tintColor)
+                    .frame(width: typeColumnWidth, alignment: .center)
+                    .accessibilityLabel(item.storageType.label)
+            }
+
             // Key column with highlight
             highlightedText(item.key, searchText: searchText)
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
