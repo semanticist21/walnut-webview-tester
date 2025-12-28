@@ -9,6 +9,11 @@ import SwiftUIBackports
 
 struct SafariVCInfoView: View {
     @Environment(\.dismiss) private var dismiss
+    @Binding var webViewID: UUID
+
+    init(webViewID: Binding<UUID> = .constant(UUID())) {
+        self._webViewID = webViewID
+    }
     @State private var showingSettings = false
     @State private var searchText = ""
 
@@ -119,7 +124,8 @@ struct SafariVCInfoView: View {
                 }
             }
             .sheet(isPresented: $showingSettings) {
-                SafariVCSettingsView()
+                SafariVCSettingsView(webViewID: $webViewID)
+                    .fullSizeSheet()
             }
             .task {
                 // Show interstitial ad (30% probability, once per session)

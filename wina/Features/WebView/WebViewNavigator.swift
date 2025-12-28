@@ -250,6 +250,30 @@ class WebViewNavigator {
         }
     }
 
+    /// Delete cookies for a specific domain using native WKHTTPCookieStore
+    func deleteCookies(forDomain domain: String) async {
+        guard let webView else { return }
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+        let cookies = await cookieStore.allCookies()
+        let host = domain.lowercased()
+
+        for cookie in cookies {
+            let cookieDomain = cookie.domain.lowercased()
+            let matches: Bool
+
+            if cookieDomain.hasPrefix(".") {
+                let trimmed = String(cookieDomain.dropFirst())
+                matches = host == trimmed || host.hasSuffix(".\(trimmed)")
+            } else {
+                matches = host == cookieDomain
+            }
+
+            if matches {
+                await cookieStore.deleteCookie(cookie)
+            }
+        }
+    }
+
     /// Delete all cookies using native WKHTTPCookieStore
     func deleteAllCookies() async {
         guard let webView else { return }

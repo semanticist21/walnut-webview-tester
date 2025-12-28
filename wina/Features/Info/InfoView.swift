@@ -10,6 +10,8 @@ import SwiftUI
 struct InfoView: View {
     /// External navigator for live page testing (nil = use test WebView with example.com)
     var navigator: WebViewNavigator?
+    var webViewID: Binding<UUID>?
+    var loadedURL: Binding<String>?
 
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
@@ -104,7 +106,17 @@ struct InfoView: View {
             await loadAllInfo()
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView()
+            if let webViewID, let loadedURL, let navigator {
+                LoadedSettingsView(
+                    webViewID: webViewID,
+                    loadedURL: loadedURL,
+                    navigator: navigator
+                )
+                .fullSizeSheet()
+            } else {
+                SettingsView()
+                    .fullSizeSheet()
+            }
         }
     }
 

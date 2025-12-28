@@ -176,6 +176,8 @@ struct OverlayMenuBars: View {
                 Capsule()
                     .frame(width: 36, height: 4)
                     .foregroundStyle(.tertiary)
+                    .contentShape(Rectangle())
+                    .gesture(dragGesture)
             }
         }
         .padding(.vertical, 10)
@@ -185,7 +187,6 @@ struct OverlayMenuBars: View {
         .clipShape(Capsule())  // Capsule 모양에 맞게 overflow 숨김
         .padding(.horizontal, 8)
         .offset(y: topOffset)
-        .highPriorityGesture(isOverlayMode ? dragGesture : nil)
     }
 
     // MARK: - Bottom Bar

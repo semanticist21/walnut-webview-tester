@@ -93,7 +93,9 @@ struct URLInputOverlayView: View {
                     showCopiedFeedback = true
                     Task {
                         try? await Task.sleep(for: .seconds(1.5))
-                        showCopiedFeedback = false
+                        await MainActor.run {
+                            showCopiedFeedback = false
+                        }
                     }
                 } label: {
                     Image(systemName: "doc.on.doc")

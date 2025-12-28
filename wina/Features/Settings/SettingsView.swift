@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+enum SettingsCopy {
+    static let liveSettingsDescription: LocalizedStringKey = "Apply to save changes"
+}
+
 // ConfigurationSettingsView moved to ConfigurationSettingsView.swift
 
 // MARK: - Live Settings View (Apply to Save)
@@ -242,7 +246,7 @@ struct LoadedSettingsView: View {
                             icon: "bolt.fill",
                             iconColor: .green,
                             title: "Live Settings",
-                            description: "Changes apply instantly"
+                            description: SettingsCopy.liveSettingsDescription
                         )
                     }
 

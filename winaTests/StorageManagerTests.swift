@@ -216,6 +216,18 @@ final class StorageManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testClearCookiesForDomainCallsNavigator() async {
+        let manager = StorageManager()
+        let mock = MockStorageNavigator()
+
+        manager.setNavigator(mock)
+        let result = await manager.clearCookies(forDomain: "example.com")
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(mock.deletedCookieDomains, ["example.com"])
+    }
+
+    @MainActor
     func testClearResetAllState() async {
         let manager = StorageManager()
         let mock = MockStorageNavigator()
@@ -266,6 +278,7 @@ private final class MockStorageNavigator: StorageNavigator {
     var cookies: [HTTPCookie] = []
     private(set) var scripts: [String] = []
     private(set) var deletedCookies: [(name: String, domain: String?, path: String?)] = []
+    private(set) var deletedCookieDomains: [String] = []
     private(set) var setCookies: [HTTPCookie] = []
 
     func evaluateJavaScript(_ script: String) async -> Any? {
@@ -283,6 +296,10 @@ private final class MockStorageNavigator: StorageNavigator {
 
     func deleteCookie(name: String, domain: String?, path: String?) async {
         deletedCookies.append((name: name, domain: domain, path: path))
+    }
+
+    func deleteCookies(forDomain domain: String) async {
+        deletedCookieDomains.append(domain)
     }
 
     func deleteAllCookies() async {

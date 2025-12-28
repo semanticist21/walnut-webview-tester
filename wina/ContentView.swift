@@ -204,11 +204,15 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showInfo) {
             if useSafariWebView {
-                SafariVCInfoView()
+                SafariVCInfoView(webViewID: $webViewID)
                     .fullSizeSheet()
             } else {
                 // Pass navigator only when WebView is loaded (for live page testing)
-                InfoView(navigator: showWebView ? webViewNavigator : nil)
+                InfoView(
+                    navigator: showWebView ? webViewNavigator : nil,
+                    webViewID: showWebView ? $webViewID : nil,
+                    loadedURL: showWebView ? $loadedURL : nil
+                )
                     .fullSizeSheet()
             }
         }
