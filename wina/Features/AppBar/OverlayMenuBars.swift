@@ -431,7 +431,6 @@ private struct BottomBarIconButton: View {
     }
 }
 
-
 #Preview("Overlay Mode (Fullscreen)") {
     ZStack {
         Color.blue.opacity(0.3)

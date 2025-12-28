@@ -418,6 +418,14 @@ class ConsoleManager {
     }
 }
 
+// MARK: - Scroll Metrics
+
+struct ScrollMetrics: Equatable {
+    let offset: CGFloat
+    let contentHeight: CGFloat
+    let viewportHeight: CGFloat
+}
+
 // MARK: - Console View
 
 // Identifiable wrapper for share content to fix sheet timing issue
@@ -664,57 +672,48 @@ extension ConsoleView {
     // MARK: - Log List
 
     private var logList: some View {
-        GeometryReader { outerGeo in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(filteredLogs) { log in
-                            LogRow(log: log, consoleManager: consoleManager)
-                                .id(log.id)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    // 콘텐츠 높이 측정
-                    .background(
-                        GeometryReader { innerGeo in
-                            Color.clear
-                                .onAppear {
-                                    contentHeight = innerGeo.size.height
-                                }
-                                .onChange(of: innerGeo.size.height) { _, newHeight in
-                                    contentHeight = newHeight
-                                }
-                        }
-                    )
-                }
-                .background(Color(uiColor: .systemBackground))
-                .scrollContentBackground(.hidden)
-                // 스크롤 오프셋 추적
-                .onScrollGeometryChange(for: Double.self) { geometry in
-                    geometry.contentOffset.y
-                } action: { _, newValue in
-                    scrollOffset = newValue
-                }
-                .onAppear {
-                    scrollViewHeight = outerGeo.size.height
-                    scrollProxy = proxy
-                }
-                .onChange(of: consoleManager.logs.count) { _, _ in
-                    if let lastLog = filteredLogs.last {
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            proxy.scrollTo(lastLog.id, anchor: .bottom)
-                        }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(filteredLogs) { log in
+                        LogRow(log: log, consoleManager: consoleManager)
+                            .id(log.id)
                     }
                 }
-                // 스크롤 네비게이션 버튼 오버레이
-                .scrollNavigationOverlay(
-                    scrollOffset: scrollOffset,
-                    contentHeight: contentHeight,
-                    viewportHeight: scrollViewHeight,
-                    onScrollUp: { scrollUp(proxy: scrollProxy) },
-                    onScrollDown: { scrollDown(proxy: scrollProxy) }
-                )
+                .frame(maxWidth: .infinity)
             }
+            .background(Color(uiColor: .systemBackground))
+            .scrollContentBackground(.hidden)
+            .onScrollGeometryChange(for: ScrollMetrics.self) { geometry in
+                ScrollMetrics(
+                    offset: geometry.contentOffset.y,
+                    contentHeight: geometry.contentSize.height,
+                    viewportHeight: geometry.visibleRect.height
+                )
+            } action: { oldValue, newValue in
+                // Batch update to reduce state changes
+                if oldValue != newValue {
+                    scrollOffset = newValue.offset
+                    contentHeight = newValue.contentHeight
+                    scrollViewHeight = newValue.viewportHeight
+                }
+            }
+            .onAppear {
+                scrollProxy = proxy
+            }
+            .onChange(of: consoleManager.logs.count) { _, _ in
+                if let lastLog = filteredLogs.last {
+                    proxy.scrollTo(lastLog.id, anchor: .bottom)
+                }
+            }
+            // 스크롤 네비게이션 버튼 오버레이
+            .scrollNavigationOverlay(
+                scrollOffset: scrollOffset,
+                contentHeight: contentHeight,
+                viewportHeight: scrollViewHeight,
+                onScrollUp: { scrollUp(proxy: scrollProxy) },
+                onScrollDown: { scrollDown(proxy: scrollProxy) }
+            )
         }
     }
 

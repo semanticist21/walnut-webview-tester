@@ -1985,26 +1985,10 @@
       }
     },
     "Copied" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "복사됨"
-          }
-        }
-      }
+      "extractionState" : "stale"
     },
     "Copied!" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "복사됨!"
-          }
-        }
-      }
+      "extractionState" : "stale"
     },
     "Copy" : {
       "localizations" : {

@@ -195,7 +195,7 @@ enum EmulatedColorScheme: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var label: String {
+    var label: LocalizedStringKey {
         switch self {
         case .system: return "System Default"
         case .light: return "Light"
