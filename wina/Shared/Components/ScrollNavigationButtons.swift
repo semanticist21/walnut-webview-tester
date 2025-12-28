@@ -84,7 +84,7 @@ struct ScrollNavigationButtons: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
         .backport
         .glassEffect(in: .circle)
