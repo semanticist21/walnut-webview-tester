@@ -2,14 +2,17 @@
 """
 App Store Connect Screenshot Upload Script
 
-Converts SVG screenshots to PNG and prepares them for fastlane deliver upload.
-Handles all 39 App Store Connect supported locales.
+Converts SVG screenshots to PNG using rsvg-convert (preserves gradients)
+and prepares them for fastlane deliver upload.
+Uses parallel processing for speed.
 """
 
 import os
 import subprocess
 import shutil
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 # Configuration
 SCRIPT_DIR = Path(__file__).parent
@@ -37,24 +40,30 @@ LOCALES = [
 MAX_IPHONE_SCREENSHOTS = 10
 MAX_IPAD_SCREENSHOTS = 10
 
+# Parallel processing
+MAX_WORKERS = 8
+print_lock = threading.Lock()
+
+
+def log(msg):
+    """Thread-safe print."""
+    with print_lock:
+        print(msg)
+
 
 def run_cmd(cmd, check=True):
     """Run a shell command."""
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if check and result.returncode != 0:
-        print(f"Error: {result.stderr}")
-        raise subprocess.CalledProcessError(result.returncode, cmd)
+        raise subprocess.CalledProcessError(result.returncode, cmd, result.stderr)
     return result
 
 
-def convert_svg_to_png(svg_path, png_path, width=None, height=None):
-    """Convert SVG to PNG using magick (ImageMagick)."""
-    if width and height:
-        cmd = f'magick -background none -density 300 "{svg_path}" -resize {width}x{height}! "{png_path}"'
-    else:
-        cmd = f'magick -background none -density 300 "{svg_path}" "{png_path}"'
+def convert_svg_to_png(svg_path, png_path, width, height):
+    """Convert SVG to PNG using rsvg-convert (preserves gradients)."""
+    cmd = f'rsvg-convert -w {width} -h {height} "{svg_path}" -o "{png_path}"'
     run_cmd(cmd)
-    print(f"  Converted: {svg_path.name} → {png_path.name}")
+    return f"Converted: {svg_path.name}"
 
 
 def resize_png(src_path, dst_path, target_width, target_height):
@@ -67,7 +76,7 @@ def resize_png(src_path, dst_path, target_width, target_height):
     # Calculate scale to cover target (fill, not fit)
     scale_w = target_width / src_w
     scale_h = target_height / src_h
-    scale = max(scale_w, scale_h)  # Use larger scale to cover
+    scale = max(scale_w, scale_h)
 
     new_w = int(src_w * scale)
     new_h = int(src_h * scale)
@@ -81,100 +90,74 @@ def resize_png(src_path, dst_path, target_width, target_height):
         f'"{dst_path}"'
     )
     run_cmd(cmd)
-    print(f"  Resized: {src_path.name} → {target_width}x{target_height}")
+    return f"Resized: {src_path.name}"
 
 
-def prepare_locale_screenshots(locale):
-    """Prepare screenshots for a single locale."""
-    print(f"\n[{locale}]")
-
+def process_locale(locale):
+    """Process all screenshots for a single locale."""
     locale_src = SCRIPT_DIR / locale
     locale_dst = FASTLANE_SCREENSHOTS / locale
     locale_dst.mkdir(parents=True, exist_ok=True)
 
+    tasks = []
     screenshot_index = 1
     ipad_index = 1
 
-    # 1. Convert localized SVG promo images (1.svg, 2.svg, 3.svg)
+    # 1. Localized SVG promo images (1.svg, 2.svg, 3.svg) → iPhone
     for i in [1, 2, 3]:
         svg_path = locale_src / f"{i}.svg"
         if svg_path.exists():
             png_path = locale_dst / f"{screenshot_index:02d}_iPhone67_{i}.png"
-            convert_svg_to_png(svg_path, png_path, IPHONE_SIZE[0], IPHONE_SIZE[1])
+            tasks.append(("svg", svg_path, png_path, IPHONE_SIZE[0], IPHONE_SIZE[1]))
             screenshot_index += 1
 
-    # 2. Add generic iPhone screenshots (1.png ~ 12.png) - resize to match
+    # 2. Generic iPhone screenshots (1.png ~ 12.png) - resize
     remaining_slots = MAX_IPHONE_SCREENSHOTS - (screenshot_index - 1)
     for i in range(1, min(13, remaining_slots + 1)):
         src_path = SCREENSHOTS_DIR / f"{i}.png"
         if src_path.exists():
             dst_path = locale_dst / f"{screenshot_index:02d}_iPhone67_generic{i}.png"
-            resize_png(src_path, dst_path, IPHONE_SIZE[0], IPHONE_SIZE[1])
+            tasks.append(("resize", src_path, dst_path, IPHONE_SIZE[0], IPHONE_SIZE[1]))
             screenshot_index += 1
 
-    # 3. Convert localized iPad SVG promo images (ipad-1.svg, ipad-2.svg, ipad-3.svg)
+    # 3. Localized iPad SVG promo images (ipad-1.svg, ipad-2.svg, ipad-3.svg)
     for i in [1, 2, 3]:
         svg_path = locale_src / f"ipad-{i}.svg"
         if svg_path.exists():
             png_path = locale_dst / f"{ipad_index:02d}_iPadPro129_{i}.png"
-            convert_svg_to_png(svg_path, png_path, IPAD_SIZE[0], IPAD_SIZE[1])
+            tasks.append(("svg", svg_path, png_path, IPAD_SIZE[0], IPAD_SIZE[1]))
             ipad_index += 1
 
-    # 4. Add generic iPad screenshots (ipad-1.png ~ ipad-4.png) - resize to match
+    # 4. Generic iPad screenshots (ipad-1.png ~ ipad-4.png) - resize
     remaining_ipad_slots = MAX_IPAD_SCREENSHOTS - (ipad_index - 1)
     for i in range(1, min(5, remaining_ipad_slots + 1)):
         src_path = SCREENSHOTS_DIR / f"ipad-{i}.png"
         if src_path.exists():
             dst_path = locale_dst / f"{ipad_index:02d}_iPadPro129_generic{i}.png"
-            resize_png(src_path, dst_path, IPAD_SIZE[0], IPAD_SIZE[1])
+            tasks.append(("resize", src_path, dst_path, IPAD_SIZE[0], IPAD_SIZE[1]))
             ipad_index += 1
 
-    print(f"  Total: {screenshot_index - 1} iPhone, {ipad_index - 1} iPad screenshots")
+    # Execute tasks
+    for task_type, src, dst, w, h in tasks:
+        if task_type == "svg":
+            convert_svg_to_png(src, dst, w, h)
+        else:
+            resize_png(src, dst, w, h)
 
-
-def create_deliverfile():
-    """Create Deliverfile for fastlane."""
-    deliverfile_path = PROJECT_ROOT / "fastlane" / "Deliverfile"
-
-    content = '''# Deliverfile for fastlane deliver
-# https://docs.fastlane.tools/actions/deliver/
-
-# App identifier
-app_identifier("com.kobbokkom.wina")
-
-# Skip metadata upload (screenshots only)
-skip_metadata(true)
-
-# Screenshots path
-screenshots_path("./fastlane/screenshots")
-
-# Overwrite existing screenshots
-overwrite_screenshots(true)
-
-# Don't submit for review automatically
-submit_for_review(false)
-
-# Skip binary upload
-skip_binary_upload(true)
-
-# Force upload even if no changes detected
-force(true)
-'''
-
-    deliverfile_path.write_text(content)
-    print(f"\nCreated: {deliverfile_path}")
+    return locale, screenshot_index - 1, ipad_index - 1
 
 
 def main():
     print("=" * 60)
-    print("App Store Screenshot Preparation")
+    print("App Store Screenshot Preparation (Parallel)")
     print("=" * 60)
 
     # Check dependencies
     try:
+        run_cmd("which rsvg-convert")
         run_cmd("which magick")
-    except subprocess.CalledProcessError:
-        print("Error: ImageMagick not found. Install with: brew install imagemagick")
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Missing dependency. Install with: brew install librsvg imagemagick")
         return
 
     # Clean and create output directory
@@ -185,19 +168,28 @@ def main():
     print(f"\nOutput: {FASTLANE_SCREENSHOTS}")
     print(f"iPhone target: {IPHONE_SIZE[0]}x{IPHONE_SIZE[1]}")
     print(f"iPad target: {IPAD_SIZE[0]}x{IPAD_SIZE[1]}")
+    print(f"Workers: {MAX_WORKERS}")
+    print()
 
-    # Process each locale
-    for locale in LOCALES:
-        prepare_locale_screenshots(locale)
+    # Process locales in parallel
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {executor.submit(process_locale, locale): locale for locale in LOCALES}
 
-    # Create Deliverfile
-    create_deliverfile()
+        completed = 0
+        for future in as_completed(futures):
+            locale = futures[future]
+            try:
+                loc, iphone_count, ipad_count = future.result()
+                completed += 1
+                log(f"[{completed:2d}/{len(LOCALES)}] {loc}: {iphone_count} iPhone, {ipad_count} iPad")
+            except Exception as e:
+                log(f"[ERROR] {locale}: {e}")
 
     print("\n" + "=" * 60)
     print("Done! Screenshots prepared in fastlane/screenshots/")
     print("\nTo upload to App Store Connect:")
     print("  cd /Users/semanticist/Documents/code/wallnut")
-    print("  fastlane deliver")
+    print("  fastlane screenshots")
     print("=" * 60)
 
 

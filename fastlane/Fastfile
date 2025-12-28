@@ -1,0 +1,24 @@
+# Fastfile for fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload screenshots to App Store Connect"
+  lane :screenshots do
+    api_key = app_store_connect_api_key(
+      key_id: "74HC92L9NA",
+      issuer_id: "a7524762-b1db-463b-84a8-bbee51a37cc2",
+      key_filepath: "/Users/semanticist/Documents/API/AuthKey_74HC92L9NA.p8"
+    )
+
+    deliver(
+      api_key: api_key,
+      skip_metadata: true,
+      skip_binary_upload: true,
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      force: true,
+      screenshots_path: "./fastlane/screenshots"
+    )
+  end
+end
