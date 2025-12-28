@@ -38,7 +38,6 @@ struct ContentView: View {
     @State private var storageManager = StorageManager()
     @State private var showSafariUnsupportedAlert = false
     @State private var safariUnsupportedURL = ""
-    @State private var bottomBarFrame: CGRect = .zero
     @FocusState var textFieldFocused: Bool
 
     // Shared URL storage
@@ -161,7 +160,6 @@ struct ContentView: View {
                 topBar
             }
         }
-        .coordinateSpace(name: BarConstants.overlayCoordinateSpace)
         .sheet(isPresented: $showSettings) {
             if useSafariWebView {
                 SafariVCSettingsView(webViewID: $webViewID)
@@ -265,13 +263,10 @@ struct ContentView: View {
                     SearchTextOverlay(
                         navigator: webViewNavigator,
                         isPresented: $showSearchText,
-                        bottomPadding: searchOverlayBottomPadding(containerHeight: proxy.size.height)
+                        bottomPadding: searchOverlayBottomPadding(safeAreaBottom: proxy.safeAreaInsets.bottom)
                     )
                 }
             }
-        }
-        .onPreferenceChange(BottomBarFramePreferenceKey.self) { frame in
-            bottomBarFrame = frame
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
@@ -316,12 +311,10 @@ struct ContentView: View {
 
     // MARK: - Search Overlay Position
 
-    private func searchOverlayBottomPadding(containerHeight: CGFloat) -> CGFloat {
-        let defaultPadding: CGFloat = 12
+    private func searchOverlayBottomPadding(safeAreaBottom: CGFloat) -> CGFloat {
         let gapAboveBar: CGFloat = 8
-        guard bottomBarFrame != .zero else { return defaultPadding }
-        let distanceToBarTop = max(0, containerHeight - bottomBarFrame.minY)
-        return distanceToBarTop + gapAboveBar
+        let barTopPadding = BarConstants.barHeight - (safeAreaBottom * BarConstants.bottomBarSafeAreaRatio)
+        return max(12, barTopPadding + gapAboveBar)
     }
 
     // MARK: - URL Actions (internal for extension access)
