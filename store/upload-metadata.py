@@ -67,7 +67,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 
 Note: Some features require iOS 18.4 or later.""",
-        "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect",
+        "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
         "promotionalText": "The essential WebView testing toolkit for iOS developers."
     },
@@ -109,7 +109,7 @@ SFSafariViewController 테스트
 웹 콘텐츠 렌더링 테스트, JavaScript 디버깅, 네트워크 요청 분석, 접근성 준수 확인이 필요한 iOS 개발자에게 적합합니다.
 
 참고: 일부 기능은 iOS 18.4 이상이 필요합니다.""",
-        "keywords": "웹뷰,개발자,디버그,콘솔,네트워크,사파리,devtools,테스트,검사,개발",
+        "keywords": "웹뷰,개발자,디버그,콘솔,네트워크,사파리,devtools,테스트,검사,ios,자바스크립트,html,css,쿠키,성능,접근성,개발도구,브라우저,앱,모바일,웹킷,사파리뷰",
         "whatsNew": "버그 수정 및 성능 개선.",
         "promotionalText": "iOS 개발자를 위한 필수 WebView 테스트 도구."
     },
@@ -151,7 +151,7 @@ SFSafariViewControllerテスト
 Webコンテンツのレンダリングテスト、JavaScriptデバッグ、ネットワークリクエスト分析、アクセシビリティ準拠の確認が必要なiOS開発者に最適です。
 
 注意：一部の機能にはiOS 18.4以降が必要です。""",
-        "keywords": "webview,開発者,デバッグ,コンソール,ネットワーク,safari,devtools,テスト,検査",
+        "keywords": "webview,開発者,デバッグ,コンソール,ネットワーク,safari,devtools,テスト,検査,ios,javascript,html,css,開発ツール,ブラウザ,アプリ",
         "whatsNew": "バグ修正とパフォーマンス改善。",
         "promotionalText": "iOS開発者のための必須WebViewテストツール。"
     },
@@ -193,7 +193,7 @@ SFSafariViewController测试
 非常适合需要测试网页内容渲染、调试JavaScript、分析网络请求和确保可访问性合规的iOS开发者。
 
 注意：部分功能需要iOS 18.4或更高版本。""",
-        "keywords": "webview,开发者,调试,控制台,网络,safari,devtools,测试,检查,开发",
+        "keywords": "webview,开发者,调试,控制台,网络,safari,devtools,测试,检查,ios,javascript,html,css,cookie,性能,开发工具,浏览器,应用,工具",
         "whatsNew": "错误修复和性能改进。",
         "promotionalText": "iOS开发者必备的WebView测试工具。"
     },
@@ -235,7 +235,7 @@ SFSafariViewController測試
 非常適合需要測試網頁內容呈現、除錯JavaScript、分析網路請求和確保無障礙合規的iOS開發者。
 
 注意：部分功能需要iOS 18.4或更高版本。""",
-        "keywords": "webview,開發者,除錯,控制台,網路,safari,devtools,測試,檢查,開發",
+        "keywords": "webview,開發者,除錯,控制台,網路,safari,devtools,測試,檢查,ios,javascript,html,css,cookie,效能,開發工具,瀏覽器,應用,工具",
         "whatsNew": "錯誤修復和效能改善。",
         "promotionalText": "iOS開發者必備的WebView測試工具。"
     },
@@ -277,7 +277,7 @@ Zusätzliche Funktionen
 Perfekt für iOS-Entwickler, die Web-Content-Rendering testen, JavaScript debuggen, Netzwerkanfragen analysieren und Barrierefreiheit sicherstellen müssen.
 
 Hinweis: Einige Funktionen erfordern iOS 18.4 oder höher.""",
-        "keywords": "webview,entwickler,debug,konsole,netzwerk,safari,devtools,test,inspektor",
+        "keywords": "webview,entwickler,debug,konsole,netzwerk,safari,devtools,test,inspektor,ios,javascript,html,browser",
         "whatsNew": "Fehlerbehebungen und Leistungsverbesserungen.",
         "promotionalText": "Das unverzichtbare WebView-Test-Toolkit für iOS-Entwickler."
     },
@@ -319,7 +319,7 @@ Fonctionnalités supplémentaires
 Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, déboguer JavaScript, analyser les requêtes réseau et assurer la conformité d'accessibilité.
 
 Note : Certaines fonctionnalités nécessitent iOS 18.4 ou ultérieur.""",
-        "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur",
+        "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
         "whatsNew": "Corrections de bugs et améliorations de performances.",
         "promotionalText": "La boîte à outils WebView essentielle pour les développeurs iOS."
     },
@@ -361,7 +361,7 @@ Características adicionales
 Perfecto para desarrolladores iOS que necesitan probar el renderizado de contenido web, depurar JavaScript, analizar solicitudes de red y asegurar el cumplimiento de accesibilidad.
 
 Nota: Algunas características requieren iOS 18.4 o posterior.""",
-        "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector",
+        "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
         "whatsNew": "Correcciones de errores y mejoras de rendimiento.",
         "promotionalText": "El kit de herramientas WebView esencial para desarrolladores iOS."
     },
@@ -403,7 +403,7 @@ Funzionalità aggiuntive
 Perfetto per sviluppatori iOS che devono testare il rendering di contenuti web, debuggare JavaScript, analizzare richieste di rete e garantire la conformità all'accessibilità.
 
 Nota: Alcune funzionalità richiedono iOS 18.4 o successivo.""",
-        "keywords": "webview,sviluppatore,debug,console,rete,safari,devtools,test,ispettore",
+        "keywords": "webview,sviluppatore,debug,console,rete,safari,devtools,test,ispettore,ios,javascript,html,css",
         "whatsNew": "Correzioni di bug e miglioramenti delle prestazioni.",
         "promotionalText": "Il toolkit WebView essenziale per sviluppatori iOS."
     },
@@ -445,7 +445,7 @@ Recursos adicionais
 Perfeito para desenvolvedores iOS que precisam testar renderização de conteúdo web, depurar JavaScript, analisar requisições de rede e garantir conformidade de acessibilidade.
 
 Nota: Alguns recursos requerem iOS 18.4 ou posterior.""",
-        "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor",
+        "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
         "whatsNew": "Correções de bugs e melhorias de desempenho.",
         "promotionalText": "O kit de ferramentas WebView essencial para desenvolvedores iOS."
     },
@@ -487,7 +487,7 @@ Nota: Alguns recursos requerem iOS 18.4 ou posterior.""",
 Идеально подходит для iOS-разработчиков, которым нужно тестировать рендеринг веб-контента, отлаживать JavaScript, анализировать сетевые запросы и обеспечивать соответствие требованиям доступности.
 
 Примечание: Некоторые функции требуют iOS 18.4 или новее.""",
-        "keywords": "webview,разработчик,отладка,консоль,сеть,safari,devtools,тест,инспектор",
+        "keywords": "webview,разработчик,отладка,консоль,сеть,safari,devtools,тест,инспектор,ios,javascript,html,css",
         "whatsNew": "Исправления ошибок и улучшения производительности.",
         "promotionalText": "Незаменимый набор инструментов для тестирования WebView для iOS-разработчиков."
     },
@@ -529,7 +529,7 @@ Nota: Alguns recursos requerem iOS 18.4 ou posterior.""",
 مثالية لمطوري iOS الذين يحتاجون إلى اختبار عرض محتوى الويب وتصحيح أخطاء JavaScript وتحليل طلبات الشبكة وضمان الامتثال لإمكانية الوصول.
 
 ملاحظة: بعض الميزات تتطلب iOS 18.4 أو أحدث.""",
-        "keywords": "webview,مطور,تصحيح,وحدة التحكم,شبكة,safari,devtools,اختبار,فحص",
+        "keywords": "webview,مطور,تصحيح,وحدة التحكم,شبكة,safari,devtools,اختبار,فحص,ios,javascript,html,css,متصفح,أداة",
         "whatsNew": "إصلاحات الأخطاء وتحسينات الأداء.",
         "promotionalText": "مجموعة أدوات WebView الأساسية لمطوري iOS."
     },
@@ -571,7 +571,7 @@ SFSafariViewController टेस्टिंग
 iOS डेवलपर्स के लिए परफेक्ट जिन्हें वेब कंटेंट रेंडरिंग टेस्ट करना है, JavaScript डीबग करना है, नेटवर्क रिक्वेस्ट एनालाइज़ करना है और एक्सेसिबिलिटी कंप्लायंस सुनिश्चित करना है।
 
 नोट: कुछ फीचर्स के लिए iOS 18.4 या बाद का वर्जन आवश्यक है।""",
-        "keywords": "webview,डेवलपर,डीबग,कंसोल,नेटवर्क,safari,devtools,टेस्ट,इंस्पेक्ट",
+        "keywords": "webview,डेवलपर,डीबग,कंसोल,नेटवर्क,safari,devtools,टेस्ट,इंस्पेक्ट,ios,javascript,html,css,ब्राउज़र",
         "whatsNew": "बग फिक्स और प्रदर्शन सुधार।",
         "promotionalText": "iOS डेवलपर्स के लिए आवश्यक WebView टेस्टिंग टूलकिट।"
     },
@@ -613,7 +613,7 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 เหมาะสำหรับนักพัฒนา iOS ที่ต้องการทดสอบการแสดงผลเนื้อหาเว็บ ดีบัก JavaScript วิเคราะห์คำขอเครือข่าย และรับรองการปฏิบัติตามการเข้าถึง
 
 หมายเหตุ: บางคุณสมบัติต้องใช้ iOS 18.4 ขึ้นไป""",
-        "keywords": "webview,นักพัฒนา,ดีบัก,คอนโซล,เครือข่าย,safari,devtools,ทดสอบ,ตรวจสอบ",
+        "keywords": "webview,นักพัฒนา,ดีบัก,คอนโซล,เครือข่าย,safari,devtools,ทดสอบ,ตรวจสอบ,ios,javascript,html,css",
         "whatsNew": "แก้ไขข้อบกพร่องและปรับปรุงประสิทธิภาพ",
         "promotionalText": "ชุดเครื่องมือทดสอบ WebView ที่จำเป็นสำหรับนักพัฒนา iOS"
     },
@@ -655,7 +655,7 @@ Tính năng bổ sung
 Hoàn hảo cho các nhà phát triển iOS cần kiểm thử hiển thị nội dung web, gỡ lỗi JavaScript, phân tích yêu cầu mạng và đảm bảo tuân thủ khả năng truy cập.
 
 Lưu ý: Một số tính năng yêu cầu iOS 18.4 trở lên.""",
-        "keywords": "webview,lập trình,debug,console,mạng,safari,devtools,kiểm thử,kiểm tra",
+        "keywords": "webview,lập trình,debug,console,mạng,safari,devtools,kiểm thử,kiểm tra,ios,javascript,html,css",
         "whatsNew": "Sửa lỗi và cải thiện hiệu suất.",
         "promotionalText": "Bộ công cụ kiểm thử WebView thiết yếu cho nhà phát triển iOS."
     },
@@ -697,7 +697,7 @@ Fitur Tambahan
 Sempurna untuk pengembang iOS yang perlu menguji rendering konten web, debug JavaScript, menganalisis permintaan jaringan, dan memastikan kepatuhan aksesibilitas.
 
 Catatan: Beberapa fitur memerlukan iOS 18.4 atau lebih baru.""",
-        "keywords": "webview,developer,debug,console,jaringan,safari,devtools,tes,inspeksi",
+        "keywords": "webview,developer,debug,console,jaringan,safari,devtools,tes,inspeksi,ios,javascript,html,css",
         "whatsNew": "Perbaikan bug dan peningkatan kinerja.",
         "promotionalText": "Toolkit pengujian WebView penting untuk pengembang iOS."
     },
@@ -739,7 +739,7 @@ Ciri-ciri Tambahan
 Sempurna untuk pembangun iOS yang perlu menguji pemaparan kandungan web, nyahpepijat JavaScript, menganalisis permintaan rangkaian, dan memastikan pematuhan kebolehcapaian.
 
 Nota: Sesetengah ciri memerlukan iOS 18.4 atau lebih baharu.""",
-        "keywords": "webview,pembangun,debug,konsol,rangkaian,safari,devtools,uji,periksa",
+        "keywords": "webview,pembangun,debug,konsol,rangkaian,safari,devtools,uji,periksa,ios,javascript,html,css,pelayar",
         "whatsNew": "Pembetulan pepijat dan penambahbaikan prestasi.",
         "promotionalText": "Kit alat pengujian WebView penting untuk pembangun iOS."
     },
@@ -781,7 +781,7 @@ Extra functies
 Perfect voor iOS-ontwikkelaars die webcontent-rendering moeten testen, JavaScript moeten debuggen, netwerkverzoeken moeten analyseren en toegankelijkheidsconformiteit moeten waarborgen.
 
 Opmerking: Sommige functies vereisen iOS 18.4 of hoger.""",
-        "keywords": "webview,ontwikkelaar,debug,console,netwerk,safari,devtools,test,inspecteer",
+        "keywords": "webview,ontwikkelaar,debug,console,netwerk,safari,devtools,test,inspecteer,ios,javascript,html,css",
         "whatsNew": "Bugfixes en prestatieverbeteringen.",
         "promotionalText": "De essentiële WebView-testtoolkit voor iOS-ontwikkelaars."
     },
@@ -823,7 +823,7 @@ Dodatkowe funkcje
 Idealne dla programistów iOS, którzy muszą testować renderowanie treści webowych, debugować JavaScript, analizować żądania sieciowe i zapewniać zgodność z dostępnością.
 
 Uwaga: Niektóre funkcje wymagają iOS 18.4 lub nowszego.""",
-        "keywords": "webview,programista,debug,konsola,sieć,safari,devtools,test,inspektor",
+        "keywords": "webview,programista,debug,konsola,sieć,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Poprawki błędów i ulepszenia wydajności.",
         "promotionalText": "Niezbędny zestaw narzędzi do testowania WebView dla programistów iOS."
     },
@@ -865,7 +865,7 @@ Ek Özellikler
 Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ isteklerini analiz etmesi ve erişilebilirlik uyumluluğunu sağlaması gereken iOS geliştiricileri için mükemmel.
 
 Not: Bazı özellikler iOS 18.4 veya sonrasını gerektirir.""",
-        "keywords": "webview,geliştirici,debug,konsol,ağ,safari,devtools,test,denetim",
+        "keywords": "webview,geliştirici,debug,konsol,ağ,safari,devtools,test,denetim,ios,javascript,html,css,tarayıcı",
         "whatsNew": "Hata düzeltmeleri ve performans iyileştirmeleri.",
         "promotionalText": "iOS geliştiricileri için temel WebView test araç seti."
     },
@@ -907,7 +907,7 @@ Not: Bazı özellikler iOS 18.4 veya sonrasını gerektirir.""",
 Ідеально підходить для iOS-розробників, яким потрібно тестувати рендеринг веб-контенту, налагоджувати JavaScript, аналізувати мережеві запити та забезпечувати відповідність вимогам доступності.
 
 Примітка: Деякі функції потребують iOS 18.4 або новішої версії.""",
-        "keywords": "webview,розробник,налагодження,консоль,мережа,safari,devtools,тест,інспектор",
+        "keywords": "webview,розробник,налагодження,консоль,мережа,safari,devtools,тест,інспектор,ios,javascript,html",
         "whatsNew": "Виправлення помилок та покращення продуктивності.",
         "promotionalText": "Необхідний набір інструментів для тестування WebView для iOS-розробників."
     },
@@ -949,7 +949,7 @@ Ytterligare funktioner
 Perfekt för iOS-utvecklare som behöver testa webbinnehållsrendering, felsöka JavaScript, analysera nätverksförfrågningar och säkerställa tillgänglighetsefterlevnad.
 
 Obs: Vissa funktioner kräver iOS 18.4 eller senare.""",
-        "keywords": "webview,utvecklare,debug,konsol,nätverk,safari,devtools,test,inspektera",
+        "keywords": "webview,utvecklare,debug,konsol,nätverk,safari,devtools,test,inspektera,ios,javascript,html,css",
         "whatsNew": "Buggfixar och prestandaförbättringar.",
         "promotionalText": "Det viktiga WebView-testverktyget för iOS-utvecklare."
     },
@@ -991,7 +991,7 @@ Ytterligere funksjoner
 Perfekt for iOS-utviklere som trenger å teste webinnholdsrendering, feilsøke JavaScript, analysere nettverksforespørsler og sikre tilgjengelighetsoverholdelse.
 
 Merk: Noen funksjoner krever iOS 18.4 eller nyere.""",
-        "keywords": "webview,utvikler,debug,konsoll,nettverk,safari,devtools,test,inspiser",
+        "keywords": "webview,utvikler,debug,konsoll,nettverk,safari,devtools,test,inspiser,ios,javascript,html,css",
         "whatsNew": "Feilrettinger og ytelsesforbedringer.",
         "promotionalText": "Det essensielle WebView-testverktøyet for iOS-utviklere."
     },
@@ -1033,7 +1033,7 @@ Yderligere funktioner
 Perfekt til iOS-udviklere, der skal teste webindholdsgengivelse, debugge JavaScript, analysere netværksanmodninger og sikre tilgængelighedsoverholdelse.
 
 Bemærk: Nogle funktioner kræver iOS 18.4 eller nyere.""",
-        "keywords": "webview,udvikler,debug,konsol,netværk,safari,devtools,test,inspicér",
+        "keywords": "webview,udvikler,debug,konsol,netværk,safari,devtools,test,inspicér,ios,javascript,html,css,browser",
         "whatsNew": "Fejlrettelser og ydelsesforbedringer.",
         "promotionalText": "Det essentielle WebView-testværktøj til iOS-udviklere."
     },
@@ -1075,7 +1075,7 @@ Lisäominaisuudet
 Täydellinen iOS-kehittäjille, jotka tarvitsevat web-sisällön renderöinnin testausta, JavaScript-virheenkorjausta, verkkopyyntöjen analysointia ja saavutettavuusvaatimusten varmistamista.
 
 Huomautus: Jotkin ominaisuudet vaativat iOS 18.4 tai uudemman.""",
-        "keywords": "webview,kehittäjä,debug,konsoli,verkko,safari,devtools,testi,tarkasta",
+        "keywords": "webview,kehittäjä,debug,konsoli,verkko,safari,devtools,testi,tarkasta,ios,javascript,html,css,selain",
         "whatsNew": "Virheenkorjauksia ja suorituskyvyn parannuksia.",
         "promotionalText": "Tärkeä WebView-testaustyökalupaketti iOS-kehittäjille."
     },
@@ -1117,7 +1117,7 @@ Další funkce
 Ideální pro iOS vývojáře, kteří potřebují testovat vykreslování webového obsahu, debugovat JavaScript, analyzovat síťové požadavky a zajistit soulad s přístupností.
 
 Poznámka: Některé funkce vyžadují iOS 18.4 nebo novější.""",
-        "keywords": "webview,vývojář,debug,konzole,síť,safari,devtools,test,inspektor",
+        "keywords": "webview,vývojář,debug,konzole,síť,safari,devtools,test,inspektor,ios,javascript,html,css,prohlížeč",
         "whatsNew": "Opravy chyb a vylepšení výkonu.",
         "promotionalText": "Nezbytná sada nástrojů pro testování WebView pro iOS vývojáře."
     },
@@ -1159,7 +1159,7 @@ Vývojárske nástroje
 Ideálne pre iOS vývojárov, ktorí potrebujú testovať vykresľovanie webového obsahu, debugovať JavaScript, analyzovať sieťové požiadavky a zabezpečiť súlad s prístupnosťou.
 
 Poznámka: Niektoré funkcie vyžadujú iOS 18.4 alebo novší.""",
-        "keywords": "webview,vývojár,debug,konzola,sieť,safari,devtools,test,inšpektor",
+        "keywords": "webview,vývojár,debug,konzola,sieť,safari,devtools,test,inšpektor,ios,javascript,html,css,prehliadač",
         "whatsNew": "Opravy chýb a vylepšenia výkonu.",
         "promotionalText": "Nevyhnutná sada nástrojov pre testovanie WebView pre iOS vývojárov."
     },
@@ -1201,7 +1201,7 @@ További funkciók
 Tökéletes iOS fejlesztőknek, akiknek webtartalom renderelést kell tesztelniük, JavaScript-et debugolniuk, hálózati kéréseket elemezniük és akadálymentességi megfelelőséget biztosítaniuk.
 
 Megjegyzés: Egyes funkciók iOS 18.4 vagy újabb verziót igényelnek.""",
-        "keywords": "webview,fejlesztő,debug,konzol,hálózat,safari,devtools,teszt,vizsgálat",
+        "keywords": "webview,fejlesztő,debug,konzol,hálózat,safari,devtools,teszt,vizsgálat,ios,javascript,html,css",
         "whatsNew": "Hibajavítások és teljesítménybeli fejlesztések.",
         "promotionalText": "Az alapvető WebView tesztelő eszközkészlet iOS fejlesztőknek."
     },
@@ -1243,7 +1243,7 @@ Caracteristici suplimentare
 Perfect pentru dezvoltatorii iOS care trebuie să testeze redarea conținutului web, să depaneze JavaScript, să analizeze cererile de rețea și să asigure conformitatea cu accesibilitatea.
 
 Notă: Unele caracteristici necesită iOS 18.4 sau o versiune ulterioară.""",
-        "keywords": "webview,dezvoltator,debug,consolă,rețea,safari,devtools,test,inspector",
+        "keywords": "webview,dezvoltator,debug,consolă,rețea,safari,devtools,test,inspector,ios,javascript,html,css",
         "whatsNew": "Remedieri de erori și îmbunătățiri de performanță.",
         "promotionalText": "Setul esențial de instrumente pentru testarea WebView pentru dezvoltatorii iOS."
     },
@@ -1285,7 +1285,7 @@ Dodatne značajke
 Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, debugirati JavaScript, analizirati mrežne zahtjeve i osigurati usklađenost s pristupačnošću.
 
 Napomena: Neke značajke zahtijevaju iOS 18.4 ili noviji.""",
-        "keywords": "webview,programer,debug,konzola,mreža,safari,devtools,test,inspektor",
+        "keywords": "webview,programer,debug,konzola,mreža,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Ispravci grešaka i poboljšanja performansi.",
         "promotionalText": "Osnovni alat za testiranje WebViewa za iOS programere."
     },
@@ -1327,7 +1327,7 @@ Napomena: Neke značajke zahtijevaju iOS 18.4 ili noviji.""",
 Ιδανικό για iOS προγραμματιστές που χρειάζεται να δοκιμάσουν απόδοση περιεχομένου web, να κάνουν debug σε JavaScript, να αναλύσουν αιτήματα δικτύου και να εξασφαλίσουν συμμόρφωση προσβασιμότητας.
 
 Σημείωση: Ορισμένες λειτουργίες απαιτούν iOS 18.4 ή μεταγενέστερη έκδοση.""",
-        "keywords": "webview,προγραμματιστής,debug,κονσόλα,δίκτυο,safari,devtools,δοκιμή",
+        "keywords": "webview,προγραμματιστής,debug,κονσόλα,δίκτυο,safari,devtools,δοκιμή,ios,javascript,html,css",
         "whatsNew": "Διορθώσεις σφαλμάτων και βελτιώσεις απόδοσης.",
         "promotionalText": "Η απαραίτητη εργαλειοθήκη δοκιμών WebView για iOS προγραμματιστές."
     },
@@ -1369,7 +1369,7 @@ Napomena: Neke značajke zahtijevaju iOS 18.4 ili noviji.""",
 מושלם למפתחי iOS שצריכים לבדוק רינדור תוכן אינטרנט, לדבג JavaScript, לנתח בקשות רשת ולהבטיח עמידה בדרישות נגישות.
 
 הערה: חלק מהתכונות דורשות iOS 18.4 ומעלה.""",
-        "keywords": "webview,מפתח,דיבאג,קונסול,רשת,safari,devtools,בדיקה,בדיקת",
+        "keywords": "webview,מפתח,דיבאג,קונסול,רשת,safari,devtools,בדיקה,בדיקת,ios,javascript,html,css,דפדפן,כלי,פיתוח",
         "whatsNew": "תיקוני באגים ושיפורי ביצועים.",
         "promotionalText": "ערכת הכלים החיונית לבדיקת WebView למפתחי iOS."
     },
@@ -1411,7 +1411,7 @@ Característiques addicionals
 Perfecte per a desenvolupadors iOS que necessiten provar el renderitzat de contingut web, depurar JavaScript, analitzar peticions de xarxa i assegurar el compliment d'accessibilitat.
 
 Nota: Algunes característiques requereixen iOS 18.4 o posterior.""",
-        "keywords": "webview,desenvolupador,debug,consola,xarxa,safari,devtools,prova,inspector",
+        "keywords": "webview,desenvolupador,debug,consola,xarxa,safari,devtools,prova,inspector,ios,javascript,html,css",
         "whatsNew": "Correccions d'errors i millores de rendiment.",
         "promotionalText": "El kit d'eines WebView essencial per a desenvolupadors iOS."
     }
