@@ -190,20 +190,22 @@ struct LogRow: View {
                         }
                     }
 
-                    // Source location (if available)
+                }
+
+                // Source + Timestamp row (always show timestamp)
+                HStack(spacing: 6) {
                     if let source = log.source {
                         Text(source)
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundStyle(.tertiary)
+                            .lineLimit(isExpanded ? nil : 1)
+                            .truncationMode(.middle)
                     }
-
-                }
-
-                HStack {
-                    Spacer()
+                    Spacer(minLength: 4)
                     Text(Self.timeFormatter.string(from: log.timestamp))
                         .font(.system(size: 9, design: .monospaced))
                         .foregroundStyle(.tertiary)
+                        .layoutPriority(1)  // timestamp always gets space
                 }
             }
 
@@ -382,28 +384,28 @@ struct LogRow: View {
                 .foregroundStyle(.tertiary)
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
+                Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
                     // Header row
-                    HStack(spacing: 0) {
+                    GridRow {
                         ForEach(columns, id: \.self) { column in
                             Text(column)
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
-                                .frame(minWidth: column == "(index)" ? 50 : 60, alignment: .leading)
+                                .frame(minWidth: column == "(index)" ? 50 : 60, maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
-                                .background(Color.secondary.opacity(0.1))
                         }
                     }
+                    .background(Color.secondary.opacity(0.1))
 
                     // Data rows
                     ForEach(Array(data.enumerated()), id: \.offset) { index, row in
-                        HStack(spacing: 0) {
+                        GridRow {
                             ForEach(columns, id: \.self) { column in
                                 Text(row[column] ?? "")
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(column == "(index)" ? .tertiary : .primary)
-                                    .frame(minWidth: column == "(index)" ? 50 : 60, alignment: .leading)
+                                    .frame(minWidth: column == "(index)" ? 50 : 60, maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 3)
                             }
