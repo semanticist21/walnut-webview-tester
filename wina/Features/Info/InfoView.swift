@@ -82,7 +82,7 @@ struct InfoView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search all info")
-            .navigationTitle("WKWebView Info")
+            .navigationTitle(Text(verbatim: "WKWebView Info"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

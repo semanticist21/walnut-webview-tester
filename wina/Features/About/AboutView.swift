@@ -128,7 +128,7 @@ struct AboutView: View {
                 Spacer()
             }
             .padding(.horizontal, 24)
-            .navigationTitle("About")
+            .navigationTitle(Text(verbatim: "About"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

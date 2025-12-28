@@ -272,7 +272,7 @@ struct ActiveSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Active Settings")
+        .navigationTitle(Text(verbatim: "Active Settings"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             updatePermissionStatuses()

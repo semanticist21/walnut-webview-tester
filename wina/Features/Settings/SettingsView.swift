@@ -139,7 +139,7 @@ struct LiveSettingsView: View {
                 .listRowBackground(Color.clear)
             }
         }
-        .navigationTitle("Live Settings")
+        .navigationTitle(Text(verbatim: "Live Settings"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -343,7 +343,7 @@ struct LoadedSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(Text(verbatim: "Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -489,7 +489,7 @@ struct SettingsView: View {
                 erudaSection
                 resetSection
             }
-            .navigationTitle("Settings")
+            .navigationTitle(Text(verbatim: "Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

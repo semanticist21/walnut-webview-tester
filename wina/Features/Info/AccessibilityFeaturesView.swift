@@ -57,7 +57,7 @@ struct AccessibilityFeaturesView: View {
                 }
             }
         }
-        .navigationTitle("Accessibility")
+        .navigationTitle(Text(verbatim: "Accessibility"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             a11yInfo = await AccessibilityInfo.load { status in

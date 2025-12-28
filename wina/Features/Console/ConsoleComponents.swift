@@ -514,7 +514,7 @@ struct ConsoleSettingsSheet: View {
                     }
                 }
             }
-            .navigationTitle("Console Settings")
+            .navigationTitle(Text(verbatim: "Console Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

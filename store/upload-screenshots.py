@@ -111,11 +111,11 @@ def process_locale(locale):
             tasks.append(("svg", svg_path, png_path, IPHONE_SIZE[0], IPHONE_SIZE[1]))
             screenshot_index += 1
 
-    # 2. Generic iPhone screenshots (1.png ~ 12.png) - resize
-    remaining_slots = MAX_IPHONE_SCREENSHOTS - (screenshot_index - 1)
-    for i in range(1, min(13, remaining_slots + 1)):
+    # 2. Generic iPhone screenshots (specific selection: 2,3,4,5,7,8,10) - resize
+    generic_iphone_selection = [2, 3, 4, 5, 7, 8, 10]
+    for i in generic_iphone_selection:
         src_path = SCREENSHOTS_DIR / f"{i}.png"
-        if src_path.exists():
+        if src_path.exists() and screenshot_index <= MAX_IPHONE_SCREENSHOTS:
             dst_path = locale_dst / f"{screenshot_index:02d}_iPhone67_generic{i}.png"
             tasks.append(("resize", src_path, dst_path, IPHONE_SIZE[0], IPHONE_SIZE[1]))
             screenshot_index += 1

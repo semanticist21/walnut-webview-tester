@@ -97,7 +97,7 @@ struct MenuSettingsView: View {
                 .listRowBackground(Color.clear)
             }
         }
-        .navigationTitle("Menu")
+        .navigationTitle(Text(verbatim: "Menu"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

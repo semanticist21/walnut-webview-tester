@@ -38,7 +38,7 @@ struct UserAgentPickerView: View {
             quickPicksSection
             browseAllSection
         }
-        .navigationTitle("User Agent")
+        .navigationTitle(Text(verbatim: "User Agent"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingCustomEditor) {
             CustomUserAgentEditor(userAgent: customUserAgent)
@@ -272,7 +272,7 @@ private struct AllPresetsView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Search presets...")
-        .navigationTitle("All Presets")
+        .navigationTitle(Text(verbatim: "All Presets"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -527,7 +527,7 @@ private struct CustomUserAgentEditor: View {
                     }
                 }
             }
-            .navigationTitle("Custom User Agent")
+            .navigationTitle(Text(verbatim: "Custom User Agent"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -81,7 +81,7 @@ struct DeviceInfoView: View {
                 ProgressView()
             }
         }
-        .navigationTitle("Device Information")
+        .navigationTitle(Text(verbatim: "Device Information"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             deviceInfo = await DeviceInfo.load()

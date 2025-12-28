@@ -202,7 +202,7 @@ struct APICapabilitiesView: View {
                 }
             }
         }
-        .navigationTitle("API Capabilities")
+        .navigationTitle(Text(verbatim: "API Capabilities"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             webViewInfo = await WebViewInfo.load { status in

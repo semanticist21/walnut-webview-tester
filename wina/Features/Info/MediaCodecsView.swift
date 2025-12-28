@@ -68,7 +68,7 @@ struct MediaCodecsView: View {
                 }
             }
         }
-        .navigationTitle("Media Codecs")
+        .navigationTitle(Text(verbatim: "Media Codecs"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             codecInfo = await MediaCodecInfo.load { status in

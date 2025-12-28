@@ -33,7 +33,7 @@ struct SafariVCSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("SafariVC Settings")
+            .navigationTitle(Text(verbatim: "SafariVC Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -95,7 +95,7 @@ struct SafariVCConfigurationSettingsView: View {
             sizeSection
             resetSection
         }
-        .navigationTitle("Configuration")
+        .navigationTitle(Text(verbatim: "Configuration"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

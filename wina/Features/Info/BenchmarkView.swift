@@ -129,7 +129,7 @@ struct BenchmarkView: View {
                 }
             }
         }
-        .navigationTitle("Performance")
+        .navigationTitle(Text(verbatim: "Performance"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             perfInfo = await PerformanceInfo.load { status in

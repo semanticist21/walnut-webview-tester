@@ -83,7 +83,7 @@ struct BrowserInfoView: View {
                 }
             }
         }
-        .navigationTitle("Browser")
+        .navigationTitle(Text(verbatim: "Browser"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             webViewInfo = await WebViewInfo.load { status in

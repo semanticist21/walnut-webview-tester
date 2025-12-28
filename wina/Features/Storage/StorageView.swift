@@ -478,9 +478,10 @@ struct StorageView: View {
 
         return result.sorted { lhs, rhs in
             if showsAllStorage, lhs.storageType != rhs.storageType {
-            return lhs.storageType.sortOrder < rhs.storageType.sortOrder
+                return lhs.storageType.sortOrder < rhs.storageType.sortOrder
+            }
+            return lhs.key < rhs.key
         }
-        return lhs.key < rhs.key
     }
 
     private var cookieGroups: [(domain: String, items: [StorageItem])] {
@@ -495,7 +496,6 @@ struct StorageView: View {
             let sortedItems = items.sorted { $0.key < $1.key }
             return (displayDomain, sortedItems)
         }
-    }
     }
 
     var body: some View {

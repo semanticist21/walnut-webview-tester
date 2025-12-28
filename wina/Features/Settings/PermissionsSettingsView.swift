@@ -55,7 +55,7 @@ struct PermissionsSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Permissions")
+        .navigationTitle(Text(verbatim: "Permissions"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             updatePermissionStatuses()

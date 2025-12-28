@@ -221,7 +221,7 @@ struct StorageEditSheet: View {
                 }
                 .listRowBackground(Color.clear)
             }
-            .navigationTitle("Edit Item")
+            .navigationTitle(Text(verbatim: "Edit Item"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -401,7 +401,7 @@ struct StorageAddSheet: View {
                     }
                 }
             }
-            .navigationTitle("Add to \(storageType.label)")
+            .navigationTitle(Text(verbatim: "Add to \(storageType.label)"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

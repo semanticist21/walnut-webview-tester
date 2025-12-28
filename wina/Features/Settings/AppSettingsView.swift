@@ -183,7 +183,7 @@ struct AppSettingsView: View {
                 Text("Language")
             }
         }
-        .navigationTitle("App Settings")
+        .navigationTitle(Text(verbatim: "App Settings"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

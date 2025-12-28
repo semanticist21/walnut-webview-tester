@@ -28,7 +28,7 @@ struct ResourceDetailView: View {
                 .padding()
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Resource Details")
+            .navigationTitle(Text(verbatim: "Resource Details"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

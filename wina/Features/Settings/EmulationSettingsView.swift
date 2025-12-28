@@ -88,7 +88,7 @@ struct EmulationSettingsView: View {
                 .listRowBackground(Color.clear)
             }
         }
-        .navigationTitle("Emulation")
+        .navigationTitle(Text(verbatim: "Emulation"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

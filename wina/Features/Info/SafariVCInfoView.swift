@@ -109,7 +109,7 @@ struct SafariVCInfoView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search all info")
-            .navigationTitle("SafariVC Info")
+            .navigationTitle(Text(verbatim: "SafariVC Info"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -369,7 +369,7 @@ private struct SafariActiveSettingsDetailView: View {
                 }
             }
         }
-        .navigationTitle("Active Settings")
+        .navigationTitle(Text(verbatim: "Active Settings"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -439,7 +439,7 @@ private struct SafariFeaturesDetailView: View {
                 )
             }
         }
-        .navigationTitle("Safari Features")
+        .navigationTitle(Text(verbatim: "Safari Features"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -486,7 +486,7 @@ private struct SafariAPIDetailView: View {
                 )
             }
         }
-        .navigationTitle("API Availability")
+        .navigationTitle(Text(verbatim: "API Availability"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -517,7 +517,7 @@ private struct SafariPrivacyDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("Privacy & Data")
+        .navigationTitle(Text(verbatim: "Privacy & Data"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -557,7 +557,7 @@ private struct SafariDelegateDetailView: View {
                 )
             }
         }
-        .navigationTitle("Delegate Events")
+        .navigationTitle(Text(verbatim: "Delegate Events"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -612,7 +612,7 @@ private struct SafariLimitationsDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("Limitations")
+        .navigationTitle(Text(verbatim: "Limitations"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

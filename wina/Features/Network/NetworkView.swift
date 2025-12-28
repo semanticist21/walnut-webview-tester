@@ -865,7 +865,7 @@ private struct NetworkSettingsSheet: View {
                     }
                 }
             }
-            .navigationTitle("Network Settings")
+            .navigationTitle(Text(verbatim: "Network Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -892,7 +892,7 @@ private struct ExportContentSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
             }
-            .navigationTitle("Export")
+            .navigationTitle(Text(verbatim: "Export"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

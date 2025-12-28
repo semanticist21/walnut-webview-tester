@@ -90,7 +90,7 @@ struct ConfigurationSettingsView: View {
             configPrivacySection
             resetSection
         }
-        .navigationTitle("Configuration")
+        .navigationTitle(Text(verbatim: "Configuration"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

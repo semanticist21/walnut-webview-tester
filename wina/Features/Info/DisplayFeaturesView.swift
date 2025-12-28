@@ -80,7 +80,7 @@ struct DisplayFeaturesView: View {
                 }
             }
         }
-        .navigationTitle("Display")
+        .navigationTitle(Text(verbatim: "Display"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             displayInfo = await DisplayInfo.load { status in
