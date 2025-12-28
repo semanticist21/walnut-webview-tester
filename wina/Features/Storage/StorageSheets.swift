@@ -169,25 +169,31 @@ struct StorageEditSheet: View {
                         .frame(minHeight: 120)
 
                     if isCookie {
-                        Picker("URL Encoding", selection: $isURLDecoded) {
-                            Text("Encoded").tag(false)
-                            Text("Decoded").tag(true)
-                        }
-                        .pickerStyle(.segmented)
-                        .onChange(of: isURLDecoded) { oldValue, newValue in
-                            if newValue && !oldValue {
-                                // Switching to decoded view
-                                if let decoded = editedValue.removingPercentEncoding {
-                                    editedValue = decoded
-                                }
-                            } else if !newValue && oldValue {
-                                // Switching to encoded view
-                                if let encoded = editedValue.addingPercentEncoding(
-                                    withAllowedCharacters: .urlQueryAllowed
-                                ) {
-                                    editedValue = encoded
+                        HStack(spacing: 8) {
+                            Picker("URL Encoding", selection: $isURLDecoded) {
+                                Text("Encoded").tag(false)
+                                Text("Decoded").tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: isURLDecoded) { oldValue, newValue in
+                                if newValue && !oldValue {
+                                    // Switching to decoded view
+                                    if let decoded = editedValue.removingPercentEncoding {
+                                        editedValue = decoded
+                                    }
+                                } else if !newValue && oldValue {
+                                    // Switching to encoded view
+                                    if let encoded = editedValue.addingPercentEncoding(
+                                        withAllowedCharacters: .urlQueryAllowed
+                                    ) {
+                                        editedValue = encoded
+                                    }
                                 }
                             }
+
+                            InfoPopoverButton(
+                                text: "Values are automatically URL-encoded when saved."
+                            )
                         }
                     }
                 } header: {
