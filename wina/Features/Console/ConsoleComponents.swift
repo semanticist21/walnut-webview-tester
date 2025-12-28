@@ -96,121 +96,105 @@ struct LogRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            // Group toggle or expand indicator
-            if isGroupHeader {
-                Image(systemName: isGroupCollapsed ? "chevron.right" : "chevron.down")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 10)
-                    .padding(.top, 4)
-            } else if needsExpansion {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 10)
-                    .padding(.top, 4)
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            // Main content row
+            HStack(alignment: .top, spacing: 8) {
+                // Group toggle or expand indicator
+                if isGroupHeader {
+                    Image(systemName: isGroupCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 10)
+                        .padding(.top, 4)
+                } else if needsExpansion {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 10)
+                        .padding(.top, 4)
+                }
 
-            // Content area
-            VStack(alignment: .leading, spacing: 2) {
-                if log.type == .table, let tableData = parsedTableData {
-                    // Table rendering
-                    tableView(data: tableData)
-                } else {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if let segments = log.styledSegments, !segments.isEmpty {
-                            styledSegmentsText(segments: segments)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .lineLimit(isExpanded || !needsExpansion ? nil : 3)
-                                .truncationMode(.tail)
-                        } else if let inlineSegments = log.inlineSegments, !inlineSegments.isEmpty, !isGroupHeader {
-                            inlineSegmentsText(segments: inlineSegments)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .lineLimit(isExpanded || !needsExpansion ? nil : 3)
-                                .truncationMode(.tail)
-                        } else if !log.message.isEmpty || isGroupHeader {
-                            // Regular message
-                            HStack(alignment: .top, spacing: 4) {
-                                // Group header has folder icon
-                                if isGroupHeader {
-                                    Image(systemName: "folder.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Text(log.message)
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .foregroundStyle(log.type == .error ? .red : (isGroupHeader ? .secondary : .primary))
-                                    .fontWeight(isGroupHeader ? .semibold : .regular)
+                // Content area
+                Group {
+                    if log.type == .table, let tableData = parsedTableData {
+                        // Table rendering
+                        tableView(data: tableData)
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let segments = log.styledSegments, !segments.isEmpty {
+                                styledSegmentsText(segments: segments)
                                     .textSelection(.enabled)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .lineLimit(isExpanded || !needsExpansion ? nil : 3)
                                     .truncationMode(.tail)
-
-                                // JSON copy button (only if JSON detected)
-                                if let json = extractedJSON {
-                                    Menu {
-                                        Button {
-                                            UIPasteboard.general.string = json.formatted
-                                            copyFeedbackMessage = "Copied formatted JSON"
-                                            showCopyFeedback = true
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                                showCopyFeedback = false
-                                            }
-                                        } label: {
-                                            Label("Copy Formatted", systemImage: "doc.on.doc")
-                                        }
-                                        Button {
-                                            UIPasteboard.general.string = json.minified
-                                            copyFeedbackMessage = "Copied minified JSON"
-                                            showCopyFeedback = true
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                                showCopyFeedback = false
-                                            }
-                                        } label: {
-                                            Label("Copy Minified", systemImage: "arrow.right.arrow.left")
-                                        }
-                                    } label: {
-                                        Image(systemName: "curlybraces")
+                            } else if let inlineSegments = log.inlineSegments, !inlineSegments.isEmpty, !isGroupHeader {
+                                inlineSegmentsText(segments: inlineSegments)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .lineLimit(isExpanded || !needsExpansion ? nil : 3)
+                                    .truncationMode(.tail)
+                            } else if !log.message.isEmpty || isGroupHeader {
+                                // Regular message
+                                HStack(alignment: .top, spacing: 4) {
+                                    // Group header has folder icon
+                                    if isGroupHeader {
+                                        Image(systemName: "folder.fill")
                                             .font(.system(size: 10))
-                                            .foregroundStyle(.blue)
-                                            .padding(4)
-                                            .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Text(log.message)
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundStyle(log.type == .error ? .red : (isGroupHeader ? .secondary : .primary))
+                                        .fontWeight(isGroupHeader ? .semibold : .regular)
+                                        .textSelection(.enabled)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .lineLimit(isExpanded || !needsExpansion ? nil : 3)
+                                        .truncationMode(.tail)
+
+                                    // JSON copy button (only if JSON detected)
+                                    if let json = extractedJSON {
+                                        Menu {
+                                            Button {
+                                                UIPasteboard.general.string = json.formatted
+                                                copyFeedbackMessage = "Copied formatted JSON"
+                                                showCopyFeedback = true
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                                    showCopyFeedback = false
+                                                }
+                                            } label: {
+                                                Label("Copy Formatted", systemImage: "doc.on.doc")
+                                            }
+                                            Button {
+                                                UIPasteboard.general.string = json.minified
+                                                copyFeedbackMessage = "Copied minified JSON"
+                                                showCopyFeedback = true
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                                    showCopyFeedback = false
+                                                }
+                                            } label: {
+                                                Label("Copy Minified", systemImage: "arrow.right.arrow.left")
+                                            }
+                                        } label: {
+                                            Image(systemName: "curlybraces")
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(.blue)
+                                                .padding(4)
+                                                .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        if let objValue = log.objectValue {
-                            // Object/Array value with tree view
-                            ConsoleValueView(value: objValue)
+                            if let objValue = log.objectValue {
+                                // Object/Array value with tree view
+                                ConsoleValueView(value: objValue)
+                            }
                         }
                     }
-
                 }
 
-                // Source + Timestamp row (always show timestamp)
-                HStack(spacing: 6) {
-                    if let source = log.source {
-                        Text(source)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(isExpanded ? nil : 1)
-                            .truncationMode(.middle)
-                    }
-                    Spacer(minLength: 4)
-                    Text(Self.timeFormatter.string(from: log.timestamp))
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                        .layoutPriority(1)  // timestamp always gets space
-                }
-            }
-
-            // Right side: Copy button + Type badge + repeat count (single line) + timestamp
-            VStack(alignment: .trailing, spacing: 6) {
+                // Right side: repeat count + type badge
                 HStack(spacing: 6) {
                     if log.repeatCount > 1 {
                         Text("×\(log.repeatCount)")
@@ -221,19 +205,25 @@ struct LogRow: View {
                             .background(Color.secondary.opacity(0.15), in: Capsule())
                     }
 
-                    // Type badge (icon + label)
                     ConsoleTypeBadge(type: log.type)
                 }
-
-                // Copy button
-                CopyIconButton(text: log.message, size: .small) {
-                    copyFeedbackMessage = "Copied"
-                    showCopyFeedback = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        showCopyFeedback = false
-                    }
-                }
             }
+
+            // Footer row: Source + Timestamp (always at the bottom)
+            HStack(spacing: 6) {
+                if let source = log.source {
+                    Text(source)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(isExpanded ? nil : 1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 4)
+                Text(Self.timeFormatter.string(from: log.timestamp))
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.leading, isGroupHeader || needsExpansion ? 18 : 0)
         }
         .padding(.leading, 12 + indentation)
         .padding(.trailing, 12)
@@ -428,16 +418,10 @@ struct ConsoleTypeBadge: View {
     let type: ConsoleLog.LogType
 
     var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: type.icon)
-                .font(.system(size: 8))
-            Text(type.shortLabel)
-                .font(.system(size: 9, weight: .medium))
-        }
-        .foregroundStyle(type.color)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
-        .background(type.color.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+        Text(type.shortLabel)
+            .font(.system(size: 9, weight: .medium, design: .monospaced))
+            .foregroundStyle(type.color)
+            .frame(width: 48, alignment: .trailing)
     }
 }
 
