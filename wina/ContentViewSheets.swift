@@ -127,9 +127,9 @@ struct BookmarksSheet: View {
                         Text(url)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onLongPressGesture {
                         UIPasteboard.general.string = url

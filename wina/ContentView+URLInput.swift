@@ -176,7 +176,7 @@ extension ContentView {
             .frame(width: inputWidth, height: min(CGFloat(filteredURLs.count) * 40, 160))
             .backport.glassEffect(in: .rect(cornerRadius: 16))
             .padding(.top, 8)
-            .transition(.opacity.combined(with: .move(edge: .top)))
+            .transition(.opacity)
         }
     }
 
@@ -198,9 +198,10 @@ extension ContentView {
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .onLongPressGesture {
             UIPasteboard.general.string = url
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -235,7 +236,7 @@ extension ContentView {
             }
             .frame(width: inputWidth)
             .padding(.top, 12)
-            .transition(.opacity.combined(with: .move(edge: .top)))
+            .transition(.opacity)
         }
     }
 

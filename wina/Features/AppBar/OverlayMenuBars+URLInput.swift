@@ -68,6 +68,13 @@ struct URLInputOverlayView: View {
             .padding(.bottom, 10)
             .frame(width: 340)
             .backport.glassEffect(in: .rect(cornerRadius: 24))
+            .overlay(alignment: .bottom) {
+                if showCopiedFeedback {
+                    CopiedFeedbackToast(message: "Copied")
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: showCopiedFeedback)
         }
         .onAppear {
             urlInputFocused = true
@@ -89,12 +96,11 @@ struct URLInputOverlayView: View {
                         showCopiedFeedback = false
                     }
                 } label: {
-                    Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                    Image(systemName: "doc.on.doc")
                         .font(.system(size: 16))
-                        .foregroundStyle(showCopiedFeedback ? .green : .secondary)
+                        .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                         .contentShape(Circle())
-                        .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain)
             }
@@ -133,12 +139,16 @@ struct URLInputOverlayView: View {
 
     // MARK: - URL Input Row
 
+    // Fixed widths to prevent layout shift (matching Home pattern)
+    private let inputRowWidth: CGFloat = 308  // 340 card - 32 padding
+    private let goButtonSpace: CGFloat = 60   // 48 button + 12 spacing
+
     private var urlInputRow: some View {
         HStack(spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: urlValidationState.iconName)
                     .foregroundStyle(urlValidationState.iconColor)
-                    .font(.system(size: 14))
+                    .font(.system(size: 16))
                     .contentTransition(.symbolEffect(.replace))
                     .animation(.easeOut(duration: 0.2), value: urlValidationState)
 
@@ -149,6 +159,7 @@ struct URLInputOverlayView: View {
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
                     .submitLabel(.go)
+                    .font(.system(size: 16))
                     .focused($urlInputFocused)
                     .onSubmit {
                         submitURL()
@@ -168,8 +179,8 @@ struct URLInputOverlayView: View {
                 }
             }
             .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .frame(maxWidth: urlValidationState == .valid ? .infinity : nil)
+            .frame(height: 48)
+            .frame(width: urlValidationState == .valid ? inputRowWidth - goButtonSpace : inputRowWidth)
             .backport.glassEffect(in: .capsule)
 
             // Go button - matching Home design
@@ -188,6 +199,7 @@ struct URLInputOverlayView: View {
                 .transition(.opacity.animation(.easeOut(duration: 0.15)))
             }
         }
+        .frame(height: 48)
         .animation(.easeOut(duration: 0.25), value: urlValidationState)
     }
 
@@ -239,9 +251,10 @@ struct URLInputOverlayView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .onLongPressGesture {
             UIPasteboard.general.string = url
             UIImpactFeedbackGenerator(style: .light).impactOccurred()

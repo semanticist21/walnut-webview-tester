@@ -314,11 +314,20 @@ See `.swiftlint.yml` for full rules. Key settings:
 
 ### 1. `.buttonStyle(.plain)` Touch Area
 ```swift
-// ❌ Only touches icon pixels
-Button { }.buttonStyle(.plain)
+// ❌ Only touches icon/text pixels
+Button { } label: {
+    HStack { ... }
+        .contentShape(Rectangle())  // WRONG: inside label
+}
+.buttonStyle(.plain)
 
-// ✅ Fix - enable full area
-.contentShape(Circle())
+// ✅ Fix - contentShape OUTSIDE Button, after buttonStyle
+Button { } label: {
+    HStack { ... }
+        .frame(maxWidth: .infinity)  // expand hit area
+}
+.buttonStyle(.plain)
+.contentShape(Rectangle())  // CORRECT: on Button itself
 ```
 
 ### 2. Compiler Type-Check Failure
