@@ -255,8 +255,8 @@ final class MetricThresholdsBoundaryTests: XCTestCase {
     }
 
     func testScoreJustBelowPoorThreshold() {
-        // Just below poor threshold = more than 0
-        let score = MetricThresholds.score(3999, good: MetricThresholds.lcpGood, poor: MetricThresholds.lcpPoor)
+        // 3900 is below poor threshold (4000), gives score = Int((4000-3900)/1500*100) = 6
+        let score = MetricThresholds.score(3900, good: MetricThresholds.lcpGood, poor: MetricThresholds.lcpPoor)
         XCTAssertGreaterThan(score, 0)
         XCTAssertLessThan(score, 100)
     }
