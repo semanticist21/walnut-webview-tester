@@ -239,7 +239,11 @@ enum BarConstants {
     static let barHeight: CGFloat = 64
     static let horizontalPadding: CGFloat = 8
     static let bottomBarSafeAreaRatio: CGFloat = 0.5
+    static let webViewOffsetRatio: CGFloat = 0.375
     static let additionalSpacing: CGFloat = 64  // "App" preset
+    static var totalUIHeight: CGFloat { barHeight * 2 + additionalSpacing }
+    static let sheetDetents: Set<PresentationDetent> = [.fraction(0.35), .medium, .large]
+    static let defaultSheetDetent: PresentationDetent = .medium
 }
 ```
 
@@ -249,7 +253,7 @@ enum BarConstants {
 
 | Purpose | Component |
 |---------|-----------|
-| Circular icon button | `GlassIconButton` (.regular 44×44, .small 28×28) |
+| Circular icon button | `GlassIconButton` (.regular 44×44/18pt, .small 28×28/12pt) |
 | Action button | `GlassActionButton` (.default, .destructive, .primary) |
 | Copy button | `CopyButton` (text + feedback toast) |
 | Type indicator | `TypeBadge` (colored label: JSON/Number/Bool/Text) |
@@ -257,6 +261,10 @@ enum BarConstants {
 | Info button | `InfoPopoverButton` |
 | DevTools header | `DevToolsHeader` (title + button groups, String/LocalizedStringKey) |
 | Scroll buttons | `ScrollNavigationButtons` + `.scrollNavigationOverlay()` |
+| Settings row | `SettingToggleRow`, `ColorPickerRow` |
+| WebView sizing | `WebViewSizeControl` |
+| Layout | `FlowLayout` (tag/chip wrapping) |
+| Security banner | `SecurityRestrictionBanner` (SafariVC warning) |
 | Share sheet | `ShareSheet` (UIActivityViewController wrapper) |
 | JSON editor | `JsonEditor/` (syntax-highlighted editing) |
 

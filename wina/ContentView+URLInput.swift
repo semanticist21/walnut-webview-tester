@@ -54,7 +54,7 @@ extension ContentView {
                 Picker("WebView Type", selection: $useSafariWebView) {
                     Text("WKWebView")
                         .tag(false)
-                    Text("SafariVC")
+                    Text(verbatim: "SafariVC")
                         .tag(true)
                 }
                 .pickerStyle(.segmented)

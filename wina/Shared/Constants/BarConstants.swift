@@ -16,7 +16,6 @@ enum BarConstants {
     /// Horizontal padding around bars
     static let horizontalPadding: CGFloat = 8
 
-
     // MARK: - Safe Area Handling
 
     /// How much of safe area bottom the bottom bar extends into (0 = none, 1 = full)

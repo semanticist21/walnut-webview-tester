@@ -281,7 +281,7 @@ struct ElementDetailView: View {
                     showMatchedRules = false
                 }
             } label: {
-                Text("Computed")
+                Text(verbatim: "Computed")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(!showMatchedRules ? .primary : .secondary)
                     .padding(.horizontal, 12)

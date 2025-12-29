@@ -303,7 +303,7 @@ struct PerformanceView: View {
                 .font(.headline)
                 .foregroundStyle(performanceManager.data.scoreRating.color)
 
-                Text("Web Vitals 2025")
+                Text(verbatim: "Web Vitals 2025")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

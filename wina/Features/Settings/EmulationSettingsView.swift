@@ -113,7 +113,7 @@ struct EmulationSettingsView: View {
                 HStack {
                     Image(systemName: "wand.and.stars")
                         .foregroundStyle(.purple)
-                    Text("Emulation Active")
+                    Text(verbatim: "Emulation Active")
                         .font(.subheadline)
                 }
                 .foregroundStyle(.secondary)

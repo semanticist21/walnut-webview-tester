@@ -118,7 +118,7 @@ struct ActiveSettingsView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "bolt.fill")
                         .foregroundStyle(.green)
-                    Text("Live Settings")
+                    Text(verbatim: "Live Settings")
                 }
             }
 
@@ -147,7 +147,7 @@ struct ActiveSettingsView: View {
                     }
                 }
             } header: {
-                Text("Identity")
+                Text(verbatim: "Identity")
             }
 
             Section {
@@ -206,7 +206,7 @@ struct ActiveSettingsView: View {
                     label: "Mode", value: contentModeText,
                     info: "Mobile or desktop sites.\nRecommended: Auto-detect.\nDesktop useful on iPad.")
             } header: {
-                Text("Content Mode")
+                Text(verbatim: "Content Mode")
             }
 
             Section {

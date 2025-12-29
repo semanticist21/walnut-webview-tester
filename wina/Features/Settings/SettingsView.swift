@@ -120,7 +120,7 @@ struct LiveSettingsView: View {
                     }
                 }
             } header: {
-                Text("Identity")
+                Text(verbatim: "Identity")
             }
 
             Section {
@@ -541,7 +541,7 @@ struct SettingsView: View {
                         .frame(width: 28)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Eruda Console")
+                        Text(verbatim: "Eruda Console")
                             .font(.body)
                         Text("In-page developer tools")
                             .font(.caption)
@@ -636,7 +636,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Core")
+            Text(verbatim: "Core")
         }
     }
 
@@ -679,7 +679,7 @@ struct SettingsView: View {
             .pickerStyle(.inline)
             .labelsHidden()
         } header: {
-            Text("Content Mode")
+            Text(verbatim: "Content Mode")
         }
     }
 
@@ -830,7 +830,7 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text("Identity")
+            Text(verbatim: "Identity")
         }
     }
 

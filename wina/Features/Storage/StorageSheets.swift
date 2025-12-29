@@ -171,8 +171,8 @@ struct StorageEditSheet: View {
                     if isCookie {
                         HStack(spacing: 8) {
                             Picker("URL Encoding", selection: $isURLDecoded) {
-                                Text("Encoded").tag(false)
-                                Text("Decoded").tag(true)
+                                Text(verbatim: "Encoded").tag(false)
+                                Text(verbatim: "Decoded").tag(true)
                             }
                             .pickerStyle(.segmented)
                             .onChange(of: isURLDecoded) { oldValue, newValue in
@@ -219,7 +219,7 @@ struct StorageEditSheet: View {
                             .listRowInsets(EdgeInsets())
                     } header: {
                         HStack {
-                            Text("JSON Explorer")
+                            Text(verbatim: "JSON Explorer")
                             Spacer()
                             Text("\(JsonParser.countElements(editedValue)) items")
                                 .font(.caption)
@@ -428,7 +428,7 @@ struct StorageAddSheet: View {
                             .listRowInsets(EdgeInsets())
                     } header: {
                         HStack {
-                            Text("JSON Explorer")
+                            Text(verbatim: "JSON Explorer")
                             Spacer()
                             Text("\(JsonParser.countElements(value)) items")
                                 .font(.caption)

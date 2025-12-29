@@ -19,7 +19,7 @@ struct StackTraceView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.blue)
 
-                Text("Initiator Stack Trace")
+                Text(verbatim: "Initiator Stack Trace")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
 

@@ -390,7 +390,7 @@ struct AccessibilityAuditView: View {
                     Image(systemName: "accessibility")
                         .font(.system(size: 48))
                         .foregroundStyle(.tertiary)
-                    Text("Accessibility Audit")
+                    Text(verbatim: "Accessibility Audit")
                         .font(.headline)
                     Text("Scan the current page for accessibility issues")
                         .font(.subheadline)

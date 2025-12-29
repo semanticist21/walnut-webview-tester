@@ -207,7 +207,7 @@ struct ConfigurationSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Core")
+            Text(verbatim: "Core")
         }
     }
 
@@ -250,7 +250,7 @@ struct ConfigurationSettingsView: View {
             .pickerStyle(.inline)
             .labelsHidden()
         } header: {
-            Text("Content Mode")
+            Text(verbatim: "Content Mode")
         }
     }
 

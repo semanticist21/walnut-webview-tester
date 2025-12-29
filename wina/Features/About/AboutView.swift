@@ -42,7 +42,7 @@ struct AboutView: View {
                         .scaledToFit()
                         .frame(height: 100)
 
-                    Text("Wallnut")
+                    Text(verbatim: "Wallnut")
                         .font(.title2)
                         .fontWeight(.semibold)
 
@@ -50,7 +50,7 @@ struct AboutView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Text("Kobbokkom")
+                    Text(verbatim: "Kobbokkom")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -108,7 +108,7 @@ struct AboutView: View {
 #endif
                                 }
                             } label: {
-                                Text("Reset Purchase State (Debug)")
+                                Text(verbatim: "Reset Purchase State (Debug)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
