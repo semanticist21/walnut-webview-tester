@@ -79,14 +79,14 @@ All locales use this canonical text pattern. Update upload-metadata.py when chan
 
 | Locale | Promotional Text |
 |--------|------------------|
-| en-US | Quickly check how web content behaves in WKWebView and SafariVC. Debug with developer tools like Console, Network, Storage, Performance, and Sources. |
-| ko | WKWebView와 SafariVC에서 웹 콘텐츠가 실제로 어떻게 동작하는지 빠르게 확인할 수 있습니다. Console, Network, Storage, Performance, Sources 등의 개발 도구로 디버깅할 수 있습니다. |
-| ja | WKWebViewとSafariVCでWebコンテンツが実際にどう動くかを素早く確認できます。Console、Network、Storage、Performance、Sourcesなどの開発ツールでデバッグできます。 |
-| zh-Hans | 可快速查看网页内容在WKWebView和SafariVC中的实际表现。可通过Console、Network、Storage、Performance、Sources等开发工具进行调试。 |
-| zh-Hant | 可快速查看網頁內容在WKWebView與SafariVC中的實際表現。可透過Console、Network、Storage、Performance、Sources等開發工具進行除錯。 |
-| de-DE | Sehen Sie schnell, wie sich Webinhalte in WKWebView und SafariVC tatsächlich verhalten. Debuggen Sie mit Entwickler-Tools wie Console, Network, Storage, Performance und Sources. |
-| fr-FR | Vérifiez rapidement le comportement réel du contenu web dans WKWebView et SafariVC. Déboguez avec des outils développeur comme Console, Network, Storage, Performance et Sources. |
-| es-ES | Compruebe rápidamente cómo se comporta el contenido web en WKWebView y SafariVC. Depure con herramientas de desarrollo como Console, Network, Storage, Performance y Sources. |
+| en-US | Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView. |
+| ko | Walnut으로 WebView 테스트를 쉽게 해보세요. 북마크·히스토리 기반 URL 관리와 Console, Network, SourceView 내장 도구로 디버깅이 쉽습니다. |
+| ja | WalnutでWebViewテストを簡単に。ブックマーク/履歴でURL管理が速く、Console・Network・SourceViewなど内蔵ツールでデバッグも簡単です。 |
+| zh-Hans | 用Walnut轻松测试WebView。通过书签/历史管理URL快速访问，并用Console、Network、SourceView等内置工具轻松调试。 |
+| zh-Hant | 用Walnut輕鬆測試WebView。透過書籤/歷史管理URL快速存取，並用Console、Network、SourceView等內建工具輕鬆除錯。 |
+| de-DE | WebView-Tests ganz einfach mit Walnut. Schneller URL-Zugriff über Lesezeichen und Verlauf, Debugging mit Console, Network und SourceView. |
+| fr-FR | Testez WebView facilement avec Walnut. Gestion rapide des URL via favoris et historique, et débogage avec Console, Network et SourceView. |
+| es-ES | Pruebe WebView fácilmente con Walnut. Gestión rápida de URL con marcadores e historial, y depuración con Console, Network y SourceView. |
 
 See `upload-metadata.py` METADATA dict for all 39 translations.
 
