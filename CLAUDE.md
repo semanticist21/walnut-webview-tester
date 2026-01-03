@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Wallnut (wina)** - WKWebView & SFSafariViewController 테스터 앱
+**Walnut (wina)** - WKWebView & SFSafariViewController 테스터 앱
 
 WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 18.4+, ~100 Swift files
 
