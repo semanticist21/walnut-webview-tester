@@ -72,7 +72,7 @@ Perfect for iOS developers who need to test web content rendering, debug JavaScr
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
-        "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
+        "promotionalText": "Quickly see how web content behaves in WKWebView and SafariVC. Track root causes with Console, Network, Storage, Performance, and Sources."
     },
     "en-AU": {
         "name": "Walnut: Webview Tester & Debug",
@@ -113,7 +113,7 @@ Perfect for iOS developers who need to test web content rendering, debug JavaScr
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
-        "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
+        "promotionalText": "Quickly see how web content behaves in WKWebView and SafariVC. Track root causes with Console, Network, Storage, Performance, and Sources."
     },
     "en-CA": {
         "name": "Walnut: Webview Tester & Debug",
@@ -154,7 +154,7 @@ Perfect for iOS developers who need to test web content rendering, debug JavaScr
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
-        "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
+        "promotionalText": "Quickly see how web content behaves in WKWebView and SafariVC. Track root causes with Console, Network, Storage, Performance, and Sources."
     },
     "en-GB": {
         "name": "Walnut: Webview Tester & Debug",
@@ -195,7 +195,7 @@ Perfect for iOS developers who need to test web content rendering, debug JavaScr
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
-        "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
+        "promotionalText": "Quickly see how web content behaves in WKWebView and SafariVC. Track root causes with Console, Network, Storage, Performance, and Sources."
     },
     "ko": {
         "name": "Walnut: 웹뷰 테스터 & 디버그",
@@ -236,7 +236,7 @@ SFSafariViewController 테스트
 """,
         "keywords": "웹뷰,개발자,디버그,콘솔,네트워크,사파리,devtools,테스트,검사,ios,자바스크립트,html,css,쿠키,성능,접근성,개발도구,브라우저,앱,모바일,웹킷,사파리뷰",
         "whatsNew": "버그 수정 및 성능 개선.",
-        "promotionalText": "WebView 설정을 바꾸고 바로 테스트할 수 있습니다. Console, Network, Storage 등 DevTools를 지원합니다."
+        "promotionalText": "WKWebView와 SafariVC에서 웹 콘텐츠가 실제로 어떻게 동작하는지 빠르게 확인할 수 있는 개발자용 도구입니다. 콘솔·네트워크·스토리지·성능·소스로 원인을 추적할 수 있습니다."
     },
     "ja": {
         "name": "Walnut: Webviewテスター&デバッグ",
@@ -277,7 +277,7 @@ Webコンテンツのレンダリングテスト、JavaScriptデバッグ、ネ�
 """,
         "keywords": "webview,開発者,デバッグ,コンソール,ネットワーク,safari,devtools,テスト,検査,ios,javascript,html,css,開発ツール,ブラウザ,アプリ",
         "whatsNew": "バグ修正とパフォーマンス改善。",
-        "promotionalText": "WebView設定を変更してすぐにテストできます。Console、Network、StorageなどDevToolsをサポートしています。"
+        "promotionalText": "WKWebViewとSafariVCでWebコンテンツがどう動くかを素早く確認できます。Console、Network、Storage、Performance、Sourcesで原因を追えます。"
     },
     "zh-Hans": {
         "name": "Walnut: Webview测试和调试",
@@ -318,7 +318,7 @@ SFSafariViewController测试
 """,
         "keywords": "webview,开发者,调试,控制台,网络,safari,devtools,测试,检查,ios,javascript,html,css,cookie,性能,开发工具,浏览器,应用,工具",
         "whatsNew": "错误修复和性能改进。",
-        "promotionalText": "更改WebView设置后可立即测试。支持Console、Network、Storage等DevTools。"
+        "promotionalText": "快速查看网页内容在WKWebView和SafariVC中的实际表现。通过Console、Network、Storage、Performance和Sources追踪原因。"
     },
     "zh-Hant": {
         "name": "Walnut: Webview測試和除錯",
@@ -359,7 +359,7 @@ SFSafariViewController測試
 """,
         "keywords": "webview,開發者,除錯,控制台,網路,safari,devtools,測試,檢查,ios,javascript,html,css,cookie,效能,開發工具,瀏覽器,應用,工具",
         "whatsNew": "錯誤修復和效能改善。",
-        "promotionalText": "更改WebView設定後可立即測試。支援Console、Network、Storage等DevTools。"
+        "promotionalText": "快速查看網頁內容在WKWebView與SafariVC中的實際表現。透過Console、Network、Storage、Performance與Sources追蹤原因。"
     },
     "de-DE": {
         "name": "Walnut: Webview Tester & Debug",
@@ -400,7 +400,7 @@ Perfekt für iOS-Entwickler, die Web-Content-Rendering testen, JavaScript debugg
 """,
         "keywords": "webview,entwickler,debug,konsole,netzwerk,safari,devtools,test,inspektor,ios,javascript,html,browser",
         "whatsNew": "Fehlerbehebungen und Leistungsverbesserungen.",
-        "promotionalText": "Ändern Sie WebView-Einstellungen und testen Sie sofort. Unterstützt DevTools wie Console, Network, Storage und mehr."
+        "promotionalText": "Sehen Sie schnell, wie sich Webinhalte in WKWebView und SafariVC verhalten. Finden Sie Ursachen mit Console, Network, Storage, Performance und Sources."
     },
     "fr-FR": {
         "name": "Walnut: Webview Test & Débogage",
@@ -441,7 +441,7 @@ Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, d
 """,
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
         "whatsNew": "Corrections de bugs et améliorations de performances.",
-        "promotionalText": "Modifiez les paramètres WebView et testez instantanément. Prend en charge DevTools avec Console, Network, Storage et plus."
+        "promotionalText": "Vérifiez rapidement le comportement du contenu web dans WKWebView et SafariVC. Repérez la cause avec Console, Network, Storage, Performance et Sources."
     },
     "fr-CA": {
         "name": "Walnut: Webview Test & Débogage",
@@ -482,7 +482,7 @@ Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, d
 """,
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
         "whatsNew": "Corrections de bugs et améliorations de performances.",
-        "promotionalText": "Modifiez les paramètres WebView et testez instantanément. Prend en charge DevTools avec Console, Network, Storage et plus."
+        "promotionalText": "Vérifiez rapidement le comportement du contenu web dans WKWebView et SafariVC. Repérez la cause avec Console, Network, Storage, Performance et Sources."
     },
     "es-ES": {
         "name": "Walnut: Webview Test & Debug",
@@ -523,7 +523,7 @@ Perfecto para desarrolladores iOS que necesitan probar el renderizado de conteni
 """,
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
         "whatsNew": "Correcciones de errores y mejoras de rendimiento.",
-        "promotionalText": "Cambie la configuración de WebView y pruebe al instante. Compatible con DevTools: Console, Network, Storage y más."
+        "promotionalText": "Compruebe rápidamente cómo se comporta el contenido web en WKWebView y SafariVC. Localice la causa con Console, Network, Storage, Performance y Sources."
     },
     "es-MX": {
         "name": "Walnut: Webview Test & Debug",
@@ -564,7 +564,7 @@ Perfecto para desarrolladores iOS que necesitan probar el renderizado de conteni
 """,
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
         "whatsNew": "Correcciones de errores y mejoras de rendimiento.",
-        "promotionalText": "Cambie la configuración de WebView y pruebe al instante. Compatible con DevTools: Console, Network, Storage y más."
+        "promotionalText": "Compruebe rápidamente cómo se comporta el contenido web en WKWebView y SafariVC. Localice la causa con Console, Network, Storage, Performance y Sources."
     },
     "it": {
         "name": "Walnut: Webview Test & Debug",
@@ -605,7 +605,7 @@ Perfetto per sviluppatori iOS che devono testare il rendering di contenuti web, 
 """,
         "keywords": "webview,sviluppatore,debug,console,rete,safari,devtools,test,ispettore,ios,javascript,html,css",
         "whatsNew": "Correzioni di bug e miglioramenti delle prestazioni.",
-        "promotionalText": "Modifica le impostazioni WebView e testa immediatamente. Supporta DevTools come Console, Network, Storage e altro."
+        "promotionalText": "Verifica rapidamente come si comportano i contenuti web in WKWebView e SafariVC. Trova le cause con Console, Network, Storage, Performance e Sources."
     },
     "pt-BR": {
         "name": "Walnut: Webview Teste & Debug",
@@ -646,7 +646,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 """,
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
         "whatsNew": "Correções de bugs e melhorias de desempenho.",
-        "promotionalText": "Altere as configurações do WebView e teste instantaneamente. Suporta DevTools com Console, Network, Storage e mais."
+        "promotionalText": "Veja rapidamente como o conteúdo web se comporta no WKWebView e no SafariVC. Encontre a causa com Console, Network, Storage, Performance e Sources."
     },
     "pt-PT": {
         "name": "Walnut: Webview Teste & Debug",
@@ -687,7 +687,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 """,
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
         "whatsNew": "Correções de bugs e melhorias de desempenho.",
-        "promotionalText": "Altere as configurações do WebView e teste instantaneamente. Suporta DevTools com Console, Network, Storage e mais."
+        "promotionalText": "Veja rapidamente como o conteúdo web se comporta no WKWebView e no SafariVC. Encontre a causa com Console, Network, Storage, Performance e Sources."
     },
     "ru": {
         "name": "Walnut: Webview Тест и Отладка",
@@ -728,7 +728,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 """,
         "keywords": "webview,разработчик,отладка,консоль,сеть,safari,devtools,тест,инспектор,ios,javascript,html,css",
         "whatsNew": "Исправления ошибок и улучшения производительности.",
-        "promotionalText": "Измените настройки WebView и тестируйте мгновенно. Поддерживает DevTools: Console, Network, Storage и другие."
+        "promotionalText": "Быстро проверьте, как веб-контент ведет себя в WKWebView и SafariVC. Найдите причину с Console, Network, Storage, Performance и Sources."
     },
     "ar-SA": {
         "name": "Walnut: Webview اختبار وتصحيح",
@@ -769,7 +769,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 """,
         "keywords": "webview,مطور,تصحيح,وحدة التحكم,شبكة,safari,devtools,اختبار,فحص,ios,javascript,html,css,متصفح,أداة",
         "whatsNew": "إصلاحات الأخطاء وتحسينات الأداء.",
-        "promotionalText": "غيّر إعدادات WebView واختبرها فوراً. يدعم DevTools: Console وNetwork وStorage والمزيد."
+        "promotionalText": "تعرّف بسرعة على كيفية عمل محتوى الويب في WKWebView وSafariVC. تتبّع السبب عبر Console وNetwork وStorage وPerformance وSources."
     },
     "hi": {
         "name": "Walnut: Webview टेस्ट और डीबग",
@@ -810,7 +810,7 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 """,
         "keywords": "webview,डेवलपर,डीबग,कंसोल,नेटवर्क,safari,devtools,टेस्ट,इंस्पेक्ट,ios,javascript,html,css,ब्राउज़र",
         "whatsNew": "बग फिक्स और प्रदर्शन सुधार।",
-        "promotionalText": "WebView सेटिंग्स बदलें और तुरंत टेस्ट करें। Console, Network, Storage आदि DevTools का समर्थन करता है।"
+        "promotionalText": "WKWebView और SafariVC में वेब सामग्री कैसे व्यवहार करती है, यह जल्दी देखें। Console, Network, Storage, Performance और Sources से कारण खोजें।"
     },
     "th": {
         "name": "Walnut: Webview ทดสอบและดีบัก",
@@ -851,7 +851,7 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 """,
         "keywords": "webview,นักพัฒนา,ดีบัก,คอนโซล,เครือข่าย,safari,devtools,ทดสอบ,ตรวจสอบ,ios,javascript,html,css",
         "whatsNew": "แก้ไขข้อบกพร่องและปรับปรุงประสิทธิภาพ",
-        "promotionalText": "เปลี่ยนการตั้งค่า WebView และทดสอบได้ทันที รองรับ DevTools เช่น Console, Network, Storage และอื่นๆ"
+        "promotionalText": "ดูอย่างรวดเร็วว่าเนื้อหาเว็บทำงานอย่างไรใน WKWebView และ SafariVC. ค้นหาสาเหตุด้วย Console, Network, Storage, Performance และ Sources."
     },
     "vi": {
         "name": "Walnut: Webview Test & Debug",
@@ -892,7 +892,7 @@ Hoàn hảo cho các nhà phát triển iOS cần kiểm thử hiển thị nộ
 """,
         "keywords": "webview,lập trình,debug,console,mạng,safari,devtools,kiểm thử,kiểm tra,ios,javascript,html,css",
         "whatsNew": "Sửa lỗi và cải thiện hiệu suất.",
-        "promotionalText": "Thay đổi cài đặt WebView và kiểm tra ngay. Hỗ trợ DevTools: Console, Network, Storage và nhiều hơn nữa."
+        "promotionalText": "Nhanh chóng xem nội dung web hoạt động thế nào trong WKWebView và SafariVC. Tìm nguyên nhân với Console, Network, Storage, Performance và Sources."
     },
     "id": {
         "name": "Walnut: Webview Tester & Debug",
@@ -933,7 +933,7 @@ Sempurna untuk pengembang iOS yang perlu menguji rendering konten web, debug Jav
 """,
         "keywords": "webview,developer,debug,console,jaringan,safari,devtools,tes,inspeksi,ios,javascript,html,css",
         "whatsNew": "Perbaikan bug dan peningkatan kinerja.",
-        "promotionalText": "Ubah pengaturan WebView dan uji secara instan. Mendukung DevTools: Console, Network, Storage, dan lainnya."
+        "promotionalText": "Cepat lihat bagaimana konten web berperilaku di WKWebView dan SafariVC. Temukan penyebabnya dengan Console, Network, Storage, Performance, dan Sources."
     },
     "ms": {
         "name": "Walnut: Webview Tester & Debug",
@@ -974,7 +974,7 @@ Sempurna untuk pembangun iOS yang perlu menguji pemaparan kandungan web, nyahpep
 """,
         "keywords": "webview,pembangun,debug,konsol,rangkaian,safari,devtools,uji,periksa,ios,javascript,html,css,pelayar",
         "whatsNew": "Pembetulan pepijat dan penambahbaikan prestasi.",
-        "promotionalText": "Tukar tetapan WebView dan uji serta-merta. Menyokong DevTools: Console, Network, Storage dan banyak lagi."
+        "promotionalText": "Lihat dengan cepat bagaimana kandungan web berfungsi dalam WKWebView dan SafariVC. Jejaki punca dengan Console, Network, Storage, Performance dan Sources."
     },
     "nl-NL": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1015,7 +1015,7 @@ Perfect voor iOS-ontwikkelaars die webcontent-rendering moeten testen, JavaScrip
 """,
         "keywords": "webview,ontwikkelaar,debug,console,netwerk,safari,devtools,test,inspecteer,ios,javascript,html,css",
         "whatsNew": "Bugfixes en prestatieverbeteringen.",
-        "promotionalText": "Wijzig WebView-instellingen en test direct. Ondersteunt DevTools zoals Console, Network, Storage en meer."
+        "promotionalText": "Zie snel hoe webcontent zich gedraagt in WKWebView en SafariVC. Vind de oorzaak met Console, Network, Storage, Performance en Sources."
     },
     "pl": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1056,7 +1056,7 @@ Idealne dla programistów iOS, którzy muszą testować renderowanie treści web
 """,
         "keywords": "webview,programista,debug,konsola,sieć,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Poprawki błędów i ulepszenia wydajności.",
-        "promotionalText": "Zmień ustawienia WebView i testuj natychmiast. Obsługuje DevTools: Console, Network, Storage i więcej."
+        "promotionalText": "Szybko sprawdź, jak działa treść webowa w WKWebView i SafariVC. Ustal przyczynę z Console, Network, Storage, Performance i Sources."
     },
     "tr": {
         "name": "Walnut: Webview Test & Debug",
@@ -1097,7 +1097,7 @@ Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ iste
 """,
         "keywords": "webview,geliştirici,debug,konsol,ağ,safari,devtools,test,denetim,ios,javascript,html,css,tarayıcı",
         "whatsNew": "Hata düzeltmeleri ve performans iyileştirmeleri.",
-        "promotionalText": "WebView ayarlarını değiştirin ve anında test edin. Console, Network, Storage ve daha fazlasıyla DevTools'u destekler."
+        "promotionalText": "Web içeriğinin WKWebView ve SafariVC’de nasıl davrandığını hızla görün. Console, Network, Storage, Performance ve Sources ile nedeni bulun."
     },
     "uk": {
         "name": "Walnut: Webview Тест і Дебаг",
@@ -1138,7 +1138,7 @@ Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ iste
 """,
         "keywords": "webview,розробник,налагодження,консоль,мережа,safari,devtools,тест,інспектор,ios,javascript,html",
         "whatsNew": "Виправлення помилок та покращення продуктивності.",
-        "promotionalText": "Змініть налаштування WebView і тестуйте миттєво. Підтримує DevTools: Console, Network, Storage та інші."
+        "promotionalText": "Швидко перевірте, як вебвміст працює у WKWebView і SafariVC. Знайдіть причину з Console, Network, Storage, Performance і Sources."
     },
     "sv": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1179,7 +1179,7 @@ Perfekt för iOS-utvecklare som behöver testa webbinnehållsrendering, felsöka
 """,
         "keywords": "webview,utvecklare,debug,konsol,nätverk,safari,devtools,test,inspektera,ios,javascript,html,css",
         "whatsNew": "Buggfixar och prestandaförbättringar.",
-        "promotionalText": "Ändra WebView-inställningar och testa direkt. Stöder DevTools som Console, Network, Storage och mer."
+        "promotionalText": "Se snabbt hur webbinnehåll beter sig i WKWebView och SafariVC. Hitta orsaken med Console, Network, Storage, Performance och Sources."
     },
     "no": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1220,7 +1220,7 @@ Perfekt for iOS-utviklere som trenger å teste webinnholdsrendering, feilsøke J
 """,
         "keywords": "webview,utvikler,debug,konsoll,nettverk,safari,devtools,test,inspiser,ios,javascript,html,css",
         "whatsNew": "Feilrettinger og ytelsesforbedringer.",
-        "promotionalText": "Endre WebView-innstillinger og test umiddelbart. Støtter DevTools: Console, Network, Storage og mer."
+        "promotionalText": "Se raskt hvordan webinnhold oppfører seg i WKWebView og SafariVC. Finn årsaken med Console, Network, Storage, Performance og Sources."
     },
     "da": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1261,7 +1261,7 @@ Perfekt til iOS-udviklere, der skal teste webindholdsgengivelse, debugge JavaScr
 """,
         "keywords": "webview,udvikler,debug,konsol,netværk,safari,devtools,test,inspicér,ios,javascript,html,css,browser",
         "whatsNew": "Fejlrettelser og ydelsesforbedringer.",
-        "promotionalText": "Skift WebView-indstillinger og test øjeblikkeligt. Understøtter DevTools: Console, Network, Storage og mere."
+        "promotionalText": "Se hurtigt hvordan webindhold opfører sig i WKWebView og SafariVC. Find årsagen med Console, Network, Storage, Performance og Sources."
     },
     "fi": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1302,7 +1302,7 @@ Täydellinen iOS-kehittäjille, jotka tarvitsevat web-sisällön renderöinnin t
 """,
         "keywords": "webview,kehittäjä,debug,konsoli,verkko,safari,devtools,testi,tarkasta,ios,javascript,html,css,selain",
         "whatsNew": "Virheenkorjauksia ja suorituskyvyn parannuksia.",
-        "promotionalText": "Muuta WebView-asetuksia ja testaa heti. Tukee DevToolsia: Console, Network, Storage ja muuta."
+        "promotionalText": "Näe nopeasti, miten web-sisältö toimii WKWebViewissä ja SafariVC:ssä. Jäljitä syy Console-, Network-, Storage-, Performance- ja Sources-työkaluilla."
     },
     "cs": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1343,7 +1343,7 @@ Ideální pro iOS vývojáře, kteří potřebují testovat vykreslování webov
 """,
         "keywords": "webview,vývojář,debug,konzole,síť,safari,devtools,test,inspektor,ios,javascript,html,css,prohlížeč",
         "whatsNew": "Opravy chyb a vylepšení výkonu.",
-        "promotionalText": "Změňte nastavení WebView a testujte okamžitě. Podporuje DevTools: Console, Network, Storage a další."
+        "promotionalText": "Rychle ověřte, jak se webový obsah chová ve WKWebView a SafariVC. Sledujte příčinu pomocí Console, Network, Storage, Performance a Sources."
     },
     "sk": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1384,7 +1384,7 @@ Ideálne pre iOS vývojárov, ktorí potrebujú testovať vykresľovanie webové
 """,
         "keywords": "webview,vývojár,debug,konzola,sieť,safari,devtools,test,inšpektor,ios,javascript,html,css,prehliadač",
         "whatsNew": "Opravy chýb a vylepšenia výkonu.",
-        "promotionalText": "Zmeňte nastavenia WebView a testujte okamžite. Podporuje DevTools: Console, Network, Storage a ďalšie."
+        "promotionalText": "Rýchlo overte, ako sa webový obsah správa vo WKWebView a SafariVC. Sledujte príčinu pomocou Console, Network, Storage, Performance a Sources."
     },
     "hu": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1425,7 +1425,7 @@ Tökéletes iOS fejlesztőknek, akiknek webtartalom renderelést kell tesztelni�
 """,
         "keywords": "webview,fejlesztő,debug,konzol,hálózat,safari,devtools,teszt,vizsgálat,ios,javascript,html,css",
         "whatsNew": "Hibajavítások és teljesítménybeli fejlesztések.",
-        "promotionalText": "Módosítsa a WebView beállításokat és teszteljen azonnal. Támogatja a DevTools-t: Console, Network, Storage és más."
+        "promotionalText": "Gyorsan nézze meg, hogyan viselkedik a webes tartalom WKWebViewben és SafariVC-ben. Kövesse az okot a Console, Network, Storage, Performance és Sources segítségével."
     },
     "ro": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1466,7 +1466,7 @@ Perfect pentru dezvoltatorii iOS care trebuie să testeze redarea conținutului 
 """,
         "keywords": "webview,dezvoltator,debug,consolă,rețea,safari,devtools,test,inspector,ios,javascript,html,css",
         "whatsNew": "Remedieri de erori și îmbunătățiri de performanță.",
-        "promotionalText": "Testați configurațiile WebView în timp real. DevTools încorporate: Console, Network, Storage, Performance, Sources."
+        "promotionalText": "Verificați rapid cum se comportă conținutul web în WKWebView și SafariVC. Urmăriți cauza cu Console, Network, Storage, Performance și Sources."
     },
     "hr": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1507,7 +1507,7 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 """,
         "keywords": "webview,programer,debug,konzola,mreža,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Ispravci grešaka i poboljšanja performansi.",
-        "promotionalText": "Testirajte WebView konfiguracije u stvarnom vremenu. Ugrađeni DevTools: Console, Network, Storage, Performance, Sources."
+        "promotionalText": "Brzo provjerite kako se web sadržaj ponaša u WKWebViewu i SafariVC-u. Pronađite uzrok uz Console, Network, Storage, Performance i Sources."
     },
     "el": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1548,7 +1548,7 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 """,
         "keywords": "webview,προγραμματιστής,debug,κονσόλα,δίκτυο,safari,devtools,δοκιμή,ios,javascript,html,css",
         "whatsNew": "Διορθώσεις σφαλμάτων και βελτιώσεις απόδοσης.",
-        "promotionalText": "Δοκιμάστε τις διαμορφώσεις WebView σε πραγματικό χρόνο. Ενσωματωμένα DevTools: Console, Network, Storage, Performance, Sources."
+        "promotionalText": "Δείτε γρήγορα πώς συμπεριφέρεται το web περιεχόμενο σε WKWebView και SafariVC. Εντοπίστε την αιτία με Console, Network, Storage, Performance και Sources."
     },
     "he": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1589,7 +1589,7 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 """,
         "keywords": "webview,מפתח,דיבאג,קונסול,רשת,safari,devtools,בדיקה,בדיקת,ios,javascript,html,css,דפדפן,כלי,פיתוח",
         "whatsNew": "תיקוני באגים ושיפורי ביצועים.",
-        "promotionalText": "בדוק הגדרות WebView בזמן אמת. DevTools מובנים: Console, Network, Storage, Performance, Sources."
+        "promotionalText": "בדקו במהירות כיצד תוכן אינטרנט מתנהג ב‑WKWebView וב‑SafariVC. אתרו את הגורם בעזרת Console, Network, Storage, Performance ו‑Sources."
     },
     "ca": {
         "name": "Walnut: Webview Tester & Debug",
@@ -1630,7 +1630,7 @@ Perfecte per a desenvolupadors iOS que necessiten provar el renderitzat de conti
 """,
         "keywords": "webview,desenvolupador,debug,consola,xarxa,safari,devtools,prova,inspector,ios,javascript,html,css",
         "whatsNew": "Correccions d'errors i millores de rendiment.",
-        "promotionalText": "Prova configuracions WebView en temps real. DevTools integrades: Console, Network, Storage, Performance, Sources."
+        "promotionalText": "Comproveu ràpidament com es comporta el contingut web a WKWebView i SafariVC. Localitzeu la causa amb Console, Network, Storage, Performance i Sources."
     }
 }
 
@@ -1850,7 +1850,7 @@ def update_version_localization(localization_id, locale, metadata):
                 "description": metadata.get("description", "")[:4000],
                 "keywords": metadata.get("keywords", "")[:100],
                 "whatsNew": metadata.get("whatsNew", ""),
-                "promotionalText": metadata.get("promotionalText", "")[:170],
+                "promotionalText": "Comproveu ràpidament com es comporta el contingut web a WKWebView i SafariVC. Localitzeu la causa amb Console, Network, Storage, Performance i Sources."
             }
         }
     }
@@ -1881,7 +1881,7 @@ def create_version_localization(version_id, locale, metadata):
                 "description": metadata.get("description", "")[:4000],
                 "keywords": metadata.get("keywords", "")[:100],
                 "whatsNew": metadata.get("whatsNew", ""),
-                "promotionalText": metadata.get("promotionalText", "")[:170],
+                "promotionalText": "Comproveu ràpidament com es comporta el contingut web a WKWebView i SafariVC. Localitzeu la causa amb Console, Network, Storage, Performance i Sources."
             },
             "relationships": {
                 "appStoreVersion": {
