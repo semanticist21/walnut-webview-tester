@@ -69,6 +69,7 @@ Additional Features
 • Dark mode support
 
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
+""",
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
         "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
@@ -109,6 +110,7 @@ Additional Features
 • Dark mode support
 
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
+""",
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
         "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
@@ -149,6 +151,7 @@ Additional Features
 • Dark mode support
 
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
+""",
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
         "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
@@ -189,6 +192,7 @@ Additional Features
 • Dark mode support
 
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
+""",
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
         "whatsNew": "Bug fixes and performance improvements.",
         "promotionalText": "Change WebView settings and test instantly. Supports DevTools including Console, Network, Storage, and more."
@@ -229,6 +233,7 @@ SFSafariViewController 테스트
 • 다크 모드 지원
 
 웹 콘텐츠 렌더링 테스트, JavaScript 디버깅, 네트워크 요청 분석, 접근성 준수 확인이 필요한 iOS 개발자에게 적합합니다.
+""",
         "keywords": "웹뷰,개발자,디버그,콘솔,네트워크,사파리,devtools,테스트,검사,ios,자바스크립트,html,css,쿠키,성능,접근성,개발도구,브라우저,앱,모바일,웹킷,사파리뷰",
         "whatsNew": "버그 수정 및 성능 개선.",
         "promotionalText": "WebView 설정을 바꾸고 바로 테스트할 수 있습니다. Console, Network, Storage 등 DevTools를 지원합니다."
@@ -269,6 +274,7 @@ SFSafariViewControllerテスト
 • ダークモードサポート
 
 Webコンテンツのレンダリングテスト、JavaScriptデバッグ、ネットワークリクエスト分析、アクセシビリティ準拠の確認が必要なiOS開発者に最適です。
+""",
         "keywords": "webview,開発者,デバッグ,コンソール,ネットワーク,safari,devtools,テスト,検査,ios,javascript,html,css,開発ツール,ブラウザ,アプリ",
         "whatsNew": "バグ修正とパフォーマンス改善。",
         "promotionalText": "WebView設定を変更してすぐにテストできます。Console、Network、StorageなどDevToolsをサポートしています。"
@@ -309,6 +315,7 @@ SFSafariViewController测试
 • 深色模式支持
 
 非常适合需要测试网页内容渲染、调试JavaScript、分析网络请求和确保可访问性合规的iOS开发者。
+""",
         "keywords": "webview,开发者,调试,控制台,网络,safari,devtools,测试,检查,ios,javascript,html,css,cookie,性能,开发工具,浏览器,应用,工具",
         "whatsNew": "错误修复和性能改进。",
         "promotionalText": "更改WebView设置后可立即测试。支持Console、Network、Storage等DevTools。"
@@ -349,6 +356,7 @@ SFSafariViewController測試
 • 深色模式支援
 
 非常適合需要測試網頁內容呈現、除錯JavaScript、分析網路請求和確保無障礙合規的iOS開發者。
+""",
         "keywords": "webview,開發者,除錯,控制台,網路,safari,devtools,測試,檢查,ios,javascript,html,css,cookie,效能,開發工具,瀏覽器,應用,工具",
         "whatsNew": "錯誤修復和效能改善。",
         "promotionalText": "更改WebView設定後可立即測試。支援Console、Network、Storage等DevTools。"
@@ -389,6 +397,7 @@ Zusätzliche Funktionen
 • Dunkelmodus-Unterstützung
 
 Perfekt für iOS-Entwickler, die Web-Content-Rendering testen, JavaScript debuggen, Netzwerkanfragen analysieren und Barrierefreiheit sicherstellen müssen.
+""",
         "keywords": "webview,entwickler,debug,konsole,netzwerk,safari,devtools,test,inspektor,ios,javascript,html,browser",
         "whatsNew": "Fehlerbehebungen und Leistungsverbesserungen.",
         "promotionalText": "Ändern Sie WebView-Einstellungen und testen Sie sofort. Unterstützt DevTools wie Console, Network, Storage und mehr."
@@ -429,6 +438,7 @@ Fonctionnalités supplémentaires
 • Support du mode sombre
 
 Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, déboguer JavaScript, analyser les requêtes réseau et assurer la conformité d'accessibilité.
+""",
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
         "whatsNew": "Corrections de bugs et améliorations de performances.",
         "promotionalText": "Modifiez les paramètres WebView et testez instantanément. Prend en charge DevTools avec Console, Network, Storage et plus."
@@ -469,6 +479,7 @@ Fonctionnalités supplémentaires
 • Support du mode sombre
 
 Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, déboguer JavaScript, analyser les requêtes réseau et assurer la conformité d'accessibilité.
+""",
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
         "whatsNew": "Corrections de bugs et améliorations de performances.",
         "promotionalText": "Modifiez les paramètres WebView et testez instantanément. Prend en charge DevTools avec Console, Network, Storage et plus."
@@ -509,6 +520,7 @@ Características adicionales
 • Soporte de modo oscuro
 
 Perfecto para desarrolladores iOS que necesitan probar el renderizado de contenido web, depurar JavaScript, analizar solicitudes de red y asegurar el cumplimiento de accesibilidad.
+""",
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
         "whatsNew": "Correcciones de errores y mejoras de rendimiento.",
         "promotionalText": "Cambie la configuración de WebView y pruebe al instante. Compatible con DevTools: Console, Network, Storage y más."
@@ -549,6 +561,7 @@ Características adicionales
 • Soporte de modo oscuro
 
 Perfecto para desarrolladores iOS que necesitan probar el renderizado de contenido web, depurar JavaScript, analizar solicitudes de red y asegurar el cumplimiento de accesibilidad.
+""",
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
         "whatsNew": "Correcciones de errores y mejoras de rendimiento.",
         "promotionalText": "Cambie la configuración de WebView y pruebe al instante. Compatible con DevTools: Console, Network, Storage y más."
@@ -589,6 +602,7 @@ Funzionalità aggiuntive
 • Supporto modalità scura
 
 Perfetto per sviluppatori iOS che devono testare il rendering di contenuti web, debuggare JavaScript, analizzare richieste di rete e garantire la conformità all'accessibilità.
+""",
         "keywords": "webview,sviluppatore,debug,console,rete,safari,devtools,test,ispettore,ios,javascript,html,css",
         "whatsNew": "Correzioni di bug e miglioramenti delle prestazioni.",
         "promotionalText": "Modifica le impostazioni WebView e testa immediatamente. Supporta DevTools come Console, Network, Storage e altro."
@@ -629,6 +643,7 @@ Recursos adicionais
 • Suporte ao modo escuro
 
 Perfeito para desenvolvedores iOS que precisam testar renderização de conteúdo web, depurar JavaScript, analisar requisições de rede e garantir conformidade de acessibilidade.
+""",
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
         "whatsNew": "Correções de bugs e melhorias de desempenho.",
         "promotionalText": "Altere as configurações do WebView e teste instantaneamente. Suporta DevTools com Console, Network, Storage e mais."
@@ -669,6 +684,7 @@ Recursos adicionais
 • Suporte ao modo escuro
 
 Perfeito para desenvolvedores iOS que precisam testar renderização de conteúdo web, depurar JavaScript, analisar requisições de rede e garantir conformidade de acessibilidade.
+""",
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
         "whatsNew": "Correções de bugs e melhorias de desempenho.",
         "promotionalText": "Altere as configurações do WebView e teste instantaneamente. Suporta DevTools com Console, Network, Storage e mais."
@@ -709,6 +725,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 • Поддержка тёмного режима
 
 Идеально подходит для iOS-разработчиков, которым нужно тестировать рендеринг веб-контента, отлаживать JavaScript, анализировать сетевые запросы и обеспечивать соответствие требованиям доступности.
+""",
         "keywords": "webview,разработчик,отладка,консоль,сеть,safari,devtools,тест,инспектор,ios,javascript,html,css",
         "whatsNew": "Исправления ошибок и улучшения производительности.",
         "promotionalText": "Измените настройки WebView и тестируйте мгновенно. Поддерживает DevTools: Console, Network, Storage и другие."
@@ -749,6 +766,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 • دعم الوضع الداكن
 
 مثالية لمطوري iOS الذين يحتاجون إلى اختبار عرض محتوى الويب وتصحيح أخطاء JavaScript وتحليل طلبات الشبكة وضمان الامتثال لإمكانية الوصول.
+""",
         "keywords": "webview,مطور,تصحيح,وحدة التحكم,شبكة,safari,devtools,اختبار,فحص,ios,javascript,html,css,متصفح,أداة",
         "whatsNew": "إصلاحات الأخطاء وتحسينات الأداء.",
         "promotionalText": "غيّر إعدادات WebView واختبرها فوراً. يدعم DevTools: Console وNetwork وStorage والمزيد."
@@ -789,6 +807,7 @@ SFSafariViewController टेस्टिंग
 • डार्क मोड सपोर्ट
 
 iOS डेवलपर्स के लिए परफेक्ट जिन्हें वेब कंटेंट रेंडरिंग टेस्ट करना है, JavaScript डीबग करना है, नेटवर्क रिक्वेस्ट एनालाइज़ करना है और एक्सेसिबिलिटी कंप्लायंस सुनिश्चित करना है।
+""",
         "keywords": "webview,डेवलपर,डीबग,कंसोल,नेटवर्क,safari,devtools,टेस्ट,इंस्पेक्ट,ios,javascript,html,css,ब्राउज़र",
         "whatsNew": "बग फिक्स और प्रदर्शन सुधार।",
         "promotionalText": "WebView सेटिंग्स बदलें और तुरंत टेस्ट करें। Console, Network, Storage आदि DevTools का समर्थन करता है।"
@@ -829,6 +848,7 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 • รองรับโหมดมืด
 
 เหมาะสำหรับนักพัฒนา iOS ที่ต้องการทดสอบการแสดงผลเนื้อหาเว็บ ดีบัก JavaScript วิเคราะห์คำขอเครือข่าย และรับรองการปฏิบัติตามการเข้าถึง
+""",
         "keywords": "webview,นักพัฒนา,ดีบัก,คอนโซล,เครือข่าย,safari,devtools,ทดสอบ,ตรวจสอบ,ios,javascript,html,css",
         "whatsNew": "แก้ไขข้อบกพร่องและปรับปรุงประสิทธิภาพ",
         "promotionalText": "เปลี่ยนการตั้งค่า WebView และทดสอบได้ทันที รองรับ DevTools เช่น Console, Network, Storage และอื่นๆ"
@@ -869,6 +889,7 @@ Tính năng bổ sung
 • Hỗ trợ chế độ tối
 
 Hoàn hảo cho các nhà phát triển iOS cần kiểm thử hiển thị nội dung web, gỡ lỗi JavaScript, phân tích yêu cầu mạng và đảm bảo tuân thủ khả năng truy cập.
+""",
         "keywords": "webview,lập trình,debug,console,mạng,safari,devtools,kiểm thử,kiểm tra,ios,javascript,html,css",
         "whatsNew": "Sửa lỗi và cải thiện hiệu suất.",
         "promotionalText": "Thay đổi cài đặt WebView và kiểm tra ngay. Hỗ trợ DevTools: Console, Network, Storage và nhiều hơn nữa."
@@ -909,6 +930,7 @@ Fitur Tambahan
 • Dukungan mode gelap
 
 Sempurna untuk pengembang iOS yang perlu menguji rendering konten web, debug JavaScript, menganalisis permintaan jaringan, dan memastikan kepatuhan aksesibilitas.
+""",
         "keywords": "webview,developer,debug,console,jaringan,safari,devtools,tes,inspeksi,ios,javascript,html,css",
         "whatsNew": "Perbaikan bug dan peningkatan kinerja.",
         "promotionalText": "Ubah pengaturan WebView dan uji secara instan. Mendukung DevTools: Console, Network, Storage, dan lainnya."
@@ -949,6 +971,7 @@ Ciri-ciri Tambahan
 • Sokongan mod gelap
 
 Sempurna untuk pembangun iOS yang perlu menguji pemaparan kandungan web, nyahpepijat JavaScript, menganalisis permintaan rangkaian, dan memastikan pematuhan kebolehcapaian.
+""",
         "keywords": "webview,pembangun,debug,konsol,rangkaian,safari,devtools,uji,periksa,ios,javascript,html,css,pelayar",
         "whatsNew": "Pembetulan pepijat dan penambahbaikan prestasi.",
         "promotionalText": "Tukar tetapan WebView dan uji serta-merta. Menyokong DevTools: Console, Network, Storage dan banyak lagi."
@@ -989,6 +1012,7 @@ Extra functies
 • Ondersteuning voor donkere modus
 
 Perfect voor iOS-ontwikkelaars die webcontent-rendering moeten testen, JavaScript moeten debuggen, netwerkverzoeken moeten analyseren en toegankelijkheidsconformiteit moeten waarborgen.
+""",
         "keywords": "webview,ontwikkelaar,debug,console,netwerk,safari,devtools,test,inspecteer,ios,javascript,html,css",
         "whatsNew": "Bugfixes en prestatieverbeteringen.",
         "promotionalText": "Wijzig WebView-instellingen en test direct. Ondersteunt DevTools zoals Console, Network, Storage en meer."
@@ -1029,6 +1053,7 @@ Dodatkowe funkcje
 • Obsługa trybu ciemnego
 
 Idealne dla programistów iOS, którzy muszą testować renderowanie treści webowych, debugować JavaScript, analizować żądania sieciowe i zapewniać zgodność z dostępnością.
+""",
         "keywords": "webview,programista,debug,konsola,sieć,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Poprawki błędów i ulepszenia wydajności.",
         "promotionalText": "Zmień ustawienia WebView i testuj natychmiast. Obsługuje DevTools: Console, Network, Storage i więcej."
@@ -1069,6 +1094,7 @@ Ek Özellikler
 • Karanlık mod desteği
 
 Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ isteklerini analiz etmesi ve erişilebilirlik uyumluluğunu sağlaması gereken iOS geliştiricileri için mükemmel.
+""",
         "keywords": "webview,geliştirici,debug,konsol,ağ,safari,devtools,test,denetim,ios,javascript,html,css,tarayıcı",
         "whatsNew": "Hata düzeltmeleri ve performans iyileştirmeleri.",
         "promotionalText": "WebView ayarlarını değiştirin ve anında test edin. Console, Network, Storage ve daha fazlasıyla DevTools'u destekler."
@@ -1109,6 +1135,7 @@ Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ iste
 • Підтримка темного режиму
 
 Ідеально підходить для iOS-розробників, яким потрібно тестувати рендеринг веб-контенту, налагоджувати JavaScript, аналізувати мережеві запити та забезпечувати відповідність вимогам доступності.
+""",
         "keywords": "webview,розробник,налагодження,консоль,мережа,safari,devtools,тест,інспектор,ios,javascript,html",
         "whatsNew": "Виправлення помилок та покращення продуктивності.",
         "promotionalText": "Змініть налаштування WebView і тестуйте миттєво. Підтримує DevTools: Console, Network, Storage та інші."
@@ -1149,6 +1176,7 @@ Ytterligare funktioner
 • Stöd för mörkt läge
 
 Perfekt för iOS-utvecklare som behöver testa webbinnehållsrendering, felsöka JavaScript, analysera nätverksförfrågningar och säkerställa tillgänglighetsefterlevnad.
+""",
         "keywords": "webview,utvecklare,debug,konsol,nätverk,safari,devtools,test,inspektera,ios,javascript,html,css",
         "whatsNew": "Buggfixar och prestandaförbättringar.",
         "promotionalText": "Ändra WebView-inställningar och testa direkt. Stöder DevTools som Console, Network, Storage och mer."
@@ -1189,6 +1217,7 @@ Ytterligere funksjoner
 • Støtte for mørk modus
 
 Perfekt for iOS-utviklere som trenger å teste webinnholdsrendering, feilsøke JavaScript, analysere nettverksforespørsler og sikre tilgjengelighetsoverholdelse.
+""",
         "keywords": "webview,utvikler,debug,konsoll,nettverk,safari,devtools,test,inspiser,ios,javascript,html,css",
         "whatsNew": "Feilrettinger og ytelsesforbedringer.",
         "promotionalText": "Endre WebView-innstillinger og test umiddelbart. Støtter DevTools: Console, Network, Storage og mer."
@@ -1229,6 +1258,7 @@ Yderligere funktioner
 • Understøttelse af mørk tilstand
 
 Perfekt til iOS-udviklere, der skal teste webindholdsgengivelse, debugge JavaScript, analysere netværksanmodninger og sikre tilgængelighedsoverholdelse.
+""",
         "keywords": "webview,udvikler,debug,konsol,netværk,safari,devtools,test,inspicér,ios,javascript,html,css,browser",
         "whatsNew": "Fejlrettelser og ydelsesforbedringer.",
         "promotionalText": "Skift WebView-indstillinger og test øjeblikkeligt. Understøtter DevTools: Console, Network, Storage og mere."
@@ -1269,6 +1299,7 @@ Lisäominaisuudet
 • Tumman tilan tuki
 
 Täydellinen iOS-kehittäjille, jotka tarvitsevat web-sisällön renderöinnin testausta, JavaScript-virheenkorjausta, verkkopyyntöjen analysointia ja saavutettavuusvaatimusten varmistamista.
+""",
         "keywords": "webview,kehittäjä,debug,konsoli,verkko,safari,devtools,testi,tarkasta,ios,javascript,html,css,selain",
         "whatsNew": "Virheenkorjauksia ja suorituskyvyn parannuksia.",
         "promotionalText": "Muuta WebView-asetuksia ja testaa heti. Tukee DevToolsia: Console, Network, Storage ja muuta."
@@ -1309,6 +1340,7 @@ Další funkce
 • Podpora tmavého režimu
 
 Ideální pro iOS vývojáře, kteří potřebují testovat vykreslování webového obsahu, debugovat JavaScript, analyzovat síťové požadavky a zajistit soulad s přístupností.
+""",
         "keywords": "webview,vývojář,debug,konzole,síť,safari,devtools,test,inspektor,ios,javascript,html,css,prohlížeč",
         "whatsNew": "Opravy chyb a vylepšení výkonu.",
         "promotionalText": "Změňte nastavení WebView a testujte okamžitě. Podporuje DevTools: Console, Network, Storage a další."
@@ -1349,6 +1381,7 @@ Vývojárske nástroje
 • Podpora tmavého režimu
 
 Ideálne pre iOS vývojárov, ktorí potrebujú testovať vykresľovanie webového obsahu, debugovať JavaScript, analyzovať sieťové požiadavky a zabezpečiť súlad s prístupnosťou.
+""",
         "keywords": "webview,vývojár,debug,konzola,sieť,safari,devtools,test,inšpektor,ios,javascript,html,css,prehliadač",
         "whatsNew": "Opravy chýb a vylepšenia výkonu.",
         "promotionalText": "Zmeňte nastavenia WebView a testujte okamžite. Podporuje DevTools: Console, Network, Storage a ďalšie."
@@ -1389,6 +1422,7 @@ További funkciók
 • Sötét mód támogatás
 
 Tökéletes iOS fejlesztőknek, akiknek webtartalom renderelést kell tesztelniük, JavaScript-et debugolniuk, hálózati kéréseket elemezniük és akadálymentességi megfelelőséget biztosítaniuk.
+""",
         "keywords": "webview,fejlesztő,debug,konzol,hálózat,safari,devtools,teszt,vizsgálat,ios,javascript,html,css",
         "whatsNew": "Hibajavítások és teljesítménybeli fejlesztések.",
         "promotionalText": "Módosítsa a WebView beállításokat és teszteljen azonnal. Támogatja a DevTools-t: Console, Network, Storage és más."
@@ -1429,6 +1463,7 @@ Caracteristici suplimentare
 • Suport mod întunecat
 
 Perfect pentru dezvoltatorii iOS care trebuie să testeze redarea conținutului web, să depaneze JavaScript, să analizeze cererile de rețea și să asigure conformitatea cu accesibilitatea.
+""",
         "keywords": "webview,dezvoltator,debug,consolă,rețea,safari,devtools,test,inspector,ios,javascript,html,css",
         "whatsNew": "Remedieri de erori și îmbunătățiri de performanță.",
         "promotionalText": "Testați configurațiile WebView în timp real. DevTools încorporate: Console, Network, Storage, Performance, Sources."
@@ -1469,6 +1504,7 @@ Dodatne značajke
 • Podrška za tamni način
 
 Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, debugirati JavaScript, analizirati mrežne zahtjeve i osigurati usklađenost s pristupačnošću.
+""",
         "keywords": "webview,programer,debug,konzola,mreža,safari,devtools,test,inspektor,ios,javascript,html,css",
         "whatsNew": "Ispravci grešaka i poboljšanja performansi.",
         "promotionalText": "Testirajte WebView konfiguracije u stvarnom vremenu. Ugrađeni DevTools: Console, Network, Storage, Performance, Sources."
@@ -1509,6 +1545,7 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 • Υποστήριξη σκοτεινής λειτουργίας
 
 Ιδανικό για iOS προγραμματιστές που χρειάζεται να δοκιμάσουν απόδοση περιεχομένου web, να κάνουν debug σε JavaScript, να αναλύσουν αιτήματα δικτύου και να εξασφαλίσουν συμμόρφωση προσβασιμότητας.
+""",
         "keywords": "webview,προγραμματιστής,debug,κονσόλα,δίκτυο,safari,devtools,δοκιμή,ios,javascript,html,css",
         "whatsNew": "Διορθώσεις σφαλμάτων και βελτιώσεις απόδοσης.",
         "promotionalText": "Δοκιμάστε τις διαμορφώσεις WebView σε πραγματικό χρόνο. Ενσωματωμένα DevTools: Console, Network, Storage, Performance, Sources."
@@ -1549,6 +1586,7 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 • תמיכה במצב כהה
 
 מושלם למפתחי iOS שצריכים לבדוק רינדור תוכן אינטרנט, לדבג JavaScript, לנתח בקשות רשת ולהבטיח עמידה בדרישות נגישות.
+""",
         "keywords": "webview,מפתח,דיבאג,קונסול,רשת,safari,devtools,בדיקה,בדיקת,ios,javascript,html,css,דפדפן,כלי,פיתוח",
         "whatsNew": "תיקוני באגים ושיפורי ביצועים.",
         "promotionalText": "בדוק הגדרות WebView בזמן אמת. DevTools מובנים: Console, Network, Storage, Performance, Sources."
@@ -1589,6 +1627,7 @@ Característiques addicionals
 • Suport de mode fosc
 
 Perfecte per a desenvolupadors iOS que necessiten provar el renderitzat de contingut web, depurar JavaScript, analitzar peticions de xarxa i assegurar el compliment d'accessibilitat.
+""",
         "keywords": "webview,desenvolupador,debug,consola,xarxa,safari,devtools,prova,inspector,ios,javascript,html,css",
         "whatsNew": "Correccions d'errors i millores de rendiment.",
         "promotionalText": "Prova configuracions WebView en temps real. DevTools integrades: Console, Network, Storage, Performance, Sources."
