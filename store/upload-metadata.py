@@ -48,10 +48,9 @@ WKWebView Testing
 • Viewport and device emulation
 
 SFSafariViewController Testing
-• Safari cookie/session sharing
-• Content Blocker support
-• Reader Mode configuration
-• Safari extension compatibility
+• Native Safari experience with content blockers
+• Reader mode and responsive size control
+• Customizable bar colors and dismiss button styles
 
 Developer Tools
 • Console: Capture console.log with %c CSS styling support
@@ -89,10 +88,9 @@ WKWebView Testing
 • Viewport and device emulation
 
 SFSafariViewController Testing
-• Safari cookie/session sharing
-• Content Blocker support
-• Reader Mode configuration
-• Safari extension compatibility
+• Native Safari experience with content blockers
+• Reader mode and responsive size control
+• Customizable bar colors and dismiss button styles
 
 Developer Tools
 • Console: Capture console.log with %c CSS styling support
@@ -130,10 +128,9 @@ WKWebView Testing
 • Viewport and device emulation
 
 SFSafariViewController Testing
-• Safari cookie/session sharing
-• Content Blocker support
-• Reader Mode configuration
-• Safari extension compatibility
+• Native Safari experience with content blockers
+• Reader mode and responsive size control
+• Customizable bar colors and dismiss button styles
 
 Developer Tools
 • Console: Capture console.log with %c CSS styling support
@@ -171,10 +168,9 @@ WKWebView Testing
 • Viewport and device emulation
 
 SFSafariViewController Testing
-• Safari cookie/session sharing
-• Content Blocker support
-• Reader Mode configuration
-• Safari extension compatibility
+• Native Safari experience with content blockers
+• Reader mode and responsive size control
+• Customizable bar colors and dismiss button styles
 
 Developer Tools
 • Console: Capture console.log with %c CSS styling support
@@ -212,10 +208,9 @@ WKWebView 테스트
 • 뷰포트 및 디바이스 에뮬레이션
 
 SFSafariViewController 테스트
-• Safari 쿠키/세션 공유
-• Content Blocker 지원
-• Reader Mode 설정
-• Safari 확장 프로그램 호환
+• 콘텐츠 차단기를 포함한 네이티브 Safari 경험
+• Reader Mode 및 반응형 크기 조절
+• 바 색상 및 닫기 버튼 스타일 커스터마이징
 
 개발자 도구
 • Console: %c CSS 스타일링을 지원하는 console.log 캡처
@@ -253,10 +248,9 @@ WKWebViewテスト
 • ビューポートとデバイスエミュレーション
 
 SFSafariViewControllerテスト
-• Safariクッキー/セッション共有
-• Content Blockerサポート
-• Reader Mode設定
-• Safari拡張機能との互換性
+• コンテンツブロッカーを含むネイティブSafari体験
+• Reader Modeとレスポンシブサイズ調整
+• バーの色と閉じるボタンスタイルのカスタマイズ
 
 開発者ツール
 • Console：%c CSSスタイリングをサポートするconsole.logキャプチャ
@@ -294,10 +288,9 @@ WKWebView测试
 • 视口和设备模拟
 
 SFSafariViewController测试
-• Safari Cookie/会话共享
-• Content Blocker支持
-• Reader Mode配置
-• Safari扩展兼容性
+• 支持内容拦截器的原生Safari体验
+• Reader Mode和响应式尺寸控制
+• 可自定义栏颜色和关闭按钮样式
 
 开发者工具
 • Console：支持%c CSS样式的console.log捕获
@@ -335,10 +328,9 @@ WKWebView測試
 • 視口和裝置模擬
 
 SFSafariViewController測試
-• Safari Cookie/工作階段共享
-• Content Blocker支援
-• Reader Mode配置
-• Safari擴充功能相容性
+• 支援內容阻擋器的原生Safari體驗
+• Reader Mode和響應式尺寸控制
+• 可自訂列顏色和關閉按鈕樣式
 
 開發者工具
 • Console：支援%c CSS樣式的console.log擷取
@@ -376,10 +368,9 @@ WKWebView-Tests
 • Viewport- und Geräte-Emulation
 
 SFSafariViewController-Tests
-• Safari-Cookie-/Sitzungsfreigabe
-• Content Blocker-Unterstützung
-• Reader Mode-Konfiguration
-• Safari-Erweiterungskompatibilität
+• Native Safari-Erfahrung mit Content Blockern
+• Reader Mode und responsive Größenanpassung
+• Anpassbare Leistenfarben und Schließen-Schaltflächen
 
 Entwicklertools
 • Console: console.log-Erfassung mit %c CSS-Styling-Unterstützung
@@ -417,10 +408,9 @@ Tests WKWebView
 • Émulation de viewport et d'appareil
 
 Tests SFSafariViewController
-• Partage de cookies/sessions Safari
-• Support Content Blocker
-• Configuration Reader Mode
-• Compatibilité extensions Safari
+• Expérience Safari native avec bloqueurs de contenu
+• Reader Mode et contrôle de taille réactif
+• Couleurs de barre et styles de bouton personnalisables
 
 Outils de développement
 • Console : Capture console.log avec support du style CSS %c
@@ -458,10 +448,9 @@ Tests WKWebView
 • Émulation de viewport et d'appareil
 
 Tests SFSafariViewController
-• Partage de cookies/sessions Safari
-• Support Content Blocker
-• Configuration Reader Mode
-• Compatibilité extensions Safari
+• Expérience Safari native avec bloqueurs de contenu
+• Reader Mode et contrôle de taille réactif
+• Couleurs de barre et styles de bouton personnalisables
 
 Outils de développement
 • Console : Capture console.log avec support du style CSS %c
@@ -499,10 +488,9 @@ Pruebas de WKWebView
 • Emulación de viewport y dispositivo
 
 Pruebas de SFSafariViewController
-• Compartir cookies/sesiones de Safari
-• Soporte de Content Blocker
-• Configuración de Reader Mode
-• Compatibilidad con extensiones de Safari
+• Experiencia Safari nativa con bloqueadores de contenido
+• Reader Mode y control de tamaño responsivo
+• Colores de barra y estilos de botón personalizables
 
 Herramientas de desarrollo
 • Console: Captura de console.log con soporte de estilo CSS %c
@@ -540,10 +528,9 @@ Pruebas de WKWebView
 • Emulación de viewport y dispositivo
 
 Pruebas de SFSafariViewController
-• Compartir cookies/sesiones de Safari
-• Soporte de Content Blocker
-• Configuración de Reader Mode
-• Compatibilidad con extensiones de Safari
+• Experiencia Safari nativa con bloqueadores de contenido
+• Reader Mode y control de tamaño responsivo
+• Colores de barra y estilos de botón personalizables
 
 Herramientas de desarrollo
 • Console: Captura de console.log con soporte de estilo CSS %c
@@ -581,9 +568,9 @@ Test WKWebView
 • Emulazione viewport e dispositivo
 
 Test SFSafariViewController
-• Condivisione cookie/sessioni Safari
-• Supporto Content Blocker
-• Configurazione Reader Mode
+• Esperienza Safari nativa con blocco contenuti
+• Reader Mode e controllo dimensioni reattivo
+• Colori della barra e stili dei pulsanti personalizzabili
 • Compatibilità estensioni Safari
 
 Strumenti per sviluppatori
@@ -622,9 +609,9 @@ Testes de WKWebView
 • Emulação de viewport e dispositivo
 
 Testes de SFSafariViewController
-• Compartilhamento de cookies/sessões do Safari
-• Suporte a Content Blocker
-• Configuração do Reader Mode
+• Experiência Safari nativa com bloqueadores de conteúdo
+• Reader Mode e controle de tamanho responsivo
+• Cores da barra e estilos de botão personalizáveis
 • Compatibilidade com extensões do Safari
 
 Ferramentas de desenvolvedor
@@ -663,9 +650,9 @@ Testes de WKWebView
 • Emulação de viewport e dispositivo
 
 Testes de SFSafariViewController
-• Compartilhamento de cookies/sessões do Safari
-• Suporte a Content Blocker
-• Configuração do Reader Mode
+• Experiência Safari nativa com bloqueadores de conteúdo
+• Reader Mode e controle de tamanho responsivo
+• Cores da barra e estilos de botão personalizáveis
 • Compatibilidade com extensões do Safari
 
 Ferramentas de desenvolvedor
@@ -704,10 +691,9 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 • Эмуляция viewport и устройства
 
 Тестирование SFSafariViewController
-• Общий доступ к cookies/сессиям Safari
-• Поддержка Content Blocker
-• Настройка Reader Mode
-• Совместимость с расширениями Safari
+• Нативный опыт Safari с блокировщиками контента
+• Reader Mode и адаптивное управление размером
+• Настраиваемые цвета панели и стили кнопок
 
 Инструменты разработчика
 • Console: Захват console.log с поддержкой стилей CSS %c
@@ -745,10 +731,9 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 • محاكاة منفذ العرض والجهاز
 
 اختبار SFSafariViewController
-• مشاركة ملفات تعريف الارتباط/الجلسات في Safari
-• دعم حاجب المحتوى
-• إعدادات وضع القارئ
-• توافق إضافات Safari
+• تجربة Safari الأصلية مع حاجب المحتوى
+• وضع القارئ والتحكم في الحجم المتجاوب
+• ألوان الشريط وأنماط الأزرار القابلة للتخصيص
 
 أدوات المطور
 • Console: التقاط console.log مع دعم تنسيق CSS %c
@@ -786,10 +771,9 @@ WKWebView टेस्टिंग
 • व्यूपोर्ट और डिवाइस एमुलेशन
 
 SFSafariViewController टेस्टिंग
-• Safari कुकी/सेशन शेयरिंग
-• Content Blocker सपोर्ट
-• Reader Mode कॉन्फ़िगरेशन
-• Safari एक्सटेंशन संगतता
+• कंटेंट ब्लॉकर्स के साथ नेटिव Safari अनुभव
+• Reader Mode और रिस्पॉन्सिव साइज़ कंट्रोल
+• कस्टमाइज़ेबल बार कलर और बटन स्टाइल
 
 डेवलपर टूल्स
 • Console: %c CSS स्टाइलिंग सपोर्ट के साथ console.log कैप्चर
@@ -827,10 +811,9 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 • การจำลอง Viewport และอุปกรณ์
 
 การทดสอบ SFSafariViewController
-• การแชร์ Cookie/เซสชัน Safari
-• รองรับ Content Blocker
-• การกำหนดค่า Reader Mode
-• ความเข้ากันได้กับส่วนขยาย Safari
+• ประสบการณ์ Safari ดั้งเดิมพร้อม Content Blockers
+• Reader Mode และการควบคุมขนาดแบบ Responsive
+• สีแถบและสไตล์ปุ่มที่ปรับแต่งได้
 
 เครื่องมือสำหรับนักพัฒนา
 • Console: จับ console.log พร้อมรองรับการจัดรูปแบบ CSS %c
@@ -868,10 +851,9 @@ Kiểm thử WKWebView
 • Giả lập viewport và thiết bị
 
 Kiểm thử SFSafariViewController
-• Chia sẻ cookie/phiên Safari
-• Hỗ trợ Content Blocker
-• Cấu hình Reader Mode
-• Tương thích tiện ích mở rộng Safari
+• Trải nghiệm Safari gốc với trình chặn nội dung
+• Reader Mode và điều khiển kích thước responsive
+• Màu thanh và kiểu nút có thể tùy chỉnh
 
 Công cụ phát triển
 • Console: Ghi nhận console.log với hỗ trợ định dạng CSS %c
@@ -909,10 +891,9 @@ Pengujian WKWebView
 • Emulasi viewport dan perangkat
 
 Pengujian SFSafariViewController
-• Berbagi cookie/sesi Safari
-• Dukungan Content Blocker
-• Konfigurasi Reader Mode
-• Kompatibilitas ekstensi Safari
+• Pengalaman Safari native dengan pemblokir konten
+• Reader Mode dan kontrol ukuran responsif
+• Warna bar dan gaya tombol yang dapat disesuaikan
 
 Alat Pengembang
 • Console: Tangkap console.log dengan dukungan styling CSS %c
@@ -950,10 +931,9 @@ Pengujian WKWebView
 • Emulasi viewport dan peranti
 
 Pengujian SFSafariViewController
-• Perkongsian kuki/sesi Safari
-• Sokongan Content Blocker
-• Konfigurasi Reader Mode
-• Keserasian sambungan Safari
+• Pengalaman Safari asli dengan penyekat kandungan
+• Reader Mode dan kawalan saiz responsif
+• Warna bar dan gaya butang yang boleh disesuaikan
 
 Alat Pembangun
 • Console: Tangkap console.log dengan sokongan gaya CSS %c
@@ -991,10 +971,9 @@ WKWebView-testen
 • Viewport- en apparaatemulatie
 
 SFSafariViewController-testen
-• Safari-cookie-/sessiedeling
-• Content Blocker-ondersteuning
-• Reader Mode-configuratie
-• Safari-extensiecompatibiliteit
+• Native Safari-ervaring met contentblockers
+• Reader Mode en responsieve groottecontrole
+• Aanpasbare balkkleuren en knopstijlen
 
 Ontwikkelaarstools
 • Console: console.log-vastlegging met %c CSS-styling-ondersteuning
@@ -1032,10 +1011,9 @@ Testowanie WKWebView
 • Emulacja viewport i urządzenia
 
 Testowanie SFSafariViewController
-• Udostępnianie ciasteczek/sesji Safari
-• Obsługa Content Blocker
-• Konfiguracja Reader Mode
-• Kompatybilność z rozszerzeniami Safari
+• Natywne doświadczenie Safari z blokerami treści
+• Reader Mode i responsywna kontrola rozmiaru
+• Konfigurowalne kolory paska i style przycisków
 
 Narzędzia deweloperskie
 • Console: Przechwytywanie console.log z obsługą stylowania CSS %c
@@ -1073,10 +1051,9 @@ WKWebView Testi
 • Viewport ve cihaz emülasyonu
 
 SFSafariViewController Testi
-• Safari çerez/oturum paylaşımı
-• Content Blocker desteği
-• Reader Mode yapılandırması
-• Safari uzantı uyumluluğu
+• İçerik engelleyicilerle yerel Safari deneyimi
+• Reader Mode ve duyarlı boyut kontrolü
+• Özelleştirilebilir çubuk renkleri ve düğme stilleri
 
 Geliştirici Araçları
 • Console: %c CSS stilleme desteğiyle console.log yakalama
@@ -1114,10 +1091,9 @@ Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ iste
 • Емуляція viewport та пристрою
 
 Тестування SFSafariViewController
-• Спільний доступ до cookies/сесій Safari
-• Підтримка Content Blocker
-• Налаштування Reader Mode
-• Сумісність з розширеннями Safari
+• Нативний досвід Safari з блокувальниками контенту
+• Reader Mode та адаптивне керування розміром
+• Налаштовувані кольори панелі та стилі кнопок
 
 Інструменти розробника
 • Console: Захоплення console.log з підтримкою стилів CSS %c
@@ -1155,10 +1131,9 @@ WKWebView-testning
 • Viewport- och enhetsemulering
 
 SFSafariViewController-testning
-• Safari-cookie-/sessionsdelning
-• Content Blocker-stöd
-• Reader Mode-konfiguration
-• Safari-tilläggskompatibilitet
+• Native Safari-upplevelse med innehållsblockerare
+• Reader Mode och responsiv storlekskontroll
+• Anpassningsbara fältfärger och knappformat
 
 Utvecklarverktyg
 • Console: console.log-fångst med %c CSS-stilstöd
@@ -1196,10 +1171,9 @@ WKWebView-testing
 • Viewport- og enhetsemulering
 
 SFSafariViewController-testing
-• Safari-informasjonskapsler-/sesjonsdeling
-• Content Blocker-støtte
-• Reader Mode-konfigurasjon
-• Safari-utvidelseskompatibilitet
+• Native Safari-opplevelse med innholdsblokkere
+• Reader Mode og responsiv størrelseskontroll
+• Tilpassbare feltfarger og knappstiler
 
 Utviklerverktøy
 • Console: console.log-fangst med %c CSS-stilstøtte
@@ -1237,10 +1211,9 @@ WKWebView-test
 • Viewport- og enhedsemulering
 
 SFSafariViewController-test
-• Safari-cookie-/sessionsdeling
-• Content Blocker-understøttelse
-• Reader Mode-konfiguration
-• Safari-udvidelseskompatibilitet
+• Native Safari-oplevelse med indholdsblokkere
+• Reader Mode og responsiv størrelseskontrol
+• Tilpasselige bjælkefarver og knapstile
 
 Udviklerværktøjer
 • Console: console.log-optagelse med %c CSS-stilunderstøttelse
@@ -1278,10 +1251,9 @@ WKWebView-testaus
 • Viewport- ja laiteemulointi
 
 SFSafariViewController-testaus
-• Safari-eväste-/istuntojakaminen
-• Content Blocker -tuki
-• Reader Mode -konfiguraatio
-• Safari-laajennusyhteensopivuus
+• Natiivi Safari-kokemus sisällönestäjillä
+• Reader Mode ja responsiivinen kokohallinta
+• Mukautettavat palkkivärit ja painiketyylit
 
 Kehittäjätyökalut
 • Console: console.log-kaappaus %c CSS-tyylituella
@@ -1319,10 +1291,9 @@ Testování WKWebView
 • Emulace viewportu a zařízení
 
 Testování SFSafariViewController
-• Sdílení cookies/sessions Safari
-• Podpora Content Blocker
-• Konfigurace Reader Mode
-• Kompatibilita s rozšířeními Safari
+• Nativní Safari zážitek s blokátory obsahu
+• Reader Mode a responzivní ovládání velikosti
+• Přizpůsobitelné barvy lišty a styly tlačítek
 
 Vývojářské nástroje
 • Console: Zachycení console.log s podporou %c CSS stylování
@@ -1360,10 +1331,9 @@ Testovanie WKWebView
 • Emulácia viewportu a zariadenia
 
 Testovanie SFSafariViewController
-• Zdieľanie cookies/sessions Safari
-• Podpora Content Blocker
-• Konfigurácia Reader Mode
-• Kompatibilita s rozšíreniami Safari
+• Natívny Safari zážitok s blokátormi obsahu
+• Reader Mode a responzívne ovládanie veľkosti
+• Prispôsobiteľné farby lišty a štýly tlačidiel
 
 Vývojárske nástroje
 • Console: Zachytenie console.log s podporou %c CSS štýlovania
@@ -1401,10 +1371,9 @@ WKWebView tesztelés
 • Viewport és eszköz emuláció
 
 SFSafariViewController tesztelés
-• Safari cookie/munkamenet megosztás
-• Content Blocker támogatás
-• Reader Mode konfiguráció
-• Safari bővítmény kompatibilitás
+• Natív Safari élmény tartalomblokkolókkal
+• Reader Mode és reszponzív méretvezérlés
+• Testreszabható sávszínek és gombstílusok
 
 Fejlesztői eszközök
 • Console: console.log rögzítés %c CSS stílus támogatással
@@ -1442,10 +1411,9 @@ Testare WKWebView
 • Emulare viewport și dispozitiv
 
 Testare SFSafariViewController
-• Partajare cookies/sesiuni Safari
-• Suport Content Blocker
-• Configurare Reader Mode
-• Compatibilitate extensii Safari
+• Experiență Safari nativă cu blocatoare de conținut
+• Reader Mode și control dimensiune responsiv
+• Culori bară și stiluri butoane personalizabile
 
 Instrumente pentru dezvoltatori
 • Console: Captură console.log cu suport pentru stilizare CSS %c
@@ -1483,10 +1451,9 @@ WKWebView testiranje
 • Emulacija viewporta i uređaja
 
 SFSafariViewController testiranje
-• Dijeljenje Safari kolačića/sesija
-• Podrška za Content Blocker
-• Konfiguracija Reader Mode
-• Kompatibilnost sa Safari proširenjima
+• Izvorno Safari iskustvo s blokatorima sadržaja
+• Reader Mode i responzivna kontrola veličine
+• Prilagodljive boje trake i stilovi gumba
 
 Alati za programere
 • Console: Hvatanje console.log s podrškom za %c CSS stiliziranje
@@ -1524,10 +1491,9 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 • Εξομοίωση viewport και συσκευής
 
 Δοκιμή SFSafariViewController
-• Κοινή χρήση cookies/sessions Safari
-• Υποστήριξη Content Blocker
-• Διαμόρφωση Reader Mode
-• Συμβατότητα επεκτάσεων Safari
+• Εγγενής εμπειρία Safari με αποκλεισμό περιεχομένου
+• Reader Mode και αποκριτικός έλεγχος μεγέθους
+• Προσαρμόσιμα χρώματα γραμμής και στυλ κουμπιών
 
 Εργαλεία προγραμματιστή
 • Console: Σύλληψη console.log με υποστήριξη %c CSS styling
@@ -1565,10 +1531,9 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 • אמולציית viewport ומכשיר
 
 בדיקת SFSafariViewController
-• שיתוף עוגיות/סשנים של Safari
-• תמיכה ב-Content Blocker
-• הגדרת Reader Mode
-• תאימות לתוספי Safari
+• חוויית Safari מקורית עם חוסמי תוכן
+• Reader Mode ובקרת גודל רספונסיבית
+• צבעי סרגל וסגנונות כפתורים הניתנים להתאמה
 
 כלי מפתחים
 • Console: לכידת console.log עם תמיכה בעיצוב CSS %c
@@ -1606,10 +1571,9 @@ Proves de WKWebView
 • Emulació de viewport i dispositiu
 
 Proves de SFSafariViewController
-• Compartir cookies/sessions de Safari
-• Suport de Content Blocker
-• Configuració de Reader Mode
-• Compatibilitat amb extensions de Safari
+• Experiència Safari nativa amb blocadors de contingut
+• Reader Mode i control de mida responsiu
+• Colors de barra i estils de botó personalitzables
 
 Eines de desenvolupador
 • Console: Captura de console.log amb suport d'estil CSS %c

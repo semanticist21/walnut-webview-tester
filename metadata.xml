@@ -29,9 +29,9 @@ Built-in DevTools (WKWebView)
 • Accessibility: axe-core based accessibility audit
 
 SFSafariViewController
-• Native Safari experience with content blockers support
-• Safari cookies and login sessions shared
-• Reader mode and Safari extensions available
+• Native Safari experience with content blockers
+• Reader mode and responsive size control
+• Customizable bar colors and dismiss button styles
 
 Developer Utilities
 • API Capability detection (Geolocation, Camera, WebRTC, etc.)
