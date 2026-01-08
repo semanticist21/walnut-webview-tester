@@ -15,10 +15,9 @@ Walnut is a developer tool for testing WKWebView and SFSafariViewController conf
 FEATURES
 
 WebView Testing
-• Switch between WKWebView and SFSafariViewController modes
-• Real-time configuration changes (JavaScript, cookies, media playback, etc.)
-• Responsive viewport resizing for testing different screen sizes
-• Screenshot capture (WKWebView only)
+• WKWebView & SFSafariViewController modes
+• Viewport resizing, screenshot, bookmarks
+• Built-in DevTools
 
 Built-in DevTools (WKWebView)
 • Console: Capture console.log, warn, error, and table outputs
@@ -27,17 +26,6 @@ Built-in DevTools (WKWebView)
 • Performance: View Web Vitals (LCP, FID, CLS) and Navigation Timing
 • Sources: Browse DOM tree, stylesheets, and inline scripts
 • Accessibility: axe-core based accessibility audit
-
-SFSafariViewController
-• Native Safari experience with content blockers
-• Reader mode and responsive size control
-• Customizable bar colors and dismiss button styles
-
-Developer Utilities
-• API Capability detection (Geolocation, Camera, WebRTC, etc.)
-• Custom User-Agent configuration
-• Bookmark management for frequently tested URLs
-• Device and browser info panel with benchmark results
 
 Note: Some Web APIs are restricted in WKWebView due to WebKit security policies. DevTools features require WKWebView mode.
 
@@ -52,17 +40,13 @@ Built for developers who need to test WebView behavior without building a separa
 
     <!-- What's New / Release Notes -->
     <whats_new>
-- Initial release
-- WKWebView and SFSafariViewController support
-- DevTools: Console, Network, Storage, Performance, Sources, Accessibility
-- API Capability detection and benchmarks
     </whats_new>
 
     <!-- Support URL -->
-    <support_url>https://github.com/anthropics/walnut/issues</support_url>
+    <support_url>https://kobbokkom.com/forum</support_url>
 
     <!-- Privacy Policy URL -->
-    <privacy_url>https://github.com/anthropics/walnut/blob/main/PRIVACY.md</privacy_url>
+    <privacy_url>https://kobbokkom.com/terms/privacy</privacy_url>
 
     <!-- Category -->
     <primary_category>Developer Tools</primary_category>
