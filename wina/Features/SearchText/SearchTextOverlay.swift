@@ -20,6 +20,7 @@ struct SearchTextOverlay: View {
     @State private var matchCount: Int = 0
     @State private var currentIndex: Int = 0
     @State private var isSearching: Bool = false
+    @State private var hasCompletedSearch: Bool = false
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
@@ -100,7 +101,7 @@ struct SearchTextOverlay: View {
                                 navigateToNext()
                             }
                         }
-                    } else if !searchText.isEmpty && !isSearching {
+                    } else if !searchText.isEmpty && hasCompletedSearch {
                         Text("No matches")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
@@ -155,6 +156,7 @@ struct SearchTextOverlay: View {
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     matchCount = json["count"] as? Int ?? 0
                     currentIndex = json["index"] as? Int ?? 0
+                    hasCompletedSearch = true
                 }
             }
         }
@@ -307,6 +309,7 @@ struct SearchTextOverlay: View {
     private func clearHighlights() {
         matchCount = 0
         currentIndex = 0
+        hasCompletedSearch = false
 
         let script = """
         (function() {
