@@ -1748,14 +1748,17 @@ def create_app_info_localization(app_info_id, locale, metadata):
 
 
 def update_version_localization(localization_id, locale, metadata):
-    """Update existing app store version localization (whatsNew only)"""
+    """Update existing app store version localization"""
     headers = get_headers()
     payload = {
         "data": {
             "type": "appStoreVersionLocalizations",
             "id": localization_id,
             "attributes": {
-                "whatsNew": metadata.get("whatsNew", "")
+                "description": metadata.get("description", ""),
+                "keywords": metadata.get("keywords", "")[:100],
+                "whatsNew": metadata.get("whatsNew", ""),
+                "promotionalText": metadata.get("promotionalText", "")
             }
         }
     }
@@ -1776,14 +1779,17 @@ def update_version_localization(localization_id, locale, metadata):
 
 
 def create_version_localization(version_id, locale, metadata):
-    """Create new app store version localization (whatsNew only)"""
+    """Create new app store version localization"""
     headers = get_headers()
     payload = {
         "data": {
             "type": "appStoreVersionLocalizations",
             "attributes": {
                 "locale": locale,
-                "whatsNew": metadata.get("whatsNew", "")
+                "description": metadata.get("description", ""),
+                "keywords": metadata.get("keywords", "")[:100],
+                "whatsNew": metadata.get("whatsNew", ""),
+                "promotionalText": metadata.get("promotionalText", "")
             },
             "relationships": {
                 "appStoreVersion": {
