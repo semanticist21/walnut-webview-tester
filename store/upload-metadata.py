@@ -1738,83 +1738,24 @@ def get_metadata_for_locale(locale):
 
 
 def update_app_info_localization(localization_id, locale, metadata):
-    """Update existing app info localization"""
-    headers = get_headers()
-    payload = {
-        "data": {
-            "type": "appInfoLocalizations",
-            "id": localization_id,
-            "attributes": {
-                "name": metadata.get("name", "")[:30],
-                "subtitle": metadata.get("subtitle", "")[:30],
-            }
-        }
-    }
-
-    response = session.patch(
-        f"{BASE_URL}/appInfoLocalizations/{localization_id}",
-        headers=headers,
-        json=payload
-    )
-
-    if response.status_code == 200:
-        print(f"  ✅ Updated app info for {locale}")
-        return True
-    else:
-        print(f"  ❌ Failed to update app info for {locale}: {response.status_code}")
-        print(f"     {response.text[:200]}")
-        return False
+    """No-op: app info updates are intentionally disabled."""
+    return True
 
 
 def create_app_info_localization(app_info_id, locale, metadata):
-    """Create new app info localization"""
-    headers = get_headers()
-    payload = {
-        "data": {
-            "type": "appInfoLocalizations",
-            "attributes": {
-                "locale": locale,
-                "name": metadata.get("name", "")[:30],
-                "subtitle": metadata.get("subtitle", "")[:30],
-            },
-            "relationships": {
-                "appInfo": {
-                    "data": {
-                        "type": "appInfos",
-                        "id": app_info_id
-                    }
-                }
-            }
-        }
-    }
-
-    response = session.post(
-        f"{BASE_URL}/appInfoLocalizations",
-        headers=headers,
-        json=payload
-    )
-
-    if response.status_code == 201:
-        print(f"  ✅ Created app info for {locale}")
-        return True
-    else:
-        print(f"  ❌ Failed to create app info for {locale}: {response.status_code}")
-        print(f"     {response.text[:200]}")
-        return False
+    """No-op: app info updates are intentionally disabled."""
+    return True
 
 
 def update_version_localization(localization_id, locale, metadata):
-    """Update existing app store version localization"""
+    """Update existing app store version localization (whatsNew only)"""
     headers = get_headers()
     payload = {
         "data": {
             "type": "appStoreVersionLocalizations",
             "id": localization_id,
             "attributes": {
-                "description": metadata.get("description", "")[:4000],
-                "keywords": metadata.get("keywords", "")[:100],
-                "whatsNew": metadata.get("whatsNew", ""),
-                "promotionalText": "Prova WebView fàcilment amb Walnut. Gestió d'URL ràpida amb marcadors i historial, i depuració amb Console, Network i SourceView."
+                "whatsNew": metadata.get("whatsNew", "")
             }
         }
     }
@@ -1835,17 +1776,14 @@ def update_version_localization(localization_id, locale, metadata):
 
 
 def create_version_localization(version_id, locale, metadata):
-    """Create new app store version localization"""
+    """Create new app store version localization (whatsNew only)"""
     headers = get_headers()
     payload = {
         "data": {
             "type": "appStoreVersionLocalizations",
             "attributes": {
                 "locale": locale,
-                "description": metadata.get("description", "")[:4000],
-                "keywords": metadata.get("keywords", "")[:100],
-                "whatsNew": metadata.get("whatsNew", ""),
-                "promotionalText": "Prova WebView fàcilment amb Walnut. Gestió d'URL ràpida amb marcadors i historial, i depuració amb Console, Network i SourceView."
+                "whatsNew": metadata.get("whatsNew", "")
             },
             "relationships": {
                 "appStoreVersion": {
