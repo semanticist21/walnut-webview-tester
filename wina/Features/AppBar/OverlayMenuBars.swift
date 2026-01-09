@@ -38,10 +38,15 @@ struct OverlayMenuBars: View {
     // WKWebView 내부 input 필드의 키보드 표시 상태를 추적한다
     @State private var isKeyboardVisible: Bool = false
     @State private var showPhotoPermissionAlert: Bool = false
+    @State private var showRecordingFailedAlert: Bool = false
 
-    // Toolbar customization
+    // Toolbar customization - WKWebView
     @AppStorage("toolbarItemsOrder") private var toolbarItemsOrderData = Data()
     @AppStorage("appBarItemsOrder") private var appBarItemsOrderData = Data()
+
+    // Toolbar customization - SafariVC (separate settings)
+    @AppStorage("safariToolbarItemsOrder") private var safariToolbarItemsOrderData = Data()
+    @AppStorage("safariAppBarItemsOrder") private var safariAppBarItemsOrderData = Data()
 
     private var visibleToolbarItems: [DevToolsMenuItem] {
         guard let items = try? JSONDecoder().decode([ToolbarItemState].self, from: toolbarItemsOrderData),
@@ -55,6 +60,27 @@ struct OverlayMenuBars: View {
         guard let items = try? JSONDecoder().decode([AppBarItemState].self, from: appBarItemsOrderData),
               !items.isEmpty else {
             return AppBarMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
+    // SafariVC-specific visible items
+    private var visibleSafariVCToolbarItems: [SafariVCToolbarMenuItem] {
+        guard let items = try? JSONDecoder().decode(
+            [SafariVCToolbarItemState].self,
+            from: safariToolbarItemsOrderData
+        ), !items.isEmpty else {
+            return SafariVCToolbarMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
+    private var visibleSafariVCAppBarItems: [SafariVCAppBarMenuItem] {
+        guard let items = try? JSONDecoder().decode(
+            [SafariVCAppBarItemState].self,
+            from: safariAppBarItemsOrderData
+        ), !items.isEmpty else {
+            return SafariVCAppBarMenuItem.defaultOrder
         }
         return items.filter { $0.isVisible }.map { $0.menuItem }
     }
@@ -143,6 +169,16 @@ struct OverlayMenuBars: View {
         } message: {
             Text("Please allow photo library access in Settings to save screenshots.")
         }
+        .alert("Screen Recording Unavailable", isPresented: $showRecordingFailedAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Screen recording was denied or is not available. Please enable screen recording permission in Settings.")
+        }
     }
 
     // MARK: - Top Bar
@@ -153,9 +189,16 @@ struct OverlayMenuBars: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     if showWebView {
-                        // WebView mode: Navigation buttons based on user customization
-                        ForEach(visibleAppBarItems) { item in
-                            appBarButton(for: item)
+                        if useSafariVC {
+                            // SafariVC mode: Home button only (Safari handles navigation)
+                            ForEach(visibleSafariVCAppBarItems) { item in
+                                safariVCAppBarButton(for: item)
+                            }
+                        } else {
+                            // WKWebView mode: Navigation buttons based on user customization
+                            ForEach(visibleAppBarItems) { item in
+                                appBarButton(for: item)
+                            }
                         }
                     } else {
                         BookmarkButton(showBookmarks: $showBookmarks, hasBookmarks: hasBookmarks)
@@ -215,14 +258,27 @@ struct OverlayMenuBars: View {
                         .buttonStyle(.plain)
                         .backport.glassEffect(in: .capsule)
 
-                        // WKWebView-only buttons
-                        if !useSafariVC {
-                            // DevTools buttons based on user customization
+                        if useSafariVC {
+                            // SafariVC mode: Screenshot and Recording only
+                            ForEach(visibleSafariVCToolbarItems) { item in
+                                if item == .recording {
+                                    recordingButton
+                                } else {
+                                    BottomBarIconButton(icon: item.icon) {
+                                        handleSafariVCToolbarItemTap(item)
+                                    }
+                                }
+                            }
+                        } else {
+                            // WKWebView mode: DevTools buttons based on user customization
                             // Eruda mode hides DevTools except Search and Screenshot
                             ForEach(visibleToolbarItems) { item in
                                 // Skip DevTools items when Eruda mode is enabled
                                 if erudaModeEnabled && !item.isAlwaysVisible {
                                     EmptyView()
+                                } else if item == .recording {
+                                    // Recording button with dynamic state and time display
+                                    recordingButton
                                 } else {
                                     BottomBarIconButton(icon: item.icon) {
                                         handleToolbarItemTap(item)
@@ -249,7 +305,7 @@ struct OverlayMenuBars: View {
         }
     }
 
-    // MARK: - AppBar Button Builder
+    // MARK: - AppBar Button Builder (WKWebView)
 
     @ViewBuilder
     private func appBarButton(for item: AppBarMenuItem) -> some View {
@@ -286,7 +342,62 @@ struct OverlayMenuBars: View {
         }
     }
 
-    // MARK: - Toolbar Item Actions
+    // MARK: - AppBar Button Builder (SafariVC)
+
+    @ViewBuilder
+    private func safariVCAppBarButton(for item: SafariVCAppBarMenuItem) -> some View {
+        switch item {
+        case .home:
+            HomeButton {
+                urlInputText = ""
+                onHome()
+            }
+        }
+    }
+
+    // MARK: - Recording Button
+
+    @ViewBuilder
+    private var recordingButton: some View {
+        let isRecording = navigator?.recorder.isRecording ?? false
+
+        if isRecording, let recorder = navigator?.recorder {
+            // Expanded recording button with time using TimelineView
+            TimelineView(.periodic(from: .now, by: 1.0)) { _ in
+                Button {
+                    handleToolbarItemTap(.recording)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.red)
+
+                        Text(formatDuration(recorder.currentDuration))
+                            .font(.system(.caption, design: .monospaced, weight: .medium))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 44)
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .backport.glassEffect(in: .capsule)
+            }
+        } else {
+            // Normal recording button
+            BottomBarIconButton(icon: "record.circle") {
+                handleToolbarItemTap(.recording)
+            }
+        }
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    // MARK: - Toolbar Item Actions (WKWebView)
 
     private func handleToolbarItemTap(_ item: DevToolsMenuItem) {
         switch item {
@@ -315,6 +426,19 @@ struct OverlayMenuBars: View {
             showSearchText.toggle()
         case .screenshot:
             takeScreenshotWithFeedback()
+        case .recording:
+            toggleRecording()
+        }
+    }
+
+    // MARK: - Toolbar Item Actions (SafariVC)
+
+    private func handleSafariVCToolbarItemTap(_ item: SafariVCToolbarMenuItem) {
+        switch item {
+        case .screenshot:
+            takeScreenshotWithFeedback()
+        case .recording:
+            toggleRecording()
         }
     }
 
@@ -373,6 +497,70 @@ struct OverlayMenuBars: View {
         }
     }
 
+    // MARK: - Recording
+
+    private func toggleRecording() {
+        guard let recorder = navigator?.recorder else { return }
+
+        if recorder.isRecording {
+            // Stop recording
+            recorder.stopRecording()
+            showRecordingSavedFeedback()
+        } else {
+            // Start recording
+            Task {
+                // Check permission first
+                let permission = navigator?.checkPhotoLibraryPermission() ?? .denied
+
+                switch permission {
+                case .notDetermined:
+                    let granted = await navigator?.requestPhotoLibraryPermission() ?? false
+                    if !granted {
+                        await MainActor.run { showPhotoPermissionAlert = true }
+                        return
+                    }
+                case .denied:
+                    await MainActor.run { showPhotoPermissionAlert = true }
+                    return
+                case .authorized:
+                    break
+                }
+
+                // Start recording
+                let started = await recorder.startRecording()
+                if started {
+                    // Haptic feedback for start
+                    AudioServicesPlaySystemSound(1519)  // Peek haptic
+                } else {
+                    // Recording failed (user denied or unavailable)
+                    await MainActor.run { showRecordingFailedAlert = true }
+                }
+            }
+        }
+    }
+
+    private func showRecordingSavedFeedback() {
+        Task {
+            // Haptic feedback for stop
+            AudioServicesPlaySystemSound(1519)
+
+            // Wait for video to be saved
+            try? await Task.sleep(for: .milliseconds(500))
+
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    navigator?.showRecordingSavedToast = true
+                }
+            }
+            try? await Task.sleep(for: .seconds(2.0))
+            await MainActor.run {
+                withAnimation(.easeIn(duration: 0.2)) {
+                    navigator?.showRecordingSavedToast = false
+                }
+            }
+        }
+    }
+
     // MARK: - Gesture
 
     private var dragGesture: some Gesture {
@@ -416,13 +604,14 @@ struct OverlayMenuBars: View {
 /// GlassIconButton과 동일한 스타일 적용 (glassEffect 통일)
 private struct BottomBarIconButton: View {
     let icon: String
+    var tintColor: Color?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(.primary)
+                .foregroundStyle(tintColor ?? .primary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
         }

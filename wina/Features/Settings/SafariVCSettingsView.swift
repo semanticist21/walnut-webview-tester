@@ -37,6 +37,21 @@ struct SafariVCSettingsView: View {
 
                 Section {
                     NavigationLink {
+                        SafariVCMenuSettingsView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "menubar.rectangle",
+                            iconColor: .indigo,
+                            title: "Menu",
+                            description: "Customize toolbar & app bar"
+                        )
+                    }
+                } header: {
+                    Text("Developer Tools Settings")
+                }
+
+                Section {
+                    NavigationLink {
                         SafariVCConfigurationSettingsView(webViewID: $webViewID)
                     } label: {
                         SettingsCategoryRow(

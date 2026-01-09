@@ -33,12 +33,14 @@ class WebViewNavigator {
     private(set) var initialURL: URL?
     var showScreenshotFlash: Bool = false
     var showScreenshotSavedToast: Bool = false
+    var showRecordingSavedToast: Bool = false
     let consoleManager = ConsoleManager()
     let networkManager = NetworkManager()
     let performanceManager = PerformanceManager()
     let resourceManager = ResourceManager()
     let accessibilityManager = AccessibilityManager()
     let snippetsManager = SnippetsManager()
+    let recorder = WebViewRecorder()
 
     private weak var webView: WKWebView?
     private var canGoBackObservation: NSKeyValueObservation?
@@ -77,6 +79,7 @@ class WebViewNavigator {
     }
 
     func detach() {
+        recorder.stopRecording()
         canGoBackObservation?.invalidate()
         canGoForwardObservation?.invalidate()
         urlObservation?.invalidate()

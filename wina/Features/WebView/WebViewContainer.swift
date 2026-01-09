@@ -141,6 +141,11 @@ struct WebViewContainer: View {
                             CopiedFeedbackToast(message: "Saved to Photos")
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
+                        // Recording saved toast
+                        if navigator?.showRecordingSavedToast == true {
+                            CopiedFeedbackToast(message: "Recording Saved")
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 }
             }

@@ -242,6 +242,21 @@ struct LoadedSettingsView: View {
 
                 Section {
                     NavigationLink {
+                        MenuSettingsView()
+                    } label: {
+                        SettingsCategoryRow(
+                            icon: "menubar.rectangle",
+                            iconColor: .indigo,
+                            title: "Menu",
+                            description: "Customize toolbar & app bar"
+                        )
+                    }
+                } header: {
+                    Text("Developer Tools Settings")
+                }
+
+                Section {
+                    NavigationLink {
                         LiveSettingsView()
                     } label: {
                         SettingsCategoryRow(
@@ -286,17 +301,6 @@ struct LoadedSettingsView: View {
                             iconColor: .blue,
                             title: "Permissions",
                             description: "Camera, Microphone, Location"
-                        )
-                    }
-
-                    NavigationLink {
-                        MenuSettingsView()
-                    } label: {
-                        SettingsCategoryRow(
-                            icon: "menubar.rectangle",
-                            iconColor: .indigo,
-                            title: "Menu",
-                            description: "Customize toolbar & app bar"
                         )
                     }
                 } header: {
