@@ -14,7 +14,7 @@ import SwiftUIBackports
 struct SearchTextOverlay: View {
     let navigator: WebViewNavigator
     @Binding var isPresented: Bool
-    let bottomPadding: CGFloat
+    let bottomPaddingCalculator: (CGFloat) -> CGFloat
 
     @State private var searchText: String = ""
     @State private var matchCount: Int = 0
@@ -23,91 +23,95 @@ struct SearchTextOverlay: View {
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
-        VStack {
-            Spacer()
+        GeometryReader { proxy in
+            let bottomPadding = bottomPaddingCalculator(proxy.safeAreaInsets.bottom)
 
-            // Search bar at bottom (Liquid Glass UI)
-            HStack(spacing: 12) {
-                // Close 버튼
-                GlassIconButton(
-                    icon: "xmark",
-                    size: .small,
-                    color: .secondary
-                ) {
-                    clearHighlights()
-                    isPresented = false
-                }
+            VStack {
+                Spacer()
 
-                // Search field
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-
-                    TextField("Search in page", text: $searchText)
-                        .font(.system(size: 15))
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($isTextFieldFocused)
-                        .submitLabel(.search)
-                        .onSubmit {
-                            performSearch()
-                        }
-
-                    // Clear 버튼
-                    if !searchText.isEmpty {
-                        Button {
-                            searchText = ""
-                            clearHighlights()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
+                // Search bar at bottom (Liquid Glass UI)
+                HStack(spacing: 12) {
+                    // Close 버튼
+                    GlassIconButton(
+                        icon: "xmark",
+                        size: .small,
+                        color: .secondary
+                    ) {
+                        clearHighlights()
+                        isPresented = false
                     }
-                }
-                .padding(.horizontal, 12)
-                .frame(height: 36)
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
 
-                // Match count & navigation
-                if matchCount > 0 {
-                    HStack(spacing: 4) {
-                        Text("\(currentIndex + 1)/\(matchCount)")
-                            .font(.system(size: 12, design: .monospaced))
+                    // Search field
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 14))
                             .foregroundStyle(.secondary)
-                            .frame(minWidth: 40)
 
-                        // 이전 매치로 이동
-                        GlassIconButton(
-                            icon: "chevron.up",
-                            size: .small,
-                            isDisabled: matchCount <= 1
-                        ) {
-                            navigateToPrevious()
-                        }
+                        TextField("Search in page", text: $searchText)
+                            .font(.system(size: 15))
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused($isTextFieldFocused)
+                            .submitLabel(.search)
+                            .onSubmit {
+                                performSearch()
+                            }
 
-                        // 다음 매치로 이동
-                        GlassIconButton(
-                            icon: "chevron.down",
-                            size: .small,
-                            isDisabled: matchCount <= 1
-                        ) {
-                            navigateToNext()
+                        // Clear 버튼
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                                clearHighlights()
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                } else if !searchText.isEmpty && !isSearching {
-                    Text("No matches")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 36)
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+
+                    // Match count & navigation
+                    if matchCount > 0 {
+                        HStack(spacing: 4) {
+                            Text("\(currentIndex + 1)/\(matchCount)")
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(minWidth: 40)
+
+                            // 이전 매치로 이동
+                            GlassIconButton(
+                                icon: "chevron.up",
+                                size: .small,
+                                isDisabled: matchCount <= 1
+                            ) {
+                                navigateToPrevious()
+                            }
+
+                            // 다음 매치로 이동
+                            GlassIconButton(
+                                icon: "chevron.down",
+                                size: .small,
+                                isDisabled: matchCount <= 1
+                            ) {
+                                navigateToNext()
+                            }
+                        }
+                    } else if !searchText.isEmpty && !isSearching {
+                        Text("No matches")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .backport.glassEffect(in: .rect(cornerRadius: 20))
+                .padding(.horizontal, 12)
+                .padding(.bottom, bottomPadding)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .backport.glassEffect(in: .rect(cornerRadius: 20))
-            .padding(.horizontal, 12)
-            .padding(.bottom, bottomPadding)
         }
         .onAppear {
             isTextFieldFocused = true
@@ -330,7 +334,7 @@ struct SearchTextOverlay: View {
         SearchTextOverlay(
             navigator: WebViewNavigator(),
             isPresented: .constant(true),
-            bottomPadding: 12
+            bottomPaddingCalculator: { _ in 12 }
         )
     }
 }

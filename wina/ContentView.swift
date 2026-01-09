@@ -284,13 +284,11 @@ struct ContentView: View {
         }
         .overlay {
             if showSearchText {
-                GeometryReader { proxy in
-                    SearchTextOverlay(
-                        navigator: webViewNavigator,
-                        isPresented: $showSearchText,
-                        bottomPadding: searchOverlayBottomPadding(safeAreaBottom: proxy.safeAreaInsets.bottom)
-                    )
-                }
+                SearchTextOverlay(
+                    navigator: webViewNavigator,
+                    isPresented: $showSearchText,
+                    bottomPaddingCalculator: searchOverlayBottomPadding
+                )
             }
         }
         .sheet(isPresented: $showAbout) {

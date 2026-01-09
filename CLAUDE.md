@@ -395,6 +395,28 @@ var color: Color { .gray }
 .foregroundStyle(.secondary)
 ```
 
+### 8. GeometryReader + Keyboard: Static Value Bug
+```swift
+// ❌ bottomPadding is let constant - won't update when keyboard appears
+.overlay {
+    GeometryReader { proxy in
+        MyView(bottomPadding: calculatePadding(proxy.safeAreaInsets.bottom))
+    }
+}
+
+// ✅ Move GeometryReader inside, or pass calculator closure
+struct MyView: View {
+    let paddingCalculator: (CGFloat) -> CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let padding = paddingCalculator(proxy.safeAreaInsets.bottom)
+            // content uses dynamic padding
+        }
+    }
+}
+```
+
 ---
 
 ## Troubleshooting
