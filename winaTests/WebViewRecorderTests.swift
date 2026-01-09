@@ -112,6 +112,23 @@ final class WebViewRecorderTests: XCTestCase {
         }
     }
 
+    // MARK: - Duration Tick Tests
+
+    func testDurationTickUpdatesRecordingDuration() {
+        let start = Date().addingTimeInterval(-5)
+        recorder.test_setStartTime(start)
+        recorder.test_handleDurationTick()
+
+        XCTAssertEqual(recorder.recordingDuration, 5, accuracy: 0.5)
+    }
+
+    func testDurationTickWithoutStartTimeKeepsDurationZero() {
+        recorder.test_setStartTime(nil)
+        recorder.test_handleDurationTick()
+
+        XCTAssertEqual(recorder.recordingDuration, 0)
+    }
+
     // MARK: - isRecording Computed Property Tests
 
     func testIsRecordingFalseWhenIdle() {

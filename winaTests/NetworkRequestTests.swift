@@ -753,6 +753,7 @@ struct NetworkRequestURLParsingTests {
 
 // MARK: - NetworkRequest Equatable Tests
 
+@MainActor
 @Suite("NetworkRequest Equatable")
 struct NetworkRequestEquatableTests {
 

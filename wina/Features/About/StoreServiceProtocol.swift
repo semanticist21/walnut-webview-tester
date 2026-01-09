@@ -13,6 +13,11 @@ struct EntitlementResult {
     let wasRevoked: Bool
 }
 
+/// Result of processing unfinished transactions
+struct UnfinishedTransactionResult {
+    let isAdRemoved: Bool
+}
+
 /// Protocol abstracting StoreKit operations for testability
 protocol StoreServiceProtocol: Sendable {
     /// Fetch products by IDs
@@ -28,7 +33,7 @@ protocol StoreServiceProtocol: Sendable {
     func checkEntitlement(for productID: String) async -> EntitlementResult
 
     /// Process unfinished transactions
-    func processUnfinishedTransactions(for productID: String) async -> Bool?
+    func processUnfinishedTransactions(for productID: String) async -> UnfinishedTransactionResult?
 
     /// Listen for transaction updates
     func transactionUpdates() -> AsyncStream<(productID: String, isRevoked: Bool)>
@@ -92,12 +97,12 @@ final class RealStoreService: StoreServiceProtocol {
         return EntitlementResult(hasEntitlement: false, wasRevoked: false)
     }
 
-    func processUnfinishedTransactions(for productID: String) async -> Bool? {
-        var result: Bool?
+    func processUnfinishedTransactions(for productID: String) async -> UnfinishedTransactionResult? {
+        var result: UnfinishedTransactionResult?
         for await verificationResult in Transaction.unfinished {
             if case .verified(let transaction) = verificationResult,
                transaction.productID == productID {
-                result = transaction.revocationDate == nil
+                result = UnfinishedTransactionResult(isAdRemoved: transaction.revocationDate == nil)
                 await transaction.finish()
             }
         }

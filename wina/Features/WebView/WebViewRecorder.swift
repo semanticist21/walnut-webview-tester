@@ -26,6 +26,110 @@ enum RecordingState: Sendable {
 
 // MARK: - WebView Recorder
 
+private final class WriterState {
+    var assetWriter: AVAssetWriter?
+    var videoInput: AVAssetWriterInput?
+    var audioInput: AVAssetWriterInput?
+    var sessionStarted = false
+    var firstSampleTime: CMTime?
+    var isRecording = false
+
+    func reset() {
+        assetWriter = nil
+        videoInput = nil
+        audioInput = nil
+        sessionStarted = false
+        firstSampleTime = nil
+        isRecording = false
+    }
+
+    func markInputsFinished() {
+        videoInput?.markAsFinished()
+        audioInput?.markAsFinished()
+    }
+
+    func processVideoSample(_ sampleBuffer: CMSampleBuffer, outputURL: URL?) {
+        if assetWriter == nil {
+            guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
+            let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+            let videoSize = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
+
+            guard setupAssetWriter(videoSize: videoSize, outputURL: outputURL) else { return }
+        }
+
+        guard let writer = assetWriter, let input = videoInput else { return }
+
+        if !sessionStarted {
+            let presentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+            writer.startSession(atSourceTime: presentationTime)
+            firstSampleTime = presentationTime
+            sessionStarted = true
+        }
+
+        if input.isReadyForMoreMediaData {
+            input.append(sampleBuffer)
+        }
+    }
+
+    func processAudioSample(_ sampleBuffer: CMSampleBuffer) {
+        guard sessionStarted else { return }
+        guard let input = audioInput, input.isReadyForMoreMediaData else { return }
+
+        input.append(sampleBuffer)
+    }
+
+    private func setupAssetWriter(videoSize: CGSize, outputURL: URL?) -> Bool {
+        guard let url = outputURL else { return false }
+
+        do {
+            assetWriter = try AVAssetWriter(outputURL: url, fileType: .mov)
+        } catch {
+            return false
+        }
+
+        let videoSettings: [String: Any] = [
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoWidthKey: Int(videoSize.width),
+            AVVideoHeightKey: Int(videoSize.height),
+            AVVideoCompressionPropertiesKey: [
+                AVVideoAverageBitRateKey: 6_000_000,
+                AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+                AVVideoExpectedSourceFrameRateKey: 30
+            ]
+        ]
+
+        videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
+        videoInput?.expectsMediaDataInRealTime = true
+
+        let audioSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 2,
+            AVEncoderBitRateKey: 128000
+        ]
+
+        audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
+        audioInput?.expectsMediaDataInRealTime = true
+
+        guard let writer = assetWriter,
+              let vInput = videoInput,
+              let aInput = audioInput else { return false }
+
+        if writer.canAdd(vInput) {
+            writer.add(vInput)
+        } else {
+            return false
+        }
+
+        if writer.canAdd(aInput) {
+            writer.add(aInput)
+        }
+
+        writer.startWriting()
+        return true
+    }
+}
+
 @Observable
 @MainActor
 final class WebViewRecorder {
@@ -51,12 +155,7 @@ final class WebViewRecorder {
     private let writerQueue = DispatchQueue(label: "com.wina.assetwriter", qos: .userInitiated)
 
     // Writer state (accessed only on writerQueue)
-    nonisolated(unsafe) private var assetWriter: AVAssetWriter?
-    nonisolated(unsafe) private var videoInput: AVAssetWriterInput?
-    nonisolated(unsafe) private var audioInput: AVAssetWriterInput?
-    nonisolated(unsafe) private var sessionStarted = false
-    nonisolated(unsafe) private var firstSampleTime: CMTime?
-    nonisolated(unsafe) private var isRecordingState = false  // Mirror of state for background access
+    private let writerState = WriterState()
 
     // MARK: - Recording Control
 
@@ -89,13 +188,10 @@ final class WebViewRecorder {
 
         // Reset state
         let url = outputURL
+        let writerState = writerState
         writerQueue.sync {
-            self.assetWriter = nil
-            self.videoInput = nil
-            self.audioInput = nil
-            self.sessionStarted = false
-            self.firstSampleTime = nil
-            self.isRecordingState = true
+            writerState.reset()
+            writerState.isRecording = true
         }
 
         startTime = Date()
@@ -120,8 +216,9 @@ final class WebViewRecorder {
         guard state == .recording else { return }
         state = .finishing
 
+        let writerState = writerState
         writerQueue.async {
-            self.isRecordingState = false
+            writerState.isRecording = false
         }
 
         // Stop duration timer
@@ -142,19 +239,20 @@ final class WebViewRecorder {
     private func startReplayKitCapture(outputURL: URL?) async throws {
         let recorder = RPScreenRecorder.shared()
 
+        let writerState = writerState
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             recorder.startCapture(handler: { [weak self] sampleBuffer, sampleBufferType, _ in
                 guard let self else { return }
 
                 // Process sample buffer on dedicated queue (nonisolated)
                 self.writerQueue.async {
-                    guard self.isRecordingState else { return }
+                    guard writerState.isRecording else { return }
 
                     switch sampleBufferType {
                     case .video:
-                        self.processVideoSampleOnQueue(sampleBuffer, outputURL: outputURL)
+                        writerState.processVideoSample(sampleBuffer, outputURL: outputURL)
                     case .audioApp:
-                        self.processAudioSampleOnQueue(sampleBuffer)
+                        writerState.processAudioSample(sampleBuffer)
                     case .audioMic:
                         break
                     @unknown default:
@@ -171,117 +269,32 @@ final class WebViewRecorder {
         }
     }
 
-    // MARK: - Sample Processing (called on writerQueue)
-
-    /// Process video sample - must be called on writerQueue
-    nonisolated private func processVideoSampleOnQueue(_ sampleBuffer: CMSampleBuffer, outputURL: URL?) {
-        // Setup AVAssetWriter on first video sample (to get dimensions)
-        if assetWriter == nil {
-            guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
-            let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-            let videoSize = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
-
-            guard setupAssetWriterOnQueue(videoSize: videoSize, outputURL: outputURL) else { return }
-        }
-
-        guard let writer = assetWriter, let input = videoInput else { return }
-
-        // Start session on first sample
-        if !sessionStarted {
-            let presentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            writer.startSession(atSourceTime: presentationTime)
-            firstSampleTime = presentationTime
-            sessionStarted = true
-        }
-
-        // Append video sample
-        if input.isReadyForMoreMediaData {
-            input.append(sampleBuffer)
-        }
-    }
-
-    /// Process audio sample - must be called on writerQueue
-    nonisolated private func processAudioSampleOnQueue(_ sampleBuffer: CMSampleBuffer) {
-        guard sessionStarted else { return }
-        guard let input = audioInput, input.isReadyForMoreMediaData else { return }
-
-        input.append(sampleBuffer)
-    }
-
-    // MARK: - AVAssetWriter Setup (called on writerQueue)
-
-    /// Setup AVAssetWriter - must be called on writerQueue
-    nonisolated private func setupAssetWriterOnQueue(videoSize: CGSize, outputURL: URL?) -> Bool {
-        guard let url = outputURL else { return false }
-
-        do {
-            assetWriter = try AVAssetWriter(outputURL: url, fileType: .mov)
-        } catch {
-            return false
-        }
-
-        // Video settings - H.264 with high quality
-        let videoSettings: [String: Any] = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: Int(videoSize.width),
-            AVVideoHeightKey: Int(videoSize.height),
-            AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: 6_000_000,  // 6 Mbps for better quality
-                AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
-                AVVideoExpectedSourceFrameRateKey: 30
-            ]
-        ]
-
-        videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
-        videoInput?.expectsMediaDataInRealTime = true
-
-        // Audio settings - AAC
-        let audioSettings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 2,
-            AVEncoderBitRateKey: 128000
-        ]
-
-        audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
-        audioInput?.expectsMediaDataInRealTime = true
-
-        guard let writer = assetWriter,
-              let vInput = videoInput,
-              let aInput = audioInput else { return false }
-
-        if writer.canAdd(vInput) {
-            writer.add(vInput)
-        } else {
-            return false
-        }
-
-        if writer.canAdd(aInput) {
-            writer.add(aInput)
-        }
-        // Audio is optional, continue even if can't add
-
-        writer.startWriting()
-        return true
-    }
-
     // MARK: - Duration Timer
 
     private func startDurationTimer() {
         // Use Timer on main RunLoop explicitly for @MainActor context
-        durationTimer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, let start = self.startTime else { return }
-                self.recordingDuration = Date().timeIntervalSince(start)
-            }
+        durationTimer = Timer(
+            timeInterval: 1.0,
+            target: self,
+            selector: #selector(handleDurationTick),
+            userInfo: nil,
+            repeats: true
+        )
+        if let durationTimer {
+            RunLoop.main.add(durationTimer, forMode: .common)
         }
-        RunLoop.main.add(durationTimer!, forMode: .common)
+    }
+
+    @objc private func handleDurationTick() {
+        guard let start = startTime else { return }
+        recordingDuration = Date().timeIntervalSince(start)
     }
 
     // MARK: - Finish Recording
 
     private func finishRecording() async {
-        let writer = writerQueue.sync { self.assetWriter }
+        let writerState = writerState
+        let writer = writerQueue.sync { writerState.assetWriter }
 
         guard let writer else {
             state = .idle
@@ -290,8 +303,7 @@ final class WebViewRecorder {
 
         // Mark inputs as finished on writer queue
         writerQueue.sync {
-            self.videoInput?.markAsFinished()
-            self.audioInput?.markAsFinished()
+            writerState.markInputsFinished()
         }
 
         // Finish writing
@@ -322,13 +334,9 @@ final class WebViewRecorder {
     }
 
     private func cleanupWriter() {
+        let writerState = writerState
         writerQueue.sync {
-            assetWriter = nil
-            videoInput = nil
-            audioInput = nil
-            sessionStarted = false
-            firstSampleTime = nil
-            isRecordingState = false
+            writerState.reset()
         }
     }
 
@@ -339,3 +347,15 @@ final class WebViewRecorder {
         durationTimer = nil
     }
 }
+
+#if DEBUG
+extension WebViewRecorder {
+    func test_setStartTime(_ date: Date?) {
+        startTime = date
+    }
+
+    func test_handleDurationTick() {
+        handleDurationTick()
+    }
+}
+#endif

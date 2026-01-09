@@ -65,19 +65,16 @@ final class StoreManager {
 
     /// Listen for transaction updates (refunds, Ask to Buy approvals, etc.)
     private func listenForTransactions() -> Task<Void, Never> {
-        Task.detached { [weak self] in
+        Task { [weak self] in
             guard let self else { return }
-            for await update in self.storeService.transactionUpdates() {
-                if update.productID == self.productID {
-                    await MainActor.run {
-                        self.isAdRemoved = !update.isRevoked
+            for await update in self.storeService.transactionUpdates()
+                where update.productID == self.productID {
+                    self.isAdRemoved = !update.isRevoked
 #if DEBUG
-                        if self.debugAdRemovalOverride {
-                            self.isAdRemoved = true
-                        }
-#endif
+                    if self.debugAdRemovalOverride {
+                        self.isAdRemoved = true
                     }
-                }
+#endif
             }
         }
     }
@@ -88,7 +85,7 @@ final class StoreManager {
     @MainActor
     private func processUnfinishedTransactions() async {
         if let result = await storeService.processUnfinishedTransactions(for: productID) {
-            isAdRemoved = result
+            isAdRemoved = result.isAdRemoved
 #if DEBUG
             if debugAdRemovalOverride {
                 isAdRemoved = true

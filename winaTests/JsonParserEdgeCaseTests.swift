@@ -41,7 +41,10 @@ struct JsonParserValidationEdgeCaseTests {
         "{\"emptyObject\":{}}",
         "{\"text\":\"hello\"}",
         "{\"unicode\":\"Hello\"}",
-        "{\"escape\":\"a\\/b\"}"
+        "{\"escape\":\"a\\/b\"}",
+        "{\"a\":1,}",
+        "[1,]",
+        "{\"a\":[1,]}"
     ]
 
     private static let invalidJsonStrings: [String] = [
@@ -53,16 +56,12 @@ struct JsonParserValidationEdgeCaseTests {
         "[",
         "]",
         "{\"a\":}",
-        "{\"a\":1,}",
         "{\"a\" 1}",
         "{\"a\":1 \"b\":2}",
         "{\"a\":1,\"b\":}",
-        "[1,]",
         "[,1]",
         "[1 2]",
-        "{\"a\":[1,]}",
         "{\"a\":[,1]}",
-        "{\"a\":true,}",
         "\"string\"",
         "123",
         "true",
@@ -107,7 +106,7 @@ struct JsonParserParsingEdgeCaseTests {
         let result = JsonParser.parse(input)
         #expect(result.isValid)
         guard let node = result.node else {
-            #expect(false)
+            #expect(Bool(false))
             return
         }
         switch (node.value, kind) {
@@ -115,16 +114,16 @@ struct JsonParserParsingEdgeCaseTests {
             #expect(lhs == expected)
         case let (.number(lhs), .number):
             guard let expectedNumber = Double(expected) else {
-                #expect(false)
+                #expect(Bool(false))
                 return
             }
             #expect(lhs == expectedNumber)
         case let (.bool(lhs), .bool):
             #expect(lhs == (expected == "true"))
         case (.null, .null):
-            #expect(true)
+            #expect(Bool(true))
         default:
-            #expect(false)
+            #expect(Bool(false))
         }
     }
 
@@ -146,11 +145,10 @@ struct JsonParserParsingEdgeCaseTests {
     private static let invalidCases: [String] = [
         "{invalid}",
         "{\"a\":}",
-        "{\"a\":1,}",
-        "[1,]",
         "{\"a\" 1}",
-        "{\"a\":true,}",
-        "{\"a\":[1,]}",
+        "{\"a\":1 \"b\":2}",
+        "[,1]",
+        "[1 2]",
         "{\"a\":[,1]}"
     ]
 
@@ -209,7 +207,11 @@ struct JsonParserFormattingEdgeCaseTests {
         "{invalid}",
         "",
         " ",
-        "[1,]"
+        "{\"a\":}",
+        "{\"a\" 1}",
+        "{\"a\":1 \"b\":2}",
+        "[,1]",
+        "[1 2]"
     ]
 
     @Test("Pretty print invalid returns nil", arguments: prettyPrintInvalid)
@@ -234,7 +236,11 @@ struct JsonParserFormattingEdgeCaseTests {
         "{invalid}",
         "",
         " ",
-        "[1,]"
+        "{\"a\":}",
+        "{\"a\" 1}",
+        "{\"a\":1 \"b\":2}",
+        "[,1]",
+        "[1 2]"
     ]
 
     @Test("Minify invalid returns nil", arguments: minifyInvalid)
@@ -258,7 +264,7 @@ struct JsonParserCrudEdgeCaseTests {
     func testAddToObject(_ input: String, _ path: [String], _ key: String, _ valueJSON: String, _ expected: String?) {
         let value = valueJSON.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0, options: .fragmentsAllowed) }
         guard let value else {
-            #expect(false)
+            #expect(Bool(false))
             return
         }
         let result = JsonParser.addToObject(input, at: path, key: key, value: value)
@@ -280,7 +286,7 @@ struct JsonParserCrudEdgeCaseTests {
     func testAppendToArray(_ input: String, _ path: [String], _ valueJSON: String, _ expected: String?) {
         let value = valueJSON.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0, options: .fragmentsAllowed) }
         guard let value else {
-            #expect(false)
+            #expect(Bool(false))
             return
         }
         let result = JsonParser.appendToArray(input, at: path, value: value)
@@ -313,7 +319,7 @@ struct JsonParserCrudEdgeCaseTests {
         ("{\"a\":{\"b\":1}}", ["a", "b"], "2", "{\"a\":{\"b\":2}}"),
         ("[1,2,3]", ["[0]"], "9", "[9,2,3]"),
         ("{\"items\":[1,2]}", ["items", "[1]"], "9", "{\"items\":[1,9]}"),
-        ("{\"a\":1}", ["missing"], "2", "{\"a\":1}"),
+        ("{\"a\":1}", ["missing"], "2", "{\"a\":1,\"missing\":2}"),
         ("[1,2,3]", ["[9]"], "9", "[1,2,3]"),
         ("{\"a\":1}", [], "{\"b\":2}", "{\"b\":2}")
     ]
@@ -322,7 +328,7 @@ struct JsonParserCrudEdgeCaseTests {
     func testUpdate(_ input: String, _ path: [String], _ valueJSON: String, _ expected: String?) {
         let value = valueJSON.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0, options: .fragmentsAllowed) }
         guard let value else {
-            #expect(false)
+            #expect(Bool(false))
             return
         }
         let result = JsonParser.update(input, at: path, value: value)

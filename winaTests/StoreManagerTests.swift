@@ -14,7 +14,7 @@ final class MockStoreService: StoreServiceProtocol, @unchecked Sendable {
     var mockProducts: [Product] = []
     var mockPurchaseResult: Product.PurchaseResult?
     var mockEntitlementResult = EntitlementResult(hasEntitlement: false, wasRevoked: false)
-    var mockUnfinishedResult: Bool?
+    var mockUnfinishedResult: UnfinishedTransactionResult?
     var syncCalled = false
     var fetchError: Error?
     var purchaseError: Error?
@@ -44,7 +44,7 @@ final class MockStoreService: StoreServiceProtocol, @unchecked Sendable {
         mockEntitlementResult
     }
 
-    func processUnfinishedTransactions(for productID: String) async -> Bool? {
+    func processUnfinishedTransactions(for productID: String) async -> UnfinishedTransactionResult? {
         mockUnfinishedResult
     }
 
@@ -68,7 +68,7 @@ struct StoreManagerSingletonTests {
     @Test("Shared instance exists")
     func sharedInstanceExists() {
         let manager = StoreManager.shared
-        #expect(manager != nil)
+        #expect(manager === StoreManager.shared)
     }
 
     @Test("Shared instance is singleton")
@@ -292,7 +292,7 @@ struct StoreManagerUnfinishedTransactionTests {
     @MainActor
     func unfinishedValidTransactionGrantsEntitlement() async {
         let mockService = MockStoreService()
-        mockService.mockUnfinishedResult = true  // Valid transaction
+        mockService.mockUnfinishedResult = UnfinishedTransactionResult(isAdRemoved: true)  // Valid transaction
         mockService.mockEntitlementResult = EntitlementResult(hasEntitlement: true, wasRevoked: false)
 
         let manager = StoreManager.createForTesting(storeService: mockService)
@@ -305,11 +305,49 @@ struct StoreManagerUnfinishedTransactionTests {
     @MainActor
     func unfinishedRevokedTransactionRemovesEntitlement() async {
         let mockService = MockStoreService()
-        mockService.mockUnfinishedResult = false  // Revoked transaction
+        mockService.mockUnfinishedResult = UnfinishedTransactionResult(isAdRemoved: false)  // Revoked transaction
 
         let manager = StoreManager.createForTesting(storeService: mockService)
         try? await Task.sleep(for: .milliseconds(100))
 
         #expect(manager.isAdRemoved == false)
+    }
+}
+
+// MARK: - Transaction Update Tests
+
+@Suite("StoreManager Transaction Update Tests")
+struct StoreManagerTransactionUpdateTests {
+
+    @Test("Transaction update for matching product toggles ad removal")
+    @MainActor
+    func transactionUpdateMatchingProductTogglesAdRemoval() async {
+        let mockService = MockStoreService()
+        let manager = StoreManager.createForTesting(storeService: mockService)
+        try? await Task.sleep(for: .milliseconds(50))
+
+        mockService.simulateTransactionUpdate(productID: "removeAds", isRevoked: false)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(manager.isAdRemoved == true)
+
+        mockService.simulateTransactionUpdate(productID: "removeAds", isRevoked: true)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(manager.isAdRemoved == false)
+    }
+
+    @Test("Transaction update for other products is ignored")
+    @MainActor
+    func transactionUpdateOtherProductIgnored() async {
+        let mockService = MockStoreService()
+        let manager = StoreManager.createForTesting(storeService: mockService)
+        try? await Task.sleep(for: .milliseconds(50))
+
+        mockService.simulateTransactionUpdate(productID: "removeAds", isRevoked: false)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(manager.isAdRemoved == true)
+
+        mockService.simulateTransactionUpdate(productID: "otherProduct", isRevoked: true)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(manager.isAdRemoved == true)
     }
 }
