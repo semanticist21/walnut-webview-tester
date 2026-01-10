@@ -35,6 +35,7 @@ struct ContentView: View {
     @State private var webViewID = UUID()
     @State var validationTask: Task<Void, Never>?
     @State private var webViewNavigator = WebViewNavigator()
+    @State private var screenRecorder = WebViewRecorder()
     @State private var storageManager = StorageManager()
     @State private var showSafariUnsupportedAlert = false
     @State private var safariUnsupportedURL = ""
@@ -150,6 +151,7 @@ struct ContentView: View {
                         }
                     },
                     navigator: useSafariWebView ? nil : webViewNavigator,
+                    recorder: screenRecorder,
                     urlStorage: urlStorage,
                     showURLInput: $showURLInput,
                     urlInputText: $urlInputText,

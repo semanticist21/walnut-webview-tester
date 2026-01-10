@@ -6,6 +6,7 @@
 //
 
 import AudioToolbox
+import Photos
 import SwiftUI
 import SwiftUIBackports
 
@@ -18,6 +19,7 @@ struct OverlayMenuBars: View {
     let onHome: () -> Void
     let onURLChange: (String) -> Void
     let navigator: WebViewNavigator?
+    let recorder: WebViewRecorder
     let urlStorage: URLStorageManager
     @Binding var showURLInput: Bool
     @Binding var urlInputText: String
@@ -39,6 +41,10 @@ struct OverlayMenuBars: View {
     @State private var isKeyboardVisible: Bool = false
     @State private var showPhotoPermissionAlert: Bool = false
     @State private var showRecordingFailedAlert: Bool = false
+    @State private var showRecordingSavedToast: Bool = false
+    // Local screenshot states for SafariVC mode (since navigator is nil)
+    @State private var showScreenshotFlash: Bool = false
+    @State private var showScreenshotSavedToast: Bool = false
 
     // Toolbar customization - WKWebView
     @AppStorage("toolbarItemsOrder") private var toolbarItemsOrderData = Data()
@@ -47,6 +53,15 @@ struct OverlayMenuBars: View {
     // Toolbar customization - SafariVC (separate settings)
     @AppStorage("safariToolbarItemsOrder") private var safariToolbarItemsOrderData = Data()
     @AppStorage("safariAppBarItemsOrder") private var safariAppBarItemsOrderData = Data()
+
+    /// Active recorder based on mode: WKWebView uses navigator.recorder, SafariVC uses passed recorder
+    private var activeRecorder: WebViewRecorder {
+        if useSafariVC {
+            return recorder  // SafariVC: use separate recorder
+        } else {
+            return navigator?.recorder ?? recorder  // WKWebView: use navigator's recorder
+        }
+    }
 
     private var visibleToolbarItems: [DevToolsMenuItem] {
         guard let items = try? JSONDecoder().decode([ToolbarItemState].self, from: toolbarItemsOrderData),
@@ -178,6 +193,31 @@ struct OverlayMenuBars: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Screen recording was denied or is not available. Please enable screen recording permission in Settings.")
+        }
+        // SafariVC mode: Screenshot flash overlay (full screen)
+        .overlay {
+            if useSafariVC && showScreenshotFlash {
+                Color.white
+                    .opacity(0.7)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+        }
+        // SafariVC mode: Screenshot/Recording saved toasts
+        .overlay(alignment: .bottom) {
+            if useSafariVC {
+                VStack(spacing: 8) {
+                    if showScreenshotSavedToast {
+                        CopiedFeedbackToast(message: "Saved to Photos")
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    if showRecordingSavedToast {
+                        CopiedFeedbackToast(message: "Recording Saved")
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .padding(.bottom, 100)  // Above bottom bar
+            }
         }
     }
 
@@ -359,20 +399,18 @@ struct OverlayMenuBars: View {
 
     @ViewBuilder
     private var recordingButton: some View {
-        let isRecording = navigator?.recorder.isRecording ?? false
-
-        if isRecording, let recorder = navigator?.recorder {
+        if activeRecorder.isRecording {
             // Expanded recording button with time using TimelineView
             TimelineView(.periodic(from: .now, by: 1.0)) { _ in
                 Button {
-                    handleToolbarItemTap(.recording)
+                    toggleRecording()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "stop.circle.fill")
                             .font(.system(size: 16))
                             .foregroundStyle(.red)
 
-                        Text(formatDuration(recorder.currentDuration))
+                        Text(formatDuration(activeRecorder.currentDuration))
                             .font(.system(.caption, design: .monospaced, weight: .medium))
                             .foregroundStyle(.primary)
                     }
@@ -386,7 +424,7 @@ struct OverlayMenuBars: View {
         } else {
             // Normal recording button
             BottomBarIconButton(icon: "record.circle") {
-                handleToolbarItemTap(.recording)
+                toggleRecording()
             }
         }
     }
@@ -447,11 +485,11 @@ struct OverlayMenuBars: View {
     private func takeScreenshotWithFeedback() {
         Task {
             // Check permission first (before any feedback)
-            let permission = navigator?.checkPhotoLibraryPermission() ?? .denied
+            let permission = checkPhotoLibraryPermission()
 
             switch permission {
             case .notDetermined:
-                let granted = await navigator?.requestPhotoLibraryPermission() ?? false
+                let granted = await requestPhotoLibraryPermission()
                 if !granted {
                     await MainActor.run { showPhotoPermissionAlert = true }
                     return
@@ -466,55 +504,118 @@ struct OverlayMenuBars: View {
             // Permission granted - now play feedback and capture
             AudioServicesPlaySystemSound(1108)
 
-            await MainActor.run {
-                withAnimation(.easeIn(duration: 0.05)) {
-                    navigator?.showScreenshotFlash = true
-                }
-            }
-            try? await Task.sleep(for: .milliseconds(100))
-            await MainActor.run {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    navigator?.showScreenshotFlash = false
-                }
-            }
-
-            try? await Task.sleep(for: .milliseconds(50))
-            let result = await navigator?.takeScreenshot() ?? .failed
-
-            if result == .success {
+            if useSafariVC {
+                // SafariVC mode: use local flash state and full-screen capture
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        navigator?.showScreenshotSavedToast = true
+                    withAnimation(.easeIn(duration: 0.05)) {
+                        showScreenshotFlash = true
                     }
                 }
-                try? await Task.sleep(for: .seconds(1.5))
+                try? await Task.sleep(for: .milliseconds(100))
                 await MainActor.run {
-                    withAnimation(.easeIn(duration: 0.2)) {
-                        navigator?.showScreenshotSavedToast = false
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        showScreenshotFlash = false
+                    }
+                }
+
+                try? await Task.sleep(for: .milliseconds(50))
+                let result = await captureFullScreen()
+
+                if result == .success {
+                    await MainActor.run {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showScreenshotSavedToast = true
+                        }
+                    }
+                    try? await Task.sleep(for: .seconds(1.5))
+                    await MainActor.run {
+                        withAnimation(.easeIn(duration: 0.2)) {
+                            showScreenshotSavedToast = false
+                        }
+                    }
+                }
+            } else {
+                // WKWebView mode: use navigator
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.05)) {
+                        navigator?.showScreenshotFlash = true
+                    }
+                }
+                try? await Task.sleep(for: .milliseconds(100))
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        navigator?.showScreenshotFlash = false
+                    }
+                }
+
+                try? await Task.sleep(for: .milliseconds(50))
+                let result = await navigator?.takeScreenshot() ?? .failed
+
+                if result == .success {
+                    await MainActor.run {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            navigator?.showScreenshotSavedToast = true
+                        }
+                    }
+                    try? await Task.sleep(for: .seconds(1.5))
+                    await MainActor.run {
+                        withAnimation(.easeIn(duration: 0.2)) {
+                            navigator?.showScreenshotSavedToast = false
+                        }
                     }
                 }
             }
         }
     }
 
+    /// Capture full screen for SafariVC mode
+    @MainActor
+    private func captureFullScreen() async -> ScreenshotResult {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else {
+            return .failed
+        }
+
+        let renderer = UIGraphicsImageRenderer(size: window.bounds.size)
+        let image = renderer.image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+
+        // Convert to opaque image (removes unnecessary alpha channel)
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = true
+        let opaqueRenderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        let opaqueImage = opaqueRenderer.image { _ in
+            image.draw(at: .zero)
+        }
+
+        // Save to Photos
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetCreationRequest.creationRequestForAsset(from: opaqueImage)
+            }
+            return .success
+        } catch {
+            return .failed
+        }
+    }
+
     // MARK: - Recording
 
     private func toggleRecording() {
-        guard let recorder = navigator?.recorder else { return }
-
-        if recorder.isRecording {
+        if activeRecorder.isRecording {
             // Stop recording
-            recorder.stopRecording()
+            activeRecorder.stopRecording()
             showRecordingSavedFeedback()
         } else {
             // Start recording
             Task {
                 // Check permission first
-                let permission = navigator?.checkPhotoLibraryPermission() ?? .denied
+                let permission = checkPhotoLibraryPermission()
 
                 switch permission {
                 case .notDetermined:
-                    let granted = await navigator?.requestPhotoLibraryPermission() ?? false
+                    let granted = await requestPhotoLibraryPermission()
                     if !granted {
                         await MainActor.run { showPhotoPermissionAlert = true }
                         return
@@ -527,7 +628,7 @@ struct OverlayMenuBars: View {
                 }
 
                 // Start recording
-                let started = await recorder.startRecording()
+                let started = await activeRecorder.startRecording()
                 if started {
                     // Haptic feedback for start
                     AudioServicesPlaySystemSound(1519)  // Peek haptic
@@ -549,16 +650,37 @@ struct OverlayMenuBars: View {
 
             await MainActor.run {
                 withAnimation(.easeOut(duration: 0.2)) {
-                    navigator?.showRecordingSavedToast = true
+                    showRecordingSavedToast = true
                 }
             }
             try? await Task.sleep(for: .seconds(2.0))
             await MainActor.run {
                 withAnimation(.easeIn(duration: 0.2)) {
-                    navigator?.showRecordingSavedToast = false
+                    showRecordingSavedToast = false
                 }
             }
         }
+    }
+
+    // MARK: - Photo Library Permission
+
+    private func checkPhotoLibraryPermission() -> PhotoPermissionStatus {
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        switch status {
+        case .notDetermined:
+            return .notDetermined
+        case .authorized, .limited:
+            return .authorized
+        case .denied, .restricted:
+            return .denied
+        @unknown default:
+            return .authorized
+        }
+    }
+
+    private func requestPhotoLibraryPermission() async -> Bool {
+        let newStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        return newStatus == .authorized || newStatus == .limited
     }
 
     // MARK: - Gesture
@@ -634,6 +756,7 @@ private struct BottomBarIconButton: View {
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,
+            recorder: WebViewRecorder(),
             urlStorage: .shared,
             showURLInput: .constant(false),
             urlInputText: .constant(""),
@@ -666,6 +789,7 @@ private struct BottomBarIconButton: View {
             onHome: {},
             onURLChange: { _ in },
             navigator: nil,
+            recorder: WebViewRecorder(),
             urlStorage: .shared,
             showURLInput: .constant(false),
             urlInputText: .constant(""),

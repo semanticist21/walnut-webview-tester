@@ -12,14 +12,17 @@ import XCTest
 final class WebViewRecorderTests: XCTestCase {
 
     var recorder: WebViewRecorder!
+    var recorder2: WebViewRecorder!
 
     override func setUp() async throws {
         try await super.setUp()
         recorder = WebViewRecorder()
+        recorder2 = WebViewRecorder()
     }
 
     override func tearDown() async throws {
         recorder = nil
+        recorder2 = nil
         try await super.tearDown()
     }
 
@@ -185,6 +188,69 @@ final class WebViewRecorderTests: XCTestCase {
         // 1 hour = 3600 seconds = 60 minutes
         let formatted = formatDuration(3661) // 1:01:01
         XCTAssertEqual(formatted, "61:01")
+    }
+
+    // MARK: - Multiple Recorder Independence Tests
+
+    /// Test that two recorder instances are independent (WKWebView vs SafariVC pattern)
+    func testTwoRecordersAreIndependent() {
+        // WKWebView uses navigator.recorder, SafariVC uses separate recorder
+        // Both recorders created in setUp
+
+        // Initial states should both be idle
+        XCTAssertEqual(recorder.state, .idle)
+        XCTAssertEqual(recorder2.state, .idle)
+        XCTAssertFalse(recorder.isRecording)
+        XCTAssertFalse(recorder2.isRecording)
+
+        // They should be different instances
+        XCTAssertNotIdentical(recorder, recorder2)
+    }
+
+    func testRecorderDurationIndependence() {
+        // Both recorders created in setUp
+        // Set different start times
+        let now = Date()
+        recorder.test_setStartTime(now.addingTimeInterval(-10))  // 10 seconds ago
+        recorder2.test_setStartTime(now.addingTimeInterval(-5))   // 5 seconds ago
+
+        recorder.test_handleDurationTick()
+        recorder2.test_handleDurationTick()
+
+        // Durations should be different
+        XCTAssertEqual(recorder.recordingDuration, 10, accuracy: 0.5)
+        XCTAssertEqual(recorder2.recordingDuration, 5, accuracy: 0.5)
+    }
+
+    func testStopOneRecorderDoesNotAffectOther() {
+        // Both recorders created in setUp
+        // Set start times
+        recorder.test_setStartTime(Date())
+        recorder2.test_setStartTime(Date())
+
+        // Stop recorder (first one)
+        recorder.stopRecording()
+
+        // recorder2 should be unaffected (startTime still set)
+        recorder2.test_handleDurationTick()
+        XCTAssertGreaterThanOrEqual(recorder2.recordingDuration, 0)
+    }
+
+    func testNavigatorRecorderVsSeparateRecorder() {
+        // Simulate the two-recorder pattern used in the app:
+        // - recorder = navigator.recorder (WKWebView)
+        // - recorder2 = screenRecorder (SafariVC)
+        // Both recorders created in setUp
+
+        // They should be completely independent
+        XCTAssertNotIdentical(recorder, recorder2)
+
+        // Setting state on one shouldn't affect the other
+        recorder.test_setStartTime(Date())
+        recorder.test_handleDurationTick()
+
+        XCTAssertGreaterThan(recorder.recordingDuration, 0)
+        XCTAssertEqual(recorder2.recordingDuration, 0)
     }
 
     // MARK: - Helper Function

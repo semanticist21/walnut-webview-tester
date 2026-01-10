@@ -162,11 +162,8 @@ final class WebViewRecorder {
     func startRecording() async -> Bool {
         guard state == .idle else { return false }
 
-        // Check photo library permission
-        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
-        guard status == .authorized || status == .limited else {
-            return false
-        }
+        // Note: Photo library permission should be checked by caller before calling this method
+        // This avoids race conditions where permission was just granted but status hasn't propagated
 
         // Check ReplayKit availability
         let recorder = RPScreenRecorder.shared()
