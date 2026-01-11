@@ -70,7 +70,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-AU": {
@@ -110,7 +110,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-CA": {
@@ -150,7 +150,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-GB": {
@@ -190,7 +190,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "ko": {
