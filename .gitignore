@@ -16,3 +16,4 @@ DerivedData/
 fastlane/screenshots/
 
 eruda
+__pycache__/

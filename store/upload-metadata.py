@@ -70,7 +70,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added video recording.\n- Fixed an intermittent issue where the find-in-page search bar didn't appear.\n- Added SafariVC menu editing.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-AU": {
@@ -110,7 +110,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added video recording.\n- Fixed an intermittent issue where the find-in-page search bar didn't appear.\n- Added SafariVC menu editing.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-CA": {
@@ -150,7 +150,7 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added video recording.\n- Fixed an intermittent issue where the find-in-page search bar didn't appear.\n- Added SafariVC menu editing.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "en-GB": {
@@ -190,11 +190,11 @@ Additional Features
 Perfect for iOS developers who need to test web content rendering, debug JavaScript, analyze network requests, and ensure accessibility compliance.
 """,
         "keywords": "webview,developer,debug,console,network,safari,wkwebview,devtools,test,inspect,ios,javascript,html",
-        "whatsNew": "- Added video recording.\n- Fixed an intermittent issue where the find-in-page search bar didn't appear.\n- Added SafariVC menu editing.",
+        "whatsNew": "- Added screenshot and screen recording support for SafariVC mode.\\n- Improved recording state management.",
         "promotionalText": "Test WebView easily with Walnut. Quick URL management with bookmarks and history, plus debugging with Console, Network, and SourceView."
     },
     "ko": {
-        "name": "Walnut: 웹뷰 테스터 & 디버그",
+        "name": "Walnut: Webview 테스터 & 디버그",
         "subtitle": "WKWebView & SafariVC 테스트",
         "description": """WKWebView와 SFSafariViewController 설정을 실시간으로 테스트하는 개발자 도구입니다.
 
@@ -230,11 +230,11 @@ SFSafariViewController 테스트
 웹 콘텐츠 렌더링 테스트, JavaScript 디버깅, 네트워크 요청 분석, 접근성 준수 확인이 필요한 iOS 개발자에게 적합합니다.
 """,
         "keywords": "웹뷰,개발자,디버그,콘솔,네트워크,사파리,devtools,테스트,검사,ios,자바스크립트,html,css,쿠키,성능,접근성,개발도구,브라우저,앱,모바일,웹킷,사파리뷰",
-        "whatsNew": "- 비디오 녹화가 추가되었습니다.\n- 페이지 찾기 시 간헐적으로 검색 창이 표시되지 않던 문제를 수정했습니다.\n- SafariVC 메뉴 편집 기능을 추가했습니다.",
+        "whatsNew": "- SafariVC 모드에서 스크린샷 및 화면 녹화를 지원합니다.\n- 녹화 상태 관리가 개선되었습니다.",
         "promotionalText": "Walnut으로 WebView 테스트를 쉽게 해보세요. 북마크·히스토리 기반 URL 관리와 Console, Network, SourceView 내장 도구로 디버깅이 쉽습니다."
     },
     "ja": {
-        "name": "Walnut: Webviewテスター&デバッグ",
+        "name": "Walnut: Webview テスター＆デバッグ",
         "subtitle": "WKWebView & SafariVCテスト",
         "description": """WKWebViewとSFSafariViewControllerの設定をリアルタイムでテストする開発者ツールです。
 
@@ -270,11 +270,11 @@ SFSafariViewControllerテスト
 Webコンテンツのレンダリングテスト、JavaScriptデバッグ、ネットワークリクエスト分析、アクセシビリティ準拠の確認が必要なiOS開発者に最適です。
 """,
         "keywords": "webview,開発者,デバッグ,コンソール,ネットワーク,safari,devtools,テスト,検査,ios,javascript,html,css,開発ツール,ブラウザ,アプリ",
-        "whatsNew": "- ビデオ録画を追加しました。\n- ページ内検索で検索バーが表示されないことがある問題を修正しました。\n- SafariVCメニューの編集機能を追加しました。",
+        "whatsNew": "- SafariVCモードでスクリーンショットと画面録画をサポートしました。\n- 録画状態の管理を改善しました。",
         "promotionalText": "WalnutでWebViewテストを簡単に。ブックマーク/履歴でURL管理が速く、Console・Network・SourceViewなど内蔵ツールでデバッグも簡単です。"
     },
     "zh-Hans": {
-        "name": "Walnut: Webview测试和调试",
+        "name": "Walnut: Webview 测试与调试",
         "subtitle": "测试WKWebView和SafariVC",
         "description": """实时测试WKWebView和SFSafariViewController配置的开发者工具。
 
@@ -310,11 +310,11 @@ SFSafariViewController测试
 非常适合需要测试网页内容渲染、调试JavaScript、分析网络请求和确保可访问性合规的iOS开发者。
 """,
         "keywords": "webview,开发者,调试,控制台,网络,safari,devtools,测试,检查,ios,javascript,html,css,cookie,性能,开发工具,浏览器,应用,工具",
-        "whatsNew": "- 新增视频录制。\n- 修复了页面内搜索栏偶尔不显示的问题。\n- 新增 SafariVC 菜单编辑功能。",
+        "whatsNew": "- 增加了SafariVC模式下的截屏和屏幕录制功能。\n- 改进了录制状态管理。",
         "promotionalText": "用Walnut轻松测试WebView。通过书签/历史管理URL快速访问，并用Console、Network、SourceView等内置工具轻松调试。"
     },
     "zh-Hant": {
-        "name": "Walnut: Webview測試和除錯",
+        "name": "Walnut: Webview 測試與除錯",
         "subtitle": "測試WKWebView和SafariVC",
         "description": """即時測試WKWebView和SFSafariViewController配置的開發者工具。
 
@@ -350,7 +350,7 @@ SFSafariViewController測試
 非常適合需要測試網頁內容呈現、除錯JavaScript、分析網路請求和確保無障礙合規的iOS開發者。
 """,
         "keywords": "webview,開發者,除錯,控制台,網路,safari,devtools,測試,檢查,ios,javascript,html,css,cookie,效能,開發工具,瀏覽器,應用,工具",
-        "whatsNew": "- 新增影片錄製。\n- 修正頁面內搜尋欄偶爾不顯示的問題。\n- 新增 SafariVC 選單編輯功能。",
+        "whatsNew": "- 增加了SafariVC模式下的截圖和螢幕錄製功能。\n- 改進了錄製狀態管理。",
         "promotionalText": "用Walnut輕鬆測試WebView。透過書籤/歷史管理URL快速存取，並用Console、Network、SourceView等內建工具輕鬆除錯。"
     },
     "de-DE": {
@@ -390,7 +390,7 @@ Zusätzliche Funktionen
 Perfekt für iOS-Entwickler, die Web-Content-Rendering testen, JavaScript debuggen, Netzwerkanfragen analysieren und Barrierefreiheit sicherstellen müssen.
 """,
         "keywords": "webview,entwickler,debug,konsole,netzwerk,safari,devtools,test,inspektor,ios,javascript,html,browser",
-        "whatsNew": "- Videoaufzeichnung hinzugefügt.\n- Ein sporadisches Problem behoben, bei dem die Seitensuche-Leiste nicht angezeigt wurde.\n- Bearbeitung des SafariVC-Menüs hinzugefügt.",
+        "whatsNew": "- Screenshot- und Bildschirmaufnahme-Unterstützung für den SafariVC-Modus hinzugefügt.\n- Aufnahmestatusverwaltung verbessert.",
         "promotionalText": "WebView-Tests ganz einfach mit Walnut. Schneller URL-Zugriff über Lesezeichen und Verlauf, Debugging mit Console, Network und SourceView."
     },
     "fr-FR": {
@@ -430,7 +430,7 @@ Fonctionnalités supplémentaires
 Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, déboguer JavaScript, analyser les requêtes réseau et assurer la conformité d'accessibilité.
 """,
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
-        "whatsNew": "- Ajout de l’enregistrement vidéo.\n- Correction d’un problème intermittent où la barre de recherche dans la page ne s’affichait pas.\n- Ajout de l’édition du menu SafariVC.",
+        "whatsNew": "- Ajout de la prise en charge des captures d'écran et de l'enregistrement vidéo pour le mode SafariVC.\n- Amélioration de la gestion de l'état d'enregistrement.",
         "promotionalText": "Testez WebView facilement avec Walnut. Gestion rapide des URL via favoris et historique, et débogage avec Console, Network et SourceView."
     },
     "fr-CA": {
@@ -470,11 +470,11 @@ Fonctionnalités supplémentaires
 Parfait pour les développeurs iOS qui doivent tester le rendu de contenu web, déboguer JavaScript, analyser les requêtes réseau et assurer la conformité d'accessibilité.
 """,
         "keywords": "webview,développeur,debug,console,réseau,safari,devtools,test,inspecteur,ios,javascript,html,cookie",
-        "whatsNew": "- Ajout de l’enregistrement vidéo.\n- Correction d’un problème intermittent où la barre de recherche dans la page ne s’affichait pas.\n- Ajout de l’édition du menu SafariVC.",
+        "whatsNew": "- Ajout de la prise en charge des captures d'écran et de l'enregistrement vidéo pour le mode SafariVC.\n- Amélioration de la gestion de l'état d'enregistrement.",
         "promotionalText": "Testez WebView facilement avec Walnut. Gestion rapide des URL via favoris et historique, et débogage avec Console, Network et SourceView."
     },
     "es-ES": {
-        "name": "Walnut: Webview Test & Debug",
+        "name": "Walnut: Webview Test & Depuración",
         "subtitle": "Probar WKWebView y SafariVC",
         "description": """La herramienta definitiva para desarrolladores para probar configuraciones de WKWebView y SFSafariViewController en tiempo real.
 
@@ -510,11 +510,11 @@ Características adicionales
 Perfecto para desarrolladores iOS que necesitan probar el renderizado de contenido web, depurar JavaScript, analizar solicitudes de red y asegurar el cumplimiento de accesibilidad.
 """,
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
-        "whatsNew": "- Se añadió la grabación de vídeo.\n- Se corrigió un problema intermitente en el que la barra de búsqueda en la página no aparecía.\n- Se añadió la edición del menú de SafariVC.",
+        "whatsNew": "- Añadida la captura de pantalla y grabación de video en modo SafariVC.\n- Mejora en la gestión del estado de grabación.",
         "promotionalText": "Pruebe WebView fácilmente con Walnut. Gestión rápida de URL con marcadores e historial, y depuración con Console, Network y SourceView."
     },
     "es-MX": {
-        "name": "Walnut: Webview Test & Debug",
+        "name": "Walnut: Webview Test & Depuración",
         "subtitle": "Probar WKWebView y SafariVC",
         "description": """La herramienta definitiva para desarrolladores para probar configuraciones de WKWebView y SFSafariViewController en tiempo real.
 
@@ -550,7 +550,7 @@ Características adicionales
 Perfecto para desarrolladores iOS que necesitan probar el renderizado de contenido web, depurar JavaScript, analizar solicitudes de red y asegurar el cumplimiento de accesibilidad.
 """,
         "keywords": "webview,desarrollador,debug,consola,red,safari,devtools,prueba,inspector,ios,javascript,html,cookie",
-        "whatsNew": "- Se agregó la grabación de video.\n- Se corrigió un problema intermitente en el que la barra de búsqueda en la página no aparecía.\n- Se agregó la edición del menú de SafariVC.",
+        "whatsNew": "- Añadida la captura de pantalla y grabación de video en modo SafariVC.\n- Mejora en la gestión del estado de grabación.",
         "promotionalText": "Pruebe WebView fácilmente con Walnut. Gestión rápida de URL con marcadores e historial, y depuración con Console, Network y SourceView."
     },
     "it": {
@@ -591,7 +591,7 @@ Funzionalità aggiuntive
 Perfetto per sviluppatori iOS che devono testare il rendering di contenuti web, debuggare JavaScript, analizzare richieste di rete e garantire la conformità all'accessibilità.
 """,
         "keywords": "webview,sviluppatore,debug,console,rete,safari,devtools,test,ispettore,ios,javascript,html,css",
-        "whatsNew": "- Aggiunta la registrazione video.\n- Risolto un problema intermittente per cui la barra di ricerca nella pagina non appariva.\n- Aggiunta la modifica del menu SafariVC.",
+        "whatsNew": "- Aggiunto supporto per screenshot e registrazione dello schermo in modalità SafariVC.\n- Migliorata la gestione dello stato di registrazione.",
         "promotionalText": "Testa WebView facilmente con Walnut. Gestione rapida degli URL con segnalibri e cronologia, debug con Console, Network e SourceView."
     },
     "pt-BR": {
@@ -632,7 +632,7 @@ Recursos adicionais
 Perfeito para desenvolvedores iOS que precisam testar renderização de conteúdo web, depurar JavaScript, analisar requisições de rede e garantir conformidade de acessibilidade.
 """,
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
-        "whatsNew": "- Adicionamos gravação de vídeo.\n- Corrigimos um problema intermitente em que a barra de busca na página não aparecia.\n- Adicionamos a edição do menu do SafariVC.",
+        "whatsNew": "- Adicionado suporte a captura de tela e gravação de vídeo no modo SafariVC.\n- Melhoria no gerenciamento do estado de gravação.",
         "promotionalText": "Teste WebView facilmente com o Walnut. Gestão rápida de URLs com favoritos e histórico, e debug com Console, Network e SourceView."
     },
     "pt-PT": {
@@ -673,7 +673,7 @@ Recursos adicionais
 Perfeito para desenvolvedores iOS que precisam testar renderização de conteúdo web, depurar JavaScript, analisar requisições de rede e garantir conformidade de acessibilidade.
 """,
         "keywords": "webview,desenvolvedor,debug,console,rede,safari,devtools,teste,inspetor,ios,javascript,html,cookie",
-        "whatsNew": "- Adicionada gravação de vídeo.\n- Corrigido um problema intermitente em que a barra de pesquisa na página não aparecia.\n- Adicionada a edição do menu do SafariVC.",
+        "whatsNew": "- Adicionado suporte a captura de tela e gravação de vídeo no modo SafariVC.\n- Melhoria no gerenciamento do estado de gravação.",
         "promotionalText": "Teste WebView facilmente com o Walnut. Gestão rápida de URLs com marcadores e histórico, e debug com Console, Network e SourceView."
     },
     "ru": {
@@ -713,7 +713,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 Идеально подходит для iOS-разработчиков, которым нужно тестировать рендеринг веб-контента, отлаживать JavaScript, анализировать сетевые запросы и обеспечивать соответствие требованиям доступности.
 """,
         "keywords": "webview,разработчик,отладка,консоль,сеть,safari,devtools,тест,инспектор,ios,javascript,html,css",
-        "whatsNew": "- Добавлена запись видео.\n- Исправлена периодическая проблема, когда строка поиска на странице не появлялась.\n- Добавлено редактирование меню SafariVC.",
+        "whatsNew": "- Добавлена поддержка снимков экрана и записи экрана в режиме SafariVC.\n- Улучшено управление состоянием записи.",
         "promotionalText": "Тестируйте WebView легко с Walnut. Быстрое управление URL через закладки и историю, отладка с Console, Network и SourceView."
     },
     "ar-SA": {
@@ -753,7 +753,7 @@ Perfeito para desenvolvedores iOS que precisam testar renderização de conteúd
 مثالية لمطوري iOS الذين يحتاجون إلى اختبار عرض محتوى الويب وتصحيح أخطاء JavaScript وتحليل طلبات الشبكة وضمان الامتثال لإمكانية الوصول.
 """,
         "keywords": "webview,مطور,تصحيح,وحدة التحكم,شبكة,safari,devtools,اختبار,فحص,ios,javascript,html,css,متصفح,أداة",
-        "whatsNew": "- تمت إضافة تسجيل الفيديو.\n- تم إصلاح مشكلة متقطعة كانت تمنع ظهور شريط البحث داخل الصفحة.\n- تمت إضافة ميزة تعديل قائمة SafariVC.",
+        "whatsNew": "- تمت إضافة دعم لقطة الشاشة وتسجيل الشاشة لوضع SafariVC.\n- تحسين إدارة حالة التسجيل.",
         "promotionalText": "اختبر WebView بسهولة مع Walnut. إدارة سريعة للروابط عبر الإشارات المرجعية والسجل، وتصحيح مع Console وNetwork وSourceView."
     },
     "hi": {
@@ -793,7 +793,7 @@ SFSafariViewController टेस्टिंग
 iOS डेवलपर्स के लिए परफेक्ट जिन्हें वेब कंटेंट रेंडरिंग टेस्ट करना है, JavaScript डीबग करना है, नेटवर्क रिक्वेस्ट एनालाइज़ करना है और एक्सेसिबिलिटी कंप्लायंस सुनिश्चित करना है।
 """,
         "keywords": "webview,डेवलपर,डीबग,कंसोल,नेटवर्क,safari,devtools,टेस्ट,इंस्पेक्ट,ios,javascript,html,css,ब्राउज़र",
-        "whatsNew": "- वीडियो रिकॉर्डिंग जोड़ी गई।\n- पेज में खोजते समय सर्च बार कभी-कभी न दिखने की समस्या ठीक की गई।\n- SafariVC मेनू संपादन जोड़ा गया।",
+        "whatsNew": "- SafariVC मोड के लिए स्क्रीनशॉट और स्क्रीन रिकॉर्डिंग सपोर्ट जोड़ा गया।\n- रिकॉर्डिंग स्टेट मैनेजमेंट में सुधार।",
         "promotionalText": "Walnut के साथ WebView को आसानी से टेस्ट करें। बुकमार्क/हिस्ट्री से URL प्रबंधन तेज़, और Console, Network, SourceView से डिबगिंग आसान।"
     },
     "th": {
@@ -833,7 +833,7 @@ iOS डेवलपर्स के लिए परफेक्ट जिन्
 เหมาะสำหรับนักพัฒนา iOS ที่ต้องการทดสอบการแสดงผลเนื้อหาเว็บ ดีบัก JavaScript วิเคราะห์คำขอเครือข่าย และรับรองการปฏิบัติตามการเข้าถึง
 """,
         "keywords": "webview,นักพัฒนา,ดีบัก,คอนโซล,เครือข่าย,safari,devtools,ทดสอบ,ตรวจสอบ,ios,javascript,html,css",
-        "whatsNew": "- เพิ่มการบันทึกวิดีโอ\n- แก้ปัญหาที่แถบค้นหาในหน้าบางครั้งไม่แสดง\n- เพิ่มการแก้ไขเมนู SafariVC",
+        "whatsNew": "- เพิ่มการสนับสนุนการจับภาพหน้าจอและการบันทึกหน้าจอสำหรับโหมด SafariVC\n- ปรับปรุงการจัดการสถานะการบันทึก",
         "promotionalText": "ทดสอบ WebView ได้ง่ายด้วย Walnut. จัดการ URL ได้เร็วด้วยบุ๊กมาร์กและประวัติ และดีบักด้วย Console, Network, SourceView."
     },
     "vi": {
@@ -873,11 +873,11 @@ Tính năng bổ sung
 Hoàn hảo cho các nhà phát triển iOS cần kiểm thử hiển thị nội dung web, gỡ lỗi JavaScript, phân tích yêu cầu mạng và đảm bảo tuân thủ khả năng truy cập.
 """,
         "keywords": "webview,lập trình,debug,console,mạng,safari,devtools,kiểm thử,kiểm tra,ios,javascript,html,css",
-        "whatsNew": "- Đã thêm ghi video.\n- Đã sửa lỗi thỉnh thoảng thanh tìm kiếm trong trang không hiển thị.\n- Đã thêm tính năng chỉnh sửa menu SafariVC.",
+        "whatsNew": "- Thêm hỗ trợ chụp màn hình và quay màn hình cho chế độ SafariVC.\n- Cải thiện quản lý trạng thái ghi.",
         "promotionalText": "Kiểm thử WebView dễ dàng với Walnut. Quản lý URL nhanh bằng dấu trang và lịch sử, và debug với Console, Network, SourceView."
     },
     "id": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Tes & Debug",
         "subtitle": "Tes WKWebView & SafariVC",
         "description": """Alat pengembang terbaik untuk menguji konfigurasi WKWebView dan SFSafariViewController secara real-time.
 
@@ -913,11 +913,11 @@ Fitur Tambahan
 Sempurna untuk pengembang iOS yang perlu menguji rendering konten web, debug JavaScript, menganalisis permintaan jaringan, dan memastikan kepatuhan aksesibilitas.
 """,
         "keywords": "webview,developer,debug,console,jaringan,safari,devtools,tes,inspeksi,ios,javascript,html,css",
-        "whatsNew": "- Menambahkan perekaman video.\n- Memperbaiki masalah sesekali bilah pencarian di halaman tidak muncul.\n- Menambahkan pengeditan menu SafariVC.",
+        "whatsNew": "- Menambahkan dukungan tangkapan layar dan perekaman layar untuk mode SafariVC.\n- Peningkatan manajemen status perekaman.",
         "promotionalText": "Uji WebView dengan mudah lewat Walnut. Kelola URL cepat lewat bookmark dan riwayat, dan debug dengan Console, Network, SourceView."
     },
     "ms": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Uji & Nyahpepijat",
         "subtitle": "Uji WKWebView & SafariVC",
         "description": """Alat pembangun terbaik untuk menguji konfigurasi WKWebView dan SFSafariViewController secara masa nyata.
 
@@ -953,11 +953,11 @@ Ciri-ciri Tambahan
 Sempurna untuk pembangun iOS yang perlu menguji pemaparan kandungan web, nyahpepijat JavaScript, menganalisis permintaan rangkaian, dan memastikan pematuhan kebolehcapaian.
 """,
         "keywords": "webview,pembangun,debug,konsol,rangkaian,safari,devtools,uji,periksa,ios,javascript,html,css,pelayar",
-        "whatsNew": "- Menambah rakaman video.\n- Membetulkan isu sekali-sekala bar carian dalam halaman tidak muncul.\n- Menambah penyuntingan menu SafariVC.",
+        "whatsNew": "- Menambah sokongan tangkapan skrin dan rakaman skrin untuk mod SafariVC.\n- Pengurusan status rakaman yang dipertingkatkan.",
         "promotionalText": "Uji WebView dengan mudah bersama Walnut. Urus URL dengan pantas melalui penanda buku dan sejarah, dan nyahpepijat dengan Console, Network, SourceView."
     },
     "nl-NL": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """De ultieme ontwikkelaarstool voor het testen van WKWebView- en SFSafariViewController-configuraties in realtime.
 
@@ -993,11 +993,11 @@ Extra functies
 Perfect voor iOS-ontwikkelaars die webcontent-rendering moeten testen, JavaScript moeten debuggen, netwerkverzoeken moeten analyseren en toegankelijkheidsconformiteit moeten waarborgen.
 """,
         "keywords": "webview,ontwikkelaar,debug,console,netwerk,safari,devtools,test,inspecteer,ios,javascript,html,css",
-        "whatsNew": "- Videoregistratie toegevoegd.\n- Een probleem verholpen waarbij de zoekbalk in de pagina soms niet verscheen.\n- Bewerking van het SafariVC-menu toegevoegd.",
+        "whatsNew": "- Ondersteuning voor schermafbeeldingen en schermopname toegevoegd voor SafariVC-modus.\n- Verbeterd beheer van opnamestatus.",
         "promotionalText": "Test WebView eenvoudig met Walnut. Snel URL-beheer via bladwijzers en geschiedenis, en debug met Console, Network en SourceView."
     },
     "pl": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test i Debug",
         "subtitle": "Testuj WKWebView i SafariVC",
         "description": """Najlepsze narzędzie deweloperskie do testowania konfiguracji WKWebView i SFSafariViewController w czasie rzeczywistym.
 
@@ -1033,11 +1033,11 @@ Dodatkowe funkcje
 Idealne dla programistów iOS, którzy muszą testować renderowanie treści webowych, debugować JavaScript, analizować żądania sieciowe i zapewniać zgodność z dostępnością.
 """,
         "keywords": "webview,programista,debug,konsola,sieć,safari,devtools,test,inspektor,ios,javascript,html,css",
-        "whatsNew": "- Dodano nagrywanie wideo.\n- Naprawiono sporadyczny problem z niewyświetlaniem paska wyszukiwania na stronie.\n- Dodano edycję menu SafariVC.",
+        "whatsNew": "- Dodano obsługę zrzutów ekranu i nagrywania ekranu w trybie SafariVC.\n- Poprawiono zarządzanie stanem nagrywania.",
         "promotionalText": "Testuj WebView łatwo z Walnut. Szybkie zarządzanie URL dzięki zakładkom i historii, debug z Console, Network i SourceView."
     },
     "tr": {
-        "name": "Walnut: Webview Test & Debug",
+        "name": "Walnut: Webview Test & Hata Ayıklama",
         "subtitle": "WKWebView & SafariVC Test",
         "description": """WKWebView ve SFSafariViewController yapılandırmalarını gerçek zamanlı test etmek için nihai geliştirici aracı.
 
@@ -1073,11 +1073,11 @@ Ek Özellikler
 Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ isteklerini analiz etmesi ve erişilebilirlik uyumluluğunu sağlaması gereken iOS geliştiricileri için mükemmel.
 """,
         "keywords": "webview,geliştirici,debug,konsol,ağ,safari,devtools,test,denetim,ios,javascript,html,css,tarayıcı",
-        "whatsNew": "- Video kaydı eklendi.\n- Sayfa içi arama çubuğunun bazen görünmemesi sorunu düzeltildi.\n- SafariVC menü düzenleme eklendi.",
+        "whatsNew": "- SafariVC modunda ekran görüntüsü ve ekran kaydı desteği eklendi.\n- Kayıt durumu yönetimi iyileştirildi.",
         "promotionalText": "Walnut ile WebView testini kolayca yapın. Yer imi ve geçmişle URL yönetimi hızlı, Console, Network, SourceView ile hata ayıklama kolay."
     },
     "uk": {
-        "name": "Walnut: Webview Тест і Дебаг",
+        "name": "Walnut: Webview Тест і Налагодження",
         "subtitle": "Тест WKWebView і SafariVC",
         "description": """Найкращий інструмент розробника для тестування конфігурацій WKWebView та SFSafariViewController в реальному часі.
 
@@ -1113,11 +1113,11 @@ Web içerik görüntülemeyi test etmesi, JavaScript hata ayıklaması, ağ iste
 Ідеально підходить для iOS-розробників, яким потрібно тестувати рендеринг веб-контенту, налагоджувати JavaScript, аналізувати мережеві запити та забезпечувати відповідність вимогам доступності.
 """,
         "keywords": "webview,розробник,налагодження,консоль,мережа,safari,devtools,тест,інспектор,ios,javascript,html",
-        "whatsNew": "- Додано запис відео.\n- Виправлено періодичну проблему, коли панель пошуку на сторінці не з’являлася.\n- Додано редагування меню SafariVC.",
+        "whatsNew": "- Додано підтримку знімків екрану та запису екрану для режиму SafariVC.\n- Покращено керування станом запису.",
         "promotionalText": "Легко тестуйте WebView з Walnut. Швидке керування URL через закладки й історію та дебаг із Console, Network і SourceView."
     },
     "sv": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Testa WKWebView & SafariVC",
         "description": """Det ultimata utvecklarverktyget för att testa WKWebView- och SFSafariViewController-konfigurationer i realtid.
 
@@ -1153,11 +1153,11 @@ Ytterligare funktioner
 Perfekt för iOS-utvecklare som behöver testa webbinnehållsrendering, felsöka JavaScript, analysera nätverksförfrågningar och säkerställa tillgänglighetsefterlevnad.
 """,
         "keywords": "webview,utvecklare,debug,konsol,nätverk,safari,devtools,test,inspektera,ios,javascript,html,css",
-        "whatsNew": "- Videoinspelning har lagts till.\n- Ett intermittent problem där sökfältet på sidan ibland inte visades har åtgärdats.\n- Redigering av SafariVC-menyn har lagts till.",
+        "whatsNew": "- Lagt till stöd för skärmdumpar och skärminspelning för SafariVC-läge.\n- Förbättrad hantering av inspelningsstatus.",
         "promotionalText": "Testa WebView enkelt med Walnut. Snabb URL-hantering via bokmärken och historik, och debug med Console, Network och SourceView."
     },
     "no": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """Det ultimate utviklerverktøyet for testing av WKWebView- og SFSafariViewController-konfigurasjoner i sanntid.
 
@@ -1193,11 +1193,11 @@ Ytterligere funksjoner
 Perfekt for iOS-utviklere som trenger å teste webinnholdsrendering, feilsøke JavaScript, analysere nettverksforespørsler og sikre tilgjengelighetsoverholdelse.
 """,
         "keywords": "webview,utvikler,debug,konsoll,nettverk,safari,devtools,test,inspiser,ios,javascript,html,css",
-        "whatsNew": "- Videoinnspilling lagt til.\n- Rettet et periodisk problem der søkefeltet på siden noen ganger ikke ble vist.\n- Redigering av SafariVC-menyen lagt til.",
+        "whatsNew": "- Lagt til støtte for skjermbilder og skjermopptak for SafariVC-modus.\n- Forbedret håndtering av innspillingsstatus.",
         "promotionalText": "Test WebView enkelt med Walnut. Rask URL-håndtering med bokmerker og historikk, og debugging med Console, Network og SourceView."
     },
     "da": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """Det ultimative udviklerværktøj til test af WKWebView- og SFSafariViewController-konfigurationer i realtid.
 
@@ -1233,11 +1233,11 @@ Yderligere funktioner
 Perfekt til iOS-udviklere, der skal teste webindholdsgengivelse, debugge JavaScript, analysere netværksanmodninger og sikre tilgængelighedsoverholdelse.
 """,
         "keywords": "webview,udvikler,debug,konsol,netværk,safari,devtools,test,inspicér,ios,javascript,html,css,browser",
-        "whatsNew": "- Videooptagelse tilføjet.\n- Rettet et periodisk problem, hvor søgefeltet på siden nogle gange ikke blev vist.\n- Redigering af SafariVC-menuen tilføjet.",
+        "whatsNew": "- Tilføjet understøttelse af skærmbilleder og skærmoptagelse for SafariVC-tilstand.\n- Forbedret styring af optagelsesstatus.",
         "promotionalText": "Test WebView nemt med Walnut. Hurtig URL-styring via bogmærker og historik, og debug med Console, Network og SourceView."
     },
     "fi": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Testi & Debug",
         "subtitle": "Testaa WKWebView & SafariVC",
         "description": """Kehittäjätyökalu WKWebView- ja SFSafariViewController-konfiguraatioiden reaaliaikaiseen testaamiseen.
 
@@ -1273,11 +1273,11 @@ Lisäominaisuudet
 Täydellinen iOS-kehittäjille, jotka tarvitsevat web-sisällön renderöinnin testausta, JavaScript-virheenkorjausta, verkkopyyntöjen analysointia ja saavutettavuusvaatimusten varmistamista.
 """,
         "keywords": "webview,kehittäjä,debug,konsoli,verkko,safari,devtools,testi,tarkasta,ios,javascript,html,css,selain",
-        "whatsNew": "- Videotallennus lisätty.\n- Korjattu ajoittainen ongelma, jossa sivun hakupalkki ei näkynyt.\n- SafariVC-valikon muokkaus lisätty.",
+        "whatsNew": "- Lisätty kuvakaappaus- ja näytön tallennustuki SafariVC-tilaan.\n- Parannettu tallennustilan hallintaa.",
         "promotionalText": "Testaa WebView helposti Walnutilla. Nopea URL-hallinta kirjanmerkeillä ja historialla, debuggaus Console-, Network- ja SourceView-työkaluilla."
     },
     "cs": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """Ultimátní vývojářský nástroj pro testování konfigurací WKWebView a SFSafariViewController v reálném čase.
 
@@ -1313,11 +1313,11 @@ Další funkce
 Ideální pro iOS vývojáře, kteří potřebují testovat vykreslování webového obsahu, debugovat JavaScript, analyzovat síťové požadavky a zajistit soulad s přístupností.
 """,
         "keywords": "webview,vývojář,debug,konzole,síť,safari,devtools,test,inspektor,ios,javascript,html,css,prohlížeč",
-        "whatsNew": "- Přidáno nahrávání videa.\n- Opravena občasná chyba, kdy se nezobrazoval vyhledávací panel na stránce.\n- Přidána úprava nabídky SafariVC.",
+        "whatsNew": "- Přidána podpora snímků obrazovky a nahrávání obrazovky pro režim SafariVC.\n- Vylepšená správa stavu nahrávání.",
         "promotionalText": "Testujte WebView snadno s Walnut. Rychlá správa URL přes záložky a historii, ladění s Console, Network a SourceView."
     },
     "sk": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """Ultimátny vývojársky nástroj pre testovanie konfigurácií WKWebView a SFSafariViewController v reálnom čase.
 
@@ -1353,11 +1353,11 @@ Vývojárske nástroje
 Ideálne pre iOS vývojárov, ktorí potrebujú testovať vykresľovanie webového obsahu, debugovať JavaScript, analyzovať sieťové požiadavky a zabezpečiť súlad s prístupnosťou.
 """,
         "keywords": "webview,vývojár,debug,konzola,sieť,safari,devtools,test,inšpektor,ios,javascript,html,css,prehliadač",
-        "whatsNew": "- Pridané nahrávanie videa.\n- Opravený občasný problém, keď sa nezobrazoval vyhľadávací panel na stránke.\n- Pridaná úprava ponuky SafariVC.",
+        "whatsNew": "- Pridaná podpora snímok obrazovky a nahrávania obrazovky pre režim SafariVC.\n- Vylepšená správa stavu nahrávania.",
         "promotionalText": "Testujte WebView jednoducho s Walnut. Rýchla správa URL cez záložky a históriu, ladenie s Console, Network a SourceView."
     },
     "hu": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Teszt & Debug",
         "subtitle": "WKWebView & SafariVC teszt",
         "description": """A tökéletes fejlesztői eszköz a WKWebView és SFSafariViewController konfigurációk valós idejű teszteléséhez.
 
@@ -1393,11 +1393,11 @@ További funkciók
 Tökéletes iOS fejlesztőknek, akiknek webtartalom renderelést kell tesztelniük, JavaScript-et debugolniuk, hálózati kéréseket elemezniük és akadálymentességi megfelelőséget biztosítaniuk.
 """,
         "keywords": "webview,fejlesztő,debug,konzol,hálózat,safari,devtools,teszt,vizsgálat,ios,javascript,html,css",
-        "whatsNew": "- Videórögzítés hozzáadva.\n- Javítottuk azt az időnkénti hibát, amikor az oldalon belüli keresősáv nem jelent meg.\n- SafariVC menüszerkesztés hozzáadva.",
+        "whatsNew": "- Képernyőkép és képernyőfelvétel támogatás hozzáadva a SafariVC módhoz.\n- Javított felvételi állapotkezelés.",
         "promotionalText": "WebView‑tesztek könnyen a Walnuttal. Gyors URL‑kezelés könyvjelzőkkel és előzményekkel, hibakeresés Console, Network és SourceView eszközökkel."
     },
     "ro": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Depanare",
         "subtitle": "Test WKWebView & SafariVC",
         "description": """Instrumentul suprem pentru dezvoltatori pentru testarea configurațiilor WKWebView și SFSafariViewController în timp real.
 
@@ -1433,11 +1433,11 @@ Caracteristici suplimentare
 Perfect pentru dezvoltatorii iOS care trebuie să testeze redarea conținutului web, să depaneze JavaScript, să analizeze cererile de rețea și să asigure conformitatea cu accesibilitatea.
 """,
         "keywords": "webview,dezvoltator,debug,consolă,rețea,safari,devtools,test,inspector,ios,javascript,html,css",
-        "whatsNew": "- Adăugată înregistrarea video.\n- Remediată o problemă intermitentă în care bara de căutare în pagină nu apărea.\n- Adăugată editarea meniului SafariVC.",
+        "whatsNew": "- Adăugat suport pentru capturi de ecran și înregistrare ecran în modul SafariVC.\n- Îmbunătățită gestionarea stării de înregistrare.",
         "promotionalText": "Testează WebView ușor cu Walnut. Gestionare rapidă a URL‑urilor prin marcaje și istoric, și debug cu Console, Network și SourceView."
     },
     "hr": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Debug",
         "subtitle": "Test WKWebView i SafariVC",
         "description": """Ultimativni alat za programere za testiranje WKWebView i SFSafariViewController konfiguracija u stvarnom vremenu.
 
@@ -1473,11 +1473,11 @@ Dodatne značajke
 Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, debugirati JavaScript, analizirati mrežne zahtjeve i osigurati usklađenost s pristupačnošću.
 """,
         "keywords": "webview,programer,debug,konzola,mreža,safari,devtools,test,inspektor,ios,javascript,html,css",
-        "whatsNew": "- Dodano snimanje videozapisa.\n- Ispravljen povremeni problem kada se traka pretraživanja na stranici nije prikazivala.\n- Dodano uređivanje izbornika SafariVC.",
+        "whatsNew": "- Dodana podrška za snimanje zaslona i snimanje zaslona za SafariVC način rada.\n- Poboljšano upravljanje stanjem snimanja.",
         "promotionalText": "Testirajte WebView lako uz Walnut. Brzo upravljanje URL‑ovima putem oznaka i povijesti, te debug s Console, Network i SourceView."
     },
     "el": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Δοκιμή & Debug",
         "subtitle": "Δοκιμή WKWebView & SafariVC",
         "description": """Το απόλυτο εργαλείο προγραμματιστή για δοκιμή διαμορφώσεων WKWebView και SFSafariViewController σε πραγματικό χρόνο.
 
@@ -1513,11 +1513,11 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 Ιδανικό για iOS προγραμματιστές που χρειάζεται να δοκιμάσουν απόδοση περιεχομένου web, να κάνουν debug σε JavaScript, να αναλύσουν αιτήματα δικτύου και να εξασφαλίσουν συμμόρφωση προσβασιμότητας.
 """,
         "keywords": "webview,προγραμματιστής,debug,κονσόλα,δίκτυο,safari,devtools,δοκιμή,ios,javascript,html,css",
-        "whatsNew": "- Προστέθηκε εγγραφή βίντεο.\n- Διορθώθηκε ένα περιστασιακό πρόβλημα όπου η γραμμή αναζήτησης στη σελίδα δεν εμφανιζόταν.\n- Προστέθηκε επεξεργασία μενού SafariVC.",
+        "whatsNew": "- Προστέθηκε υποστήριξη λήψης στιγμιότυπων και εγγραφής οθόνης για τη λειτουργία SafariVC.\n- Βελτιωμένη διαχείριση κατάστασης εγγραφής.",
         "promotionalText": "Δοκιμάστε εύκολα WebView με το Walnut. Γρήγορη διαχείριση URL με σελιδοδείκτες/ιστορικό και debug με Console, Network, SourceView."
     },
     "he": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview בדיקה ודיבוג",
         "subtitle": "בדיקת WKWebView ו-SafariVC",
         "description": """הכלי האולטימטיבי למפתחים לבדיקת הגדרות WKWebView ו-SFSafariViewController בזמן אמת.
 
@@ -1553,11 +1553,11 @@ Savršeno za iOS programere koji trebaju testirati prikazivanje web sadržaja, d
 מושלם למפתחי iOS שצריכים לבדוק רינדור תוכן אינטרנט, לדבג JavaScript, לנתח בקשות רשת ולהבטיח עמידה בדרישות נגישות.
 """,
         "keywords": "webview,מפתח,דיבאג,קונסול,רשת,safari,devtools,בדיקה,בדיקת,ios,javascript,html,css,דפדפן,כלי,פיתוח",
-        "whatsNew": "- נוספה הקלטת וידאו.\n- תוקנה בעיה לסירוגין שבה סרגל החיפוש בדף לא הופיע.\n- נוספה עריכת תפריט SafariVC.",
+        "whatsNew": "- נוספה תמיכה בצילום מסך והקלטת מסך למצב SafariVC.\n- שיפור ניהול מצב ההקלטה.",
         "promotionalText": "בדקו WebView בקלות עם Walnut. ניהול URL מהיר בעזרת סימניות והיסטוריה, ודיבוג עם Console, Network ו‑SourceView."
     },
     "ca": {
-        "name": "Walnut: Webview Tester & Debug",
+        "name": "Walnut: Webview Test & Depuració",
         "subtitle": "Provar WKWebView i SafariVC",
         "description": """L'eina definitiva per a desenvolupadors per provar configuracions de WKWebView i SFSafariViewController en temps real.
 
@@ -1593,7 +1593,7 @@ Característiques addicionals
 Perfecte per a desenvolupadors iOS que necessiten provar el renderitzat de contingut web, depurar JavaScript, analitzar peticions de xarxa i assegurar el compliment d'accessibilitat.
 """,
         "keywords": "webview,desenvolupador,debug,consola,xarxa,safari,devtools,prova,inspector,ios,javascript,html,css",
-        "whatsNew": "- S’ha afegit l’enregistrament de vídeo.\n- S’ha corregit un problema intermitent en què la barra de cerca a la pàgina no apareixia.\n- S’ha afegit l’edició del menú SafariVC.",
+        "whatsNew": "- Afegit suport per a captures de pantalla i gravació de pantalla per al mode SafariVC.\n- Millora en la gestió de l'estat de gravació.",
         "promotionalText": "Prova WebView fàcilment amb Walnut. Gestió d'URL ràpida amb marcadors i historial, i depuració amb Console, Network i SourceView."
     }
 }
