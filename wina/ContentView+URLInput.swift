@@ -49,6 +49,8 @@ extension ContentView {
                     }
                 }
                 .frame(width: inputWidth)
+                .contentShape(Rectangle())
+                .onTapGesture { }  // Prevent background tap propagation
 
                 // WebView Type Toggle
                 Picker("WebView Type", selection: $useSafariWebView) {

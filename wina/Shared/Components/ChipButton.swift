@@ -13,6 +13,7 @@ struct ChipButton: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .backport.glassEffect(in: .capsule)
