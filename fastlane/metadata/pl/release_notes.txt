@@ -1,0 +1,1 @@
+Naprawiono problem, w którym przyciski Chip na ekranie głównym nie reagowały na dotyk.

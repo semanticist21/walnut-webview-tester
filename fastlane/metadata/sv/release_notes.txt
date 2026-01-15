@@ -1,0 +1,1 @@
+Åtgärdade ett problem där Chip-knappar på hemskärmen inte reagerade på tryck.

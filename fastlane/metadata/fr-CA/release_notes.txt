@@ -1,0 +1,1 @@
+Correction d'un problème où les boutons Chip de l'écran d'accueil ne répondaient pas au toucher.

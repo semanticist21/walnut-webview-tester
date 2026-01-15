@@ -1,0 +1,1 @@
+Ana ekrandaki Chip düğmelerinin dokunmaya tepki vermemesine neden olan sorun düzeltildi.

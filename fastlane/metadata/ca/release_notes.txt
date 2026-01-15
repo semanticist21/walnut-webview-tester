@@ -1,0 +1,1 @@
+S'ha corregit un problema pel qual els botons Chip de la pantalla d'inici no responien al toc.

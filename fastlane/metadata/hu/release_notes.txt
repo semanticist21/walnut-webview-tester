@@ -1,0 +1,1 @@
+Javítva a hiba, amikor a kezdőképernyőn lévő Chip gombok nem reagáltak az érintésre.

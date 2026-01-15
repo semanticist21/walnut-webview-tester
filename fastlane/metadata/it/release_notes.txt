@@ -1,0 +1,1 @@
+Risolto un problema per cui i pulsanti Chip della schermata Home non rispondevano al tocco.

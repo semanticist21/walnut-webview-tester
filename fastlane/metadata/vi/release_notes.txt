@@ -1,0 +1,1 @@
+Đã sửa lỗi các nút Chip trên màn hình chính không phản hồi khi chạm.

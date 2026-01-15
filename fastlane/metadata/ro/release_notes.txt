@@ -1,0 +1,1 @@
+S-a remediat o problemă în care butoanele Chip de pe ecranul principal nu răspundeau la atingere.

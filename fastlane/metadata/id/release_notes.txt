@@ -1,0 +1,1 @@
+Memperbaiki masalah tombol Chip di layar beranda yang tidak merespons sentuhan.

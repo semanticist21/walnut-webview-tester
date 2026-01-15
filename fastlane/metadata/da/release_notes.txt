@@ -1,0 +1,1 @@
+Rettede et problem hvor Chip-knapper på startskærmen ikke reagerede på tryk.

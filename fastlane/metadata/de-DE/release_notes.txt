@@ -1,0 +1,1 @@
+Problem behoben, bei dem Chip-Schaltflächen auf dem Startbildschirm nicht auf Berührung reagierten.

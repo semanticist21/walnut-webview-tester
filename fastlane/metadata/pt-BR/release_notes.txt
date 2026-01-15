@@ -1,0 +1,1 @@
+Corrigido um problema em que os botões Chip da tela inicial não respondiam ao toque.

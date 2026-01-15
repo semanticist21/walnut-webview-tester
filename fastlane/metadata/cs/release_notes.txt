@@ -1,0 +1,1 @@
+Opraven problém, kdy tlačítka Chip na domovské obrazovce nereagovala na dotyk.

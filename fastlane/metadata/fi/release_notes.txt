@@ -1,0 +1,1 @@
+Korjattiin ongelma, jossa aloitusnäytön Chip-painikkeet eivät reagoineet kosketukseen.
