@@ -47,6 +47,8 @@ struct ContentView: View {
     // Quick options (synced with Settings)
     @AppStorage("cleanStart") var cleanStart = true
     @AppStorage("privateBrowsing") var privateBrowsing = false
+    // SafariVC: Use callback test page instead of manual URL
+    @State var useCallbackTestPage: Bool = false
     @AppStorage("colorSchemeOverride") private var colorSchemeOverride: String?
 
     // Safari configuration settings (for onChange detection)
@@ -346,14 +348,20 @@ struct ContentView: View {
     // MARK: - URL Actions (internal for extension access)
 
     func submitURL() {
-        guard !urlText.isEmpty else { return }
-        guard validateSafariURLIfNeeded(urlText) else { return }
-
-        // Add to history via shared storage
-        urlStorage.addToHistory(urlText)
+        // Handle callback test page mode
+        let targetURL: String
+        if useCallbackTestPage {
+            targetURL = CallbackTestManager.testPageURL.absoluteString
+        } else {
+            guard !urlText.isEmpty else { return }
+            guard validateSafariURLIfNeeded(urlText) else { return }
+            // Add to history via shared storage
+            urlStorage.addToHistory(urlText)
+            targetURL = urlText
+        }
 
         // Normalize URL for initialURL tracking
-        var normalized = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        var normalized = targetURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if !normalized.contains("://") {
             normalized = "https://\(normalized)"
         }
@@ -386,7 +394,7 @@ struct ContentView: View {
                         webViewNavigator.setInitialURL(url)
                     }
 
-                    loadedURL = urlText
+                    loadedURL = targetURL
                     webViewID = UUID()  // Force new WebView instance
                     withAnimation(.easeOut(duration: 0.2)) {
                         showWebView = true
@@ -399,7 +407,7 @@ struct ContentView: View {
                 webViewNavigator.setInitialURL(url)
             }
 
-            loadedURL = urlText
+            loadedURL = targetURL
             withAnimation(.easeOut(duration: 0.2)) {
                 showWebView = true
             }

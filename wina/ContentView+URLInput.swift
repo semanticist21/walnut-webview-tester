@@ -65,35 +65,40 @@ extension ContentView {
                 // URL Input
                 HStack(spacing: 12) {
                     HStack(spacing: 12) {
-                        Image(systemName: urlValidationState.iconName)
-                            .foregroundStyle(urlValidationState.iconColor)
+                        Image(systemName: useCallbackTestPage ? "checkmark.circle.fill" : urlValidationState.iconName)
+                            .foregroundStyle(useCallbackTestPage ? .green : urlValidationState.iconColor)
                             .font(.system(size: 16))
                             .contentTransition(.symbolEffect(.replace))
 
-                        TextField("Enter URL", text: $urlText)
-                            .textFieldStyle(.plain)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.URL)
-                            .submitLabel(.go)
-                            .font(.system(size: 16))
-                            .focused($textFieldFocused)
-                            .onSubmit {
-                                if urlValidationState == .valid {
-                                    textFieldFocused = false
-                                    showDropdown = false
-                                    submitURL()
-                                }
+                        TextField(
+                            useCallbackTestPage ? "Callback Test Page" : "Enter URL",
+                            text: useCallbackTestPage ? .constant(CallbackTestManager.testPageURL.absoluteString) : $urlText
+                        )
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .submitLabel(.go)
+                        .font(.system(size: 16))
+                        .focused($textFieldFocused)
+                        .disabled(useCallbackTestPage)
+                        .foregroundStyle(useCallbackTestPage ? .secondary : .primary)
+                        .onSubmit {
+                            if urlValidationState == .valid || useCallbackTestPage {
+                                textFieldFocused = false
+                                showDropdown = false
+                                submitURL()
                             }
-                            .onChange(of: urlText) { _, _ in
-                                // Debounced URL validation
-                                validationTask?.cancel()
-                                validationTask = Task {
-                                    try? await Task.sleep(for: .milliseconds(150))
-                                    guard !Task.isCancelled else { return }
-                                    validateURL()
-                                }
+                        }
+                        .onChange(of: urlText) { _, _ in
+                            // Debounced URL validation
+                            validationTask?.cancel()
+                            validationTask = Task {
+                                try? await Task.sleep(for: .milliseconds(150))
+                                guard !Task.isCancelled else { return }
+                                validateURL()
                             }
+                        }
 
                         Button {
                             urlText = ""
@@ -105,19 +110,21 @@ extension ContentView {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .opacity(urlText.isEmpty ? 0 : 1)
-                        .disabled(urlText.isEmpty)
+                        .opacity(urlText.isEmpty || useCallbackTestPage ? 0 : 1)
+                        .disabled(urlText.isEmpty || useCallbackTestPage)
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .frame(width: urlValidationState == .valid ? inputWidth - 60 : inputWidth)
+                    .frame(width: (urlValidationState == .valid || useCallbackTestPage) ? inputWidth - 60 : inputWidth)
                     .contentShape(Capsule())
                     .onTapGesture {
-                        textFieldFocused = true
+                        if !useCallbackTestPage {
+                            textFieldFocused = true
+                        }
                     }
                     .backport.glassEffect(in: .capsule)
 
-                    if urlValidationState == .valid {
+                    if urlValidationState == .valid || useCallbackTestPage {
                         Button {
                             textFieldFocused = false
                             showDropdown = false
@@ -135,6 +142,7 @@ extension ContentView {
                     }
                 }
                 .animation(.easeOut(duration: 0.25), value: urlValidationState)
+                .animation(.easeOut(duration: 0.25), value: useCallbackTestPage)
                 .overlay(alignment: .bottom) {
                     // Quick options (lower layer)
                     quickOptionsOverlay
@@ -231,7 +239,16 @@ extension ContentView {
 
     @ViewBuilder
     var quickOptionsOverlay: some View {
-        if !useSafariWebView {
+        if useSafariWebView {
+            // SafariVC mode: Callback test page toggle
+            VStack(spacing: 8) {
+                ToggleChipButton(isOn: $useCallbackTestPage, label: "Use callback test page")
+            }
+            .frame(width: inputWidth)
+            .padding(.top, 12)
+            .transition(.opacity)
+        } else {
+            // WKWebView mode: Clean start and private browsing toggles
             VStack(spacing: 8) {
                 ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
                 ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")

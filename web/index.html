@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walnut Callback Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #8892b0;
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .hint {
+            color: #64ffda;
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64ffda;
+            margin-bottom: 12px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:last-child {
+            margin-bottom: 0;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: #fff;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: #fff;
+        }
+        .code {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 12px;
+            color: #64ffda;
+            word-break: break-all;
+            margin-top: 12px;
+        }
+        .custom-section {
+            margin-top: 16px;
+        }
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .input-group input {
+            flex: 1;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+        .input-group input::placeholder {
+            color: #8892b0;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #64ffda;
+        }
+
+        /* Accordion Styles */
+        .accordion {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .accordion:last-child {
+            border-bottom: none;
+        }
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .accordion-header:hover {
+            color: #64ffda;
+        }
+        .accordion-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .accordion-icon {
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        .accordion.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+        .accordion-content {
+            display: none;
+            padding-bottom: 16px;
+        }
+        .accordion.open .accordion-content {
+            display: block;
+        }
+
+        /* Code Block Styles */
+        .code-block-wrapper {
+            position: relative;
+            margin: 8px 0;
+        }
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            padding-top: 32px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 11px;
+            color: #e6e6e6;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+        .code-block .comment { color: #6a737d; }
+        .code-block .keyword { color: #ff79c6; }
+        .code-block .string { color: #a5d6ff; }
+        .code-block .tag { color: #7ee787; }
+        .code-block .attr { color: #79c0ff; }
+
+        .code-label {
+            font-size: 11px;
+            color: #8892b0;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .code-label:first-child {
+            margin-top: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #8892b0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+        .copy-btn.copied {
+            background: rgba(100, 255, 218, 0.2);
+            color: #64ffda;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #8892b0;
+            padding: 10px 12px;
+            background: rgba(100, 255, 218, 0.08);
+            border-left: 3px solid #64ffda;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .note code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Walnut Callback Test</h1>
+        <p class="subtitle">URL Scheme Callback Testing</p>
+        <p class="hint">👆 Tap any button to trigger a callback to the app</p>
+
+        <div class="section">
+            <div class="section-title">Basic Callbacks</div>
+            <a href="walnut://callback" class="btn btn-primary">
+                Simple Callback
+            </a>
+            <a href="walnut://callback?status=success&message=Hello%20from%20Safari" class="btn btn-success">
+                Success with Message
+            </a>
+            <a href="walnut://callback?status=error&code=401&message=Unauthorized" class="btn btn-warning">
+                Error Callback
+            </a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">OAuth Simulation</div>
+            <a href="walnut://auth?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9&user_id=12345&expires_in=3600" class="btn btn-info">
+                OAuth Token Callback
+            </a>
+            <a href="walnut://auth?code=auth_code_abc123&state=random_state_xyz" class="btn btn-primary">
+                Authorization Code
+            </a>
+            <div class="code">walnut://auth?token=...&user_id=...</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Payment Simulation</div>
+            <a href="walnut://payment?status=completed&order_id=ORD-2024-001&amount=9900&currency=KRW" class="btn btn-success">
+                Payment Success
+            </a>
+            <a href="walnut://payment?status=cancelled&order_id=ORD-2024-002&reason=user_cancelled" class="btn btn-warning">
+                Payment Cancelled
+            </a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Custom Callback</div>
+            <div class="input-group">
+                <input type="text" id="customPath" placeholder="Path (e.g., callback)">
+            </div>
+            <div class="input-group">
+                <input type="text" id="customKey" placeholder="Key">
+                <input type="text" id="customValue" placeholder="Value">
+            </div>
+            <button class="btn btn-info" onclick="sendCustomCallback()">
+                Send Custom Callback
+            </button>
+            <div class="code" id="customPreview">walnut://callback?key=value</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📚 Implementation Guide</div>
+
+            <!-- URL Scheme Format -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span class="accordion-title">URL Scheme Format</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-label">Basic Structure</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block"><span class="keyword">scheme</span>://<span class="attr">host</span>/<span class="string">path</span>?<span class="attr">key</span>=<span class="string">value</span></div>
+                    </div>
+
+                    <div class="code-label">Examples</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-format"><span class="comment">// Simple callback</span>
+walnut://callback
+
+<span class="comment">// With parameters</span>
+walnut://callback?status=success&id=123
+
+<span class="comment">// OAuth style</span>
+walnut://auth?code=abc123&state=xyz
+
+<span class="comment">// Deep link with path</span>
+walnut://app/profile/settings?tab=security</div>
+                        <button class="copy-btn" onclick="copyCode('code-format')">Copy</button>
+                    </div>
+
+                    <div class="note">
+                        💡 Use <code>encodeURIComponent()</code> for special characters in values
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTML Implementation -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span class="accordion-title">HTML Link Implementation</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-label">Anchor Tag</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-html"><span class="comment">&lt;!-- Simple link --&gt;</span>
+<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"walnut://callback"</span><span class="tag">&gt;</span>
+  Open App
+<span class="tag">&lt;/a&gt;</span>
+
+<span class="comment">&lt;!-- With parameters --&gt;</span>
+<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"walnut://callback?action=login&amp;user=123"</span><span class="tag">&gt;</span>
+  Login Callback
+<span class="tag">&lt;/a&gt;</span></div>
+                        <button class="copy-btn" onclick="copyCode('code-html')">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JavaScript Implementation -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span class="accordion-title">JavaScript Implementation</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-label">Basic Navigation</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-js-basic"><span class="comment">// Direct navigation</span>
+<span class="keyword">window</span>.location.href = <span class="string">'walnut://callback?status=done'</span>;
+
+<span class="comment">// With dynamic parameters</span>
+<span class="keyword">const</span> params = <span class="keyword">new</span> URLSearchParams({
+  action: <span class="string">'complete'</span>,
+  orderId: <span class="string">'ORD-001'</span>
+});
+<span class="keyword">window</span>.location.href = <span class="string">`walnut://payment?</span>${params}<span class="string">`</span>;</div>
+                        <button class="copy-btn" onclick="copyCode('code-js-basic')">Copy</button>
+                    </div>
+
+                    <div class="code-label">Reusable Function</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-js-func"><span class="keyword">function</span> sendCallback(host, params = {}) {
+  <span class="keyword">const</span> query = <span class="keyword">new</span> URLSearchParams(params);
+  <span class="keyword">const</span> url = query.toString()
+    ? <span class="string">`walnut://</span>${host}<span class="string">?</span>${query}<span class="string">`</span>
+    : <span class="string">`walnut://</span>${host}<span class="string">`</span>;
+  <span class="keyword">window</span>.location.href = url;
+}
+
+<span class="comment">// Usage</span>
+sendCallback(<span class="string">'auth'</span>, { token: <span class="string">'abc123'</span> });</div>
+                        <button class="copy-btn" onclick="copyCode('code-js-func')">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- iOS Swift Implementation -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span class="accordion-title">iOS Swift Handler</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-label">Info.plist Configuration</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-plist"><span class="tag">&lt;key&gt;</span>CFBundleURLTypes<span class="tag">&lt;/key&gt;</span>
+<span class="tag">&lt;array&gt;</span>
+  <span class="tag">&lt;dict&gt;</span>
+    <span class="tag">&lt;key&gt;</span>CFBundleURLSchemes<span class="tag">&lt;/key&gt;</span>
+    <span class="tag">&lt;array&gt;</span>
+      <span class="tag">&lt;string&gt;</span>yourapp<span class="tag">&lt;/string&gt;</span>
+    <span class="tag">&lt;/array&gt;</span>
+  <span class="tag">&lt;/dict&gt;</span>
+<span class="tag">&lt;/array&gt;</span></div>
+                        <button class="copy-btn" onclick="copyCode('code-plist')">Copy</button>
+                    </div>
+
+                    <div class="code-label">SwiftUI Handler</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block" id="code-swift"><span class="keyword">@main</span>
+<span class="keyword">struct</span> YourApp: App {
+  <span class="keyword">var</span> body: <span class="keyword">some</span> Scene {
+    WindowGroup {
+      ContentView()
+        .onOpenURL { url <span class="keyword">in</span>
+          handleCallback(url)
+        }
+    }
+  }
+
+  <span class="keyword">func</span> handleCallback(_ url: URL) {
+    <span class="keyword">guard</span> url.scheme == <span class="string">"yourapp"</span>
+    <span class="keyword">else</span> { <span class="keyword">return</span> }
+
+    <span class="keyword">let</span> host = url.host ?? <span class="string">""</span>
+    <span class="keyword">let</span> params = URLComponents(
+      url: url,
+      resolvingAgainstBaseURL: <span class="keyword">false</span>
+    )?.queryItems?.reduce(
+      into: [String: String]()
+    ) { dict, item <span class="keyword">in</span>
+      dict[item.name] = item.value
+    } ?? [:]
+
+    <span class="comment">// Handle by host</span>
+    <span class="keyword">switch</span> host {
+    <span class="keyword">case</span> <span class="string">"auth"</span>: handleAuth(params)
+    <span class="keyword">case</span> <span class="string">"payment"</span>: handlePayment(params)
+    <span class="keyword">default</span>: <span class="keyword">break</span>
+    }
+  }
+}</div>
+                        <button class="copy-btn" onclick="copyCode('code-swift')">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common Patterns -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span class="accordion-title">Common Parameter Patterns</span>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="code-label">OAuth / Authentication</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block"><span class="comment">// Authorization Code Flow</span>
+yourapp://auth?code=AUTH_CODE&state=STATE
+
+<span class="comment">// Token Response</span>
+yourapp://auth?access_token=TOKEN&expires_in=3600
+
+<span class="comment">// Error</span>
+yourapp://auth?error=access_denied</div>
+                    </div>
+
+                    <div class="code-label">Payment / Transaction</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block"><span class="comment">// Success</span>
+yourapp://payment?status=completed&order_id=ORD-001
+
+<span class="comment">// Cancelled</span>
+yourapp://payment?status=cancelled&reason=user_cancelled</div>
+                    </div>
+
+                    <div class="code-label">Deep Link / Navigation</div>
+                    <div class="code-block-wrapper">
+                        <div class="code-block"><span class="comment">// Content</span>
+yourapp://share?type=article&id=12345
+
+<span class="comment">// Settings</span>
+yourapp://settings/notifications?enabled=true</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pathInput = document.getElementById('customPath');
+        const keyInput = document.getElementById('customKey');
+        const valueInput = document.getElementById('customValue');
+        const preview = document.getElementById('customPreview');
+
+        function updatePreview() {
+            const path = pathInput.value || 'callback';
+            const key = keyInput.value || 'key';
+            const value = valueInput.value || 'value';
+            preview.textContent = `walnut://${path}?${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+        }
+
+        function sendCustomCallback() {
+            const path = pathInput.value || 'callback';
+            const key = keyInput.value || 'key';
+            const value = valueInput.value || 'value';
+            const url = `walnut://${path}?${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            window.location.href = url;
+        }
+
+        pathInput.addEventListener('input', updatePreview);
+        keyInput.addEventListener('input', updatePreview);
+        valueInput.addEventListener('input', updatePreview);
+
+        // Accordion toggle
+        function toggleAccordion(header) {
+            const accordion = header.parentElement;
+            accordion.classList.toggle('open');
+        }
+
+        // Copy code to clipboard
+        function copyCode(elementId) {
+            const codeBlock = document.getElementById(elementId);
+            const text = codeBlock.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const wrapper = codeBlock.parentElement;
+                const btn = wrapper.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

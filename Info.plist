@@ -62,5 +62,18 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.walnut.wina</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>walnut</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

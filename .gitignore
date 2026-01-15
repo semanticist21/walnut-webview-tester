@@ -17,3 +17,6 @@ fastlane/screenshots/
 
 eruda
 __pycache__/
+
+# Local Netlify folder
+.netlify

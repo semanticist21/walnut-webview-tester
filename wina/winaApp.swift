@@ -85,6 +85,11 @@ struct winaApp: App {
                     // Initialize WebView size after Scene is ready
                     Self.initializeWebViewSizeIfNeeded()
                 }
+                .onOpenURL { url in
+                    // Handle URL scheme callbacks (walnut://...)
+                    CallbackTestManager.shared.handleIncomingURL(url)
+                }
+                .callbackResultSheet()
         }
     }
 
