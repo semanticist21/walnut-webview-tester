@@ -3,41 +3,50 @@ import SwiftUI
 // MARK: - Console Value View
 
 /// ConsoleValue 객체를 트리 형태로 렌더링하는 뷰 (확장/축소 가능)
+/// 각 행(row)에만 depth 기반 padding 적용, children은 별도 padding 없음
 struct ConsoleValueView: View {
     let value: ConsoleValue
+    let depth: Int
+    let key: String?
+    let isPrototype: Bool
     @State private var isExpanded: Bool = false
 
+    init(value: ConsoleValue, depth: Int = 0, key: String? = nil, isPrototype: Bool = false) {
+        self.value = value
+        self.depth = depth
+        self.key = key
+        self.isPrototype = isPrototype
+    }
+
     var body: some View {
-        if value.isExpandable {
-            expandableValueView
-        } else {
-            simpleValueView
-        }
-    }
-
-    // MARK: - Simple Value (스칼라, 함수 등)
-
-    private var simpleValueView: some View {
-        HStack(spacing: 6) {
-            Text(value.preview)
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundStyle(valueTextColor)
-                .textSelection(.enabled)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Expandable Value (객체, 배열)
-
-    private var expandableValueView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header (toggle + preview)
-            HStack(spacing: 6) {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 10)
+            // Row: [chevron] [key:] [value/preview] - 이 행에만 padding 적용
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                // Chevron for expandable
+                if value.isExpandable {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 10, height: 14, alignment: .center)
+                } else {
+                    Spacer().frame(width: 10, height: 14)
+                }
 
+                // Key (if present)
+                if let key = key {
+                    Text(key)
+                        .font(.system(size: 12, weight: isPrototype ? .regular : .semibold, design: .monospaced))
+                        .foregroundStyle(isPrototype ? .secondary : keyColor)
+                        .italic(isPrototype)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+
+                    Text(":")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+
+                // Value or preview
                 Text(value.preview)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(valueTextColor)
@@ -45,20 +54,22 @@ struct ConsoleValueView: View {
 
                 Spacer()
             }
+            .padding(.leading, CGFloat(depth) * 10)  // 행(row)에만 padding
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onTapGesture {
+                guard value.isExpandable else { return }
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isExpanded.toggle()
                 }
             }
 
-            // Children (expanded)
+            // Children (expanded) - VStack 밖에서 각자 자신의 padding 적용
             if isExpanded {
                 children
-                    .padding(.leading, 4)
             }
         }
+        // 외부 VStack에는 padding 없음 - children이 자신의 depth로 padding 적용
     }
 
     // MARK: - Array Chunking
@@ -85,7 +96,8 @@ struct ConsoleValueView: View {
                 ArrayChunkView(
                     startIndex: chunk.0,
                     endIndex: chunk.1,
-                    elements: Array(allElements[chunk.0...chunk.1])
+                    elements: Array(allElements[chunk.0...chunk.1]),
+                    depth: depth + 1
                 )
             }
         }
@@ -99,29 +111,21 @@ struct ConsoleValueView: View {
         case .object(let obj):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(obj.sortedProperties.enumerated()), id: \.element.key) { _, property in
-                    let isPrototype = property.key == "[[Prototype]]"
+                    let isProto = property.key == "[[Prototype]]"
                     let isTruncated = property.key == "[[Truncated]]"
 
                     if isTruncated {
                         Text("… truncated properties")
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.tertiary)
+                            .padding(.leading, CGFloat(depth + 1) * 10)
                     } else {
-                        HStack(alignment: .top, spacing: 6) {
-                            Text(property.key)
-                                .font(.system(size: 12, weight: isPrototype ? .regular : .semibold, design: .monospaced))
-                                .foregroundStyle(isPrototype ? .secondary : keyColor)
-                                .italic(isPrototype)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .padding(.leading, 4)
-
-                            Text(":")
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(.tertiary)
-
-                            ConsoleValueView(value: property.value)
-                        }
+                        ConsoleValueView(
+                            value: property.value,
+                            depth: depth + 1,
+                            key: property.key,
+                            isPrototype: isProto
+                        )
                     }
                 }
             }
@@ -130,20 +134,11 @@ struct ConsoleValueView: View {
             VStack(alignment: .leading, spacing: 4) {
                 let items = domProperties(tag: tag, attributes: attributes)
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text(item.key)
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(keyColor)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.leading, 4)
-
-                        Text(":")
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-
-                        ConsoleValueView(value: item.value)
-                    }
+                    ConsoleValueView(
+                        value: item.value,
+                        depth: depth + 1,
+                        key: item.key
+                    )
                 }
             }
 
@@ -156,20 +151,11 @@ struct ConsoleValueView: View {
                 } else {
                     // Small array: show all elements
                     ForEach(Array(arr.elements.enumerated()), id: \.offset) { index, element in
-                        HStack(alignment: .top, spacing: 6) {
-                            Text("[\(index)]")
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(keyColor)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .padding(.leading, 4)
-
-                            Text(":")
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(.tertiary)
-
-                            ConsoleValueView(value: element)
-                        }
+                        ConsoleValueView(
+                            value: element,
+                            depth: depth + 1,
+                            key: "[\(index)]"
+                        )
                     }
                 }
 
@@ -177,43 +163,29 @@ struct ConsoleValueView: View {
                     Text("… \(arr.totalCount - arr.elements.count) more items")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.tertiary)
-                        .padding(.leading, 4)
+                        .padding(.leading, CGFloat(depth + 1) * 10)
                 }
             }
 
         case .map(let entries):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(entries.enumerated()), id: \.element.key) { _, entry in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text(entry.key)
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(keyColor)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.leading, 4)
-
-                        Text("→")
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-
-                        ConsoleValueView(value: entry.value)
-                    }
+                    MapEntryView(
+                        entryKey: entry.key,
+                        entryValue: entry.value,
+                        depth: depth + 1
+                    )
                 }
             }
 
         case .set(let values):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(values.enumerated()), id: \.offset) { index, element in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("(\(index))")
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(keyColor)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.leading, 4)
-
-                        ConsoleValueView(value: element)
-                    }
+                    ConsoleValueView(
+                        value: element,
+                        depth: depth + 1,
+                        key: "(\(index))"
+                    )
                 }
             }
 
@@ -252,12 +224,86 @@ struct ConsoleValueView: View {
     }
 }
 
+// MARK: - Map Entry View (uses → instead of :)
+
+private struct MapEntryView: View {
+    let entryKey: String
+    let entryValue: ConsoleValue
+    let depth: Int
+    @State private var isExpanded: Bool = false
+
+    private var keyColor: Color {
+        return Color(red: 0.65, green: 0.45, blue: 0.9)
+    }
+
+    private var valueTextColor: Color {
+        switch entryValue {
+        case .error: return Color(red: 1.0, green: 0.2, blue: 0.2)
+        case .circularReference: return Color(red: 1.0, green: 0.7, blue: 0.0)
+        case .string: return Color(red: 0.9, green: 0.6, blue: 0.0)
+        case .number: return Color(red: 0.2, green: 0.7, blue: 1.0)
+        case .boolean: return Color(red: 0.8, green: 0.2, blue: 0.8)
+        case .null, .undefined: return Color(red: 0.7, green: 0.7, blue: 0.7)
+        default: return .primary
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Row with padding
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if entryValue.isExpandable {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 10, height: 14, alignment: .center)
+                } else {
+                    Spacer().frame(width: 10, height: 14)
+                }
+
+                Text(entryKey)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(keyColor)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+
+                Text("→")
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+
+                Text(entryValue.preview)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(valueTextColor)
+                    .textSelection(.enabled)
+
+                Spacer()
+            }
+            .padding(.leading, CGFloat(depth) * 10)  // 행에만 padding
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard entryValue.isExpandable else { return }
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isExpanded.toggle()
+                }
+            }
+
+            // Children - 외부 VStack에 padding 없음
+            if isExpanded {
+                ConsoleValueView(value: entryValue, depth: depth + 1)
+            }
+        }
+        // 외부 VStack에는 padding 없음
+    }
+}
+
 // MARK: - Array Chunk View (Collapsible)
 
 private struct ArrayChunkView: View {
     let startIndex: Int
     let endIndex: Int
     let elements: [ConsoleValue]
+    let depth: Int
     @State private var isExpanded: Bool = false
 
     private var label: String {
@@ -266,17 +312,17 @@ private struct ArrayChunkView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
+            // Header with padding
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isExpanded.toggle()
                 }
             } label: {
-                HStack(spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .frame(width: 10)
+                        .frame(width: 10, height: 14, alignment: .center)
 
                     Text(label)
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
@@ -288,36 +334,28 @@ private struct ArrayChunkView: View {
 
                     Spacer()
                 }
+                .padding(.leading, CGFloat(depth) * 10)  // 행에만 padding
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            // Content (expanded)
+            // Content (expanded) - 외부 VStack에 padding 없음
             if isExpanded {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(Array(elements.enumerated()), id: \.offset) { localIdx, element in
                         let globalIdx = startIndex + localIdx
-                        HStack(alignment: .top, spacing: 6) {
-                            Text("[\(globalIdx)]")
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Color(red: 0.2, green: 0.4, blue: 0.8))
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .padding(.leading, 4)
-
-                            Text(":")
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(.tertiary)
-
-                            ConsoleValueView(value: element)
-                        }
+                        ConsoleValueView(
+                            value: element,
+                            depth: depth + 1,
+                            key: "[\(globalIdx)]"
+                        )
                     }
                 }
-                .padding(.leading, 4)
                 .padding(.vertical, 4)
             }
         }
+        // 외부 VStack에는 padding 없음
     }
 }
 

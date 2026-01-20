@@ -52,6 +52,19 @@ struct LogRow: View {
     @State private var isExpanded: Bool = false
     @State private var showCopyFeedback: Bool = false
     @State private var copyFeedbackMessage: String = ""
+    @State private var isPressed: Bool = false
+
+    /// 복사용 전체 문자열 (message + objectValue)
+    private var fullCopyableString: String {
+        var result = log.message
+        if let objValue = log.objectValue {
+            if !result.isEmpty {
+                result += "\n"
+            }
+            result += objValue.copyableString
+        }
+        return result
+    }
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -187,8 +200,11 @@ struct LogRow: View {
                             }
 
                             if let objValue = log.objectValue {
-                                // Object/Array value with tree view
-                                ConsoleValueView(value: objValue)
+                                // Object/Array value with tree view (horizontal scroll for long content)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    ConsoleValueView(value: objValue)
+                                        .fixedSize(horizontal: true, vertical: false)
+                                }
                             }
                         }
                     }
@@ -228,7 +244,11 @@ struct LogRow: View {
         .padding(.leading, 12 + indentation)
         .padding(.trailing, 12)
         .padding(.vertical, 6)
-        .background(log.type == .error ? Color.red.opacity(0.08) : (isGroupHeader ? Color.secondary.opacity(0.05) : Color.clear))
+        .background(
+            isPressed
+                ? Color.gray.opacity(0.3)
+                : (log.type == .error ? Color.red.opacity(0.08) : (isGroupHeader ? Color.secondary.opacity(0.05) : Color.clear))
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             if isGroupHeader, let groupId = log.groupId {
@@ -241,17 +261,18 @@ struct LogRow: View {
                 }
             }
         }
-        .gesture(
-            LongPressGesture(minimumDuration: 0.5)
-                .onEnded { _ in
-                    UIPasteboard.general.string = log.message
-                    copyFeedbackMessage = "Copied message"
-                    showCopyFeedback = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        showCopyFeedback = false
-                    }
-                }
-        )
+        .onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {
+            UIPasteboard.general.string = fullCopyableString
+            copyFeedbackMessage = "Copied"
+            showCopyFeedback = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                showCopyFeedback = false
+            }
+        })
         .overlay(alignment: .bottom) {
             Divider()
                 .padding(.leading, 12 + indentation)

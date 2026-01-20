@@ -85,6 +85,48 @@ indirect enum ConsoleValue {
             return false
         }
     }
+
+    /// 복사용 전체 문자열 (JSON 형식)
+    var copyableString: String {
+        switch self {
+        case .string(let str):
+            return "\"\(str)\""
+        case .number(let num):
+            if num == Double(Int(num)) {
+                return String(Int(num))
+            }
+            return String(num)
+        case .boolean(let bool):
+            return bool ? "true" : "false"
+        case .null:
+            return "null"
+        case .undefined:
+            return "undefined"
+        case .function(let name):
+            return "ƒ \(name)()"
+        case .date(let date):
+            return "Date(\"\(ISO8601DateFormatter().string(from: date))\")"
+        case .circularReference(let path):
+            return "[Circular: \(path)]"
+        case .error(let message):
+            return "Error: \(message)"
+        case .object(let obj):
+            let props = obj.sortedProperties.map { "\"\($0.key)\": \($0.value.copyableString)" }
+            return "{ \(props.joined(separator: ", ")) }"
+        case .array(let arr):
+            let items = arr.elements.map { $0.copyableString }
+            let suffix = arr.isTruncated ? ", ... (\(arr.totalCount) total)" : ""
+            return "[\(items.joined(separator: ", "))\(suffix)]"
+        case .map(let entries):
+            let items = entries.map { "\($0.key) => \($0.value.copyableString)" }
+            return "Map { \(items.joined(separator: ", ")) }"
+        case .set(let values):
+            let items = values.map { $0.copyableString }
+            return "Set { \(items.joined(separator: ", ")) }"
+        case .domElement(let tag, let attributes):
+            return domPreview(tag: tag, attributes: attributes)
+        }
+    }
 }
 
 private func domPreview(tag: String, attributes: [String: String]) -> String {
