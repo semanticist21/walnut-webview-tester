@@ -307,6 +307,14 @@ struct NetworkView: View {
                 .foregroundStyle(.secondary)
             TextField("Filter", text: $searchText)
                 .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

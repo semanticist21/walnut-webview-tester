@@ -714,6 +714,14 @@ struct StorageView: View {
                 .foregroundStyle(.secondary)
             TextField("Filter by key or value", text: $searchText)
                 .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

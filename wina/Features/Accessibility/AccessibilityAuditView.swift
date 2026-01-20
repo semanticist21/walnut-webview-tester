@@ -342,6 +342,14 @@ struct AccessibilityAuditView: View {
                 .foregroundStyle(.secondary)
             TextField("Filter issues", text: searchTextBinding)
                 .textFieldStyle(.plain)
+            if !searchTextBinding.wrappedValue.isEmpty {
+                Button {
+                    searchTextBinding.wrappedValue = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
