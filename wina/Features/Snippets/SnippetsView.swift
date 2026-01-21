@@ -804,11 +804,15 @@ private struct SnippetRow: View {
                     Text(snippet.name)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
 
                     Text(snippet.description)
                         .font(.system(size: 12))
                         .foregroundStyle(.tertiary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
 
                     if isDisabled {
                         Text("Disable CSS is active")
@@ -816,6 +820,8 @@ private struct SnippetRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
 
                 Spacer()
 

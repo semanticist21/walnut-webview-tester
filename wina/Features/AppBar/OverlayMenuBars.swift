@@ -54,84 +54,6 @@ struct OverlayMenuBars: View {
     @AppStorage("safariToolbarItemsOrder") private var safariToolbarItemsOrderData = Data()
     @AppStorage("safariAppBarItemsOrder") private var safariAppBarItemsOrderData = Data()
 
-    /// Active recorder based on mode: WKWebView uses navigator.recorder, SafariVC uses passed recorder
-    private var activeRecorder: WebViewRecorder {
-        if useSafariVC {
-            return recorder  // SafariVC: use separate recorder
-        } else {
-            return navigator?.recorder ?? recorder  // WKWebView: use navigator's recorder
-        }
-    }
-
-    private var visibleToolbarItems: [DevToolsMenuItem] {
-        guard let items = try? JSONDecoder().decode([ToolbarItemState].self, from: toolbarItemsOrderData),
-              !items.isEmpty else {
-            return DevToolsMenuItem.defaultOrder
-        }
-        return items.filter { $0.isVisible }.map { $0.menuItem }
-    }
-
-    private var visibleAppBarItems: [AppBarMenuItem] {
-        guard let items = try? JSONDecoder().decode([AppBarItemState].self, from: appBarItemsOrderData),
-              !items.isEmpty else {
-            return AppBarMenuItem.defaultOrder
-        }
-        return items.filter { $0.isVisible }.map { $0.menuItem }
-    }
-
-    // SafariVC-specific visible items
-    private var visibleSafariVCToolbarItems: [SafariVCToolbarMenuItem] {
-        guard let items = try? JSONDecoder().decode(
-            [SafariVCToolbarItemState].self,
-            from: safariToolbarItemsOrderData
-        ), !items.isEmpty else {
-            return SafariVCToolbarMenuItem.defaultOrder
-        }
-        return items.filter { $0.isVisible }.map { $0.menuItem }
-    }
-
-    private var visibleSafariVCAppBarItems: [SafariVCAppBarMenuItem] {
-        guard let items = try? JSONDecoder().decode(
-            [SafariVCAppBarItemState].self,
-            from: safariAppBarItemsOrderData
-        ), !items.isEmpty else {
-            return SafariVCAppBarMenuItem.defaultOrder
-        }
-        return items.filter { $0.isVisible }.map { $0.menuItem }
-    }
-
-    private let topBarHeight: CGFloat = BarConstants.barHeight
-    private let bottomBarHeight: CGFloat = BarConstants.barHeight
-    private let topHandleVisible: CGFloat = 6  // Tiny peek for top bar
-
-    // Top bar offset (comes down from top)
-    private var topOffset: CGFloat {
-        guard isOverlayMode else { return 0 }  // Fixed position
-        if isExpanded {
-            return dragOffset
-        } else {
-            return -topBarHeight + topHandleVisible + dragOffset
-        }
-    }
-
-    // Bottom bar offset (comes up from bottom)
-    private var bottomOffset: CGFloat {
-        guard isOverlayMode else { return 0 }  // Fixed position
-        if isExpanded {
-            return -dragOffset
-        } else {
-            return bottomBarHeight - dragOffset  // Fully hidden
-        }
-    }
-
-    // 하단 바 표시 여부를 결정한다 (키보드가 올라오면 하단 바를 숨긴다)
-    private var showBottomBar: Bool {
-        // 키보드가 보이면 하단 바를 숨겨서 입력을 방해하지 않는다
-        guard !isKeyboardVisible else { return false }
-        // overlay 모드에서는 확장 상태일 때만, fixed 모드에서는 항상 표시한다
-        return !isOverlayMode || isExpanded
-    }
-
     var body: some View {
         ZStack {
             // Top bar
@@ -220,9 +142,97 @@ struct OverlayMenuBars: View {
             }
         }
     }
+}
 
-    // MARK: - Top Bar
+// MARK: - OverlayMenuBars Layout
 
+private extension OverlayMenuBars {
+    private var topBarHeight: CGFloat { BarConstants.barHeight }
+    private var bottomBarHeight: CGFloat { BarConstants.barHeight }
+    private var topHandleVisible: CGFloat { 6 }  // Tiny peek for top bar
+
+    // Top bar offset (comes down from top)
+    private var topOffset: CGFloat {
+        guard isOverlayMode else { return 0 }  // Fixed position
+        if isExpanded {
+            return dragOffset
+        } else {
+            return -topBarHeight + topHandleVisible + dragOffset
+        }
+    }
+
+    // Bottom bar offset (comes up from bottom)
+    private var bottomOffset: CGFloat {
+        guard isOverlayMode else { return 0 }  // Fixed position
+        if isExpanded {
+            return -dragOffset
+        } else {
+            return bottomBarHeight - dragOffset  // Fully hidden
+        }
+    }
+
+    // 하단 바 표시 여부를 결정한다 (키보드가 올라오면 하단 바를 숨긴다)
+    private var showBottomBar: Bool {
+        // 키보드가 보이면 하단 바를 숨겨서 입력을 방해하지 않는다
+        guard !isKeyboardVisible else { return false }
+        // overlay 모드에서는 확장 상태일 때만, fixed 모드에서는 항상 표시한다
+        return !isOverlayMode || isExpanded
+    }
+}
+
+// MARK: - OverlayMenuBars Toolbar Items
+
+private extension OverlayMenuBars {
+    /// Active recorder based on mode: WKWebView uses navigator.recorder, SafariVC uses passed recorder
+    private var activeRecorder: WebViewRecorder {
+        if useSafariVC {
+            return recorder  // SafariVC: use separate recorder
+        } else {
+            return navigator?.recorder ?? recorder  // WKWebView: use navigator's recorder
+        }
+    }
+
+    private var visibleToolbarItems: [DevToolsMenuItem] {
+        guard let items = try? JSONDecoder().decode([ToolbarItemState].self, from: toolbarItemsOrderData),
+              !items.isEmpty else {
+            return DevToolsMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
+    private var visibleAppBarItems: [AppBarMenuItem] {
+        guard let items = try? JSONDecoder().decode([AppBarItemState].self, from: appBarItemsOrderData),
+              !items.isEmpty else {
+            return AppBarMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
+    // SafariVC-specific visible items
+    private var visibleSafariVCToolbarItems: [SafariVCToolbarMenuItem] {
+        guard let items = try? JSONDecoder().decode(
+            [SafariVCToolbarItemState].self,
+            from: safariToolbarItemsOrderData
+        ), !items.isEmpty else {
+            return SafariVCToolbarMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+
+    private var visibleSafariVCAppBarItems: [SafariVCAppBarMenuItem] {
+        guard let items = try? JSONDecoder().decode(
+            [SafariVCAppBarItemState].self,
+            from: safariAppBarItemsOrderData
+        ), !items.isEmpty else {
+            return SafariVCAppBarMenuItem.defaultOrder
+        }
+        return items.filter { $0.isVisible }.map { $0.menuItem }
+    }
+}
+
+// MARK: - OverlayMenuBars Views
+
+private extension OverlayMenuBars {
     private var topBar: some View {
         VStack(spacing: 6) {
             // Menu buttons (all scrollable)
@@ -270,8 +280,6 @@ struct OverlayMenuBars: View {
         .padding(.horizontal, 8)
         .offset(y: topOffset)
     }
-
-    // MARK: - Bottom Bar
 
     private var bottomBar: some View {
         GeometryReader { geometry in
@@ -344,9 +352,11 @@ struct OverlayMenuBars: View {
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
     }
+}
 
-    // MARK: - AppBar Button Builder (WKWebView)
+// MARK: - OverlayMenuBars Buttons
 
+private extension OverlayMenuBars {
     @ViewBuilder
     private func appBarButton(for item: AppBarMenuItem) -> some View {
         switch item {
@@ -382,8 +392,6 @@ struct OverlayMenuBars: View {
         }
     }
 
-    // MARK: - AppBar Button Builder (SafariVC)
-
     @ViewBuilder
     private func safariVCAppBarButton(for item: SafariVCAppBarMenuItem) -> some View {
         switch item {
@@ -394,8 +402,6 @@ struct OverlayMenuBars: View {
             }
         }
     }
-
-    // MARK: - Recording Button
 
     @ViewBuilder
     private var recordingButton: some View {
@@ -434,9 +440,11 @@ struct OverlayMenuBars: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
+}
 
-    // MARK: - Toolbar Item Actions (WKWebView)
+// MARK: - OverlayMenuBars Actions
 
+private extension OverlayMenuBars {
     private func handleToolbarItemTap(_ item: DevToolsMenuItem) {
         switch item {
         case .console:
@@ -469,8 +477,6 @@ struct OverlayMenuBars: View {
         }
     }
 
-    // MARK: - Toolbar Item Actions (SafariVC)
-
     private func handleSafariVCToolbarItemTap(_ item: SafariVCToolbarMenuItem) {
         switch item {
         case .screenshot:
@@ -479,9 +485,11 @@ struct OverlayMenuBars: View {
             toggleRecording()
         }
     }
+}
 
-    // MARK: - Screenshot
+// MARK: - OverlayMenuBars Screenshot
 
+private extension OverlayMenuBars {
     private func takeScreenshotWithFeedback() {
         Task {
             // Check permission first (before any feedback)
@@ -599,9 +607,11 @@ struct OverlayMenuBars: View {
             return .failed
         }
     }
+}
 
-    // MARK: - Recording
+// MARK: - OverlayMenuBars Recording
 
+private extension OverlayMenuBars {
     private func toggleRecording() {
         if activeRecorder.isRecording {
             // Stop recording
@@ -661,9 +671,11 @@ struct OverlayMenuBars: View {
             }
         }
     }
+}
 
-    // MARK: - Photo Library Permission
+// MARK: - OverlayMenuBars Permissions
 
+private extension OverlayMenuBars {
     private func checkPhotoLibraryPermission() -> PhotoPermissionStatus {
         let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
         switch status {
@@ -682,9 +694,11 @@ struct OverlayMenuBars: View {
         let newStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         return newStatus == .authorized || newStatus == .limited
     }
+}
 
-    // MARK: - Gesture
+// MARK: - OverlayMenuBars Gestures
 
+private extension OverlayMenuBars {
     private var dragGesture: some Gesture {
         DragGesture()
             .onChanged { value in
