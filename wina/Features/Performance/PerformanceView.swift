@@ -79,54 +79,52 @@ struct PerformanceView: View {
 
     private var mainContent: some View {
         ScrollViewReader { proxy in
-            GeometryReader { _ in
-                ScrollView {
-                    GeometryReader { geometryInner in
+            ScrollView {
+                GeometryReader { geometryInner in
+                    Color.clear
+                        .onAppear {
+                            scrollViewHeight = geometryInner.size.height
+                        }
+                }
+                .frame(height: 0)
+
+                VStack(spacing: 16) {
+                    coreWebVitalsSection
+                        .id("core-vitals")
+
+                    metricsSection
+                        .id("metrics")
+
+                    resourcesSection
+                        .id("resources")
+
+                    timingSection
+                        .id("timing")
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    GeometryReader { geometryContent in
                         Color.clear
                             .onAppear {
-                                scrollViewHeight = geometryInner.size.height
+                                contentHeight = geometryContent.size.height
                             }
                     }
-                    .frame(height: 0)
-
-                    VStack(spacing: 16) {
-                        coreWebVitalsSection
-                            .id("core-vitals")
-
-                        metricsSection
-                            .id("metrics")
-
-                        resourcesSection
-                            .id("resources")
-
-                        timingSection
-                            .id("timing")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        GeometryReader { geometryContent in
-                            Color.clear
-                                .onAppear {
-                                    contentHeight = geometryContent.size.height
-                                }
-                        }
-                    )
-                }
-                .scrollContentBackground(.hidden)
-                .onScrollGeometryChange(for: Double.self) { scrollGeometry in
-                    scrollGeometry.contentOffset.y
-                } action: { _, newValue in
-                    scrollOffset = newValue
-                }
-                .scrollNavigationOverlay(
-                    scrollOffset: scrollOffset,
-                    contentHeight: contentHeight,
-                    viewportHeight: scrollViewHeight,
-                    onScrollUp: { scrollUp(proxy: scrollProxy) },
-                    onScrollDown: { scrollDown(proxy: scrollProxy) }
                 )
             }
+            .scrollContentBackground(.hidden)
+            .onScrollGeometryChange(for: Double.self) { scrollGeometry in
+                scrollGeometry.contentOffset.y
+            } action: { _, newValue in
+                scrollOffset = newValue
+            }
+            .scrollNavigationOverlay(
+                scrollOffset: scrollOffset,
+                contentHeight: contentHeight,
+                viewportHeight: scrollViewHeight,
+                onScrollUp: { scrollUp(proxy: scrollProxy) },
+                onScrollDown: { scrollDown(proxy: scrollProxy) }
+            )
             .onAppear {
                 scrollProxy = proxy
             }
@@ -635,6 +633,11 @@ private struct ResourceTypeRow: View {
     let isExpanded: Bool
     let onToggle: () -> Void
 
+    // Performance: pre-sort outside View body to avoid repeated sorting on each render
+    private var sortedTopResources: [ResourceTiming] {
+        Array(resources.sorted(by: { $0.displaySize > $1.displaySize }).prefix(15))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Button(action: onToggle) {
@@ -665,7 +668,7 @@ private struct ResourceTypeRow: View {
 
             if isExpanded {
                 VStack(spacing: 0) {
-                    ForEach(resources.sorted(by: { $0.displaySize > $1.displaySize }).prefix(15)) { resource in
+                    ForEach(sortedTopResources) { resource in
                         ResourceDetailRow(resource: resource)
                             .padding(.leading, 24)
                             .padding(.vertical, 6)

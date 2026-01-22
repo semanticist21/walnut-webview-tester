@@ -178,7 +178,8 @@ class NetworkManager {
             requestType: type
         )
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             // Enforce max request count - delete disk files for removed requests
             if self.requests.count >= self.maxRequestCount {
                 let removedRequest = self.requests.removeFirst()
@@ -206,7 +207,8 @@ class NetworkManager {
         // Store only preview in memory
         let preview = responseBody.map { String($0.prefix(NetworkRequest.previewLength)) }
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             if let index = self.requests.firstIndex(where: { $0.id == uuid }) {
                 // Replace entire struct to ensure @Observable detects the change
                 var updated = self.requests[index]

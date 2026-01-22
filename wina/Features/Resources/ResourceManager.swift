@@ -61,7 +61,8 @@ class ResourceManager {
             timestamp: Date()
         )
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             if self.resources.count >= self.maxResourceCount {
                 self.resources.removeFirst()
             }

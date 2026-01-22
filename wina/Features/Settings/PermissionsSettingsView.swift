@@ -6,7 +6,7 @@
 //
 
 import AVFoundation
-import Combine
+import Combine  // Required for ObservableObject protocol
 import CoreLocation
 import SwiftUI
 

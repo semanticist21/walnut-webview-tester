@@ -194,6 +194,9 @@ class ConsoleManager {
     private var currentGroupLevel: Int = 0
     private var groupStack: [UUID] = []
 
+    // Memory management: max logs limit
+    private let maxLogs = 5000
+
     // ✨ Timer support (console.time/timeEnd)
     private var timerContexts: [String: Date] = [:]
 
@@ -271,6 +274,11 @@ class ConsoleManager {
             }
 
             self.logs.append(log)
+
+            // Auto-trim if exceeding max logs limit
+            if self.logs.count > self.maxLogs {
+                self.logs.removeFirst(self.logs.count - self.maxLogs)
+            }
         }
     }
 
@@ -452,6 +460,7 @@ struct ConsoleView: View {
     @State private var jsInput: String = ""
     @State private var commandHistory: [String] = []
     @State private var historyIndex: Int = -1
+    private let maxCommandHistory = 100
     @FocusState private var isInputFocused: Bool
     // Scroll navigation state
     @State private var scrollOffset: CGFloat = 0
@@ -822,9 +831,12 @@ extension ConsoleView {
         let command = sanitizeSmartQuotes(rawCommand)
         guard !command.isEmpty, let nav = navigator else { return }
 
-        // Add to history
+        // Add to history (with max limit)
         if commandHistory.last != command {
             commandHistory.append(command)
+            if commandHistory.count > maxCommandHistory {
+                commandHistory.removeFirst()
+            }
         }
         historyIndex = -1
 
