@@ -52,7 +52,6 @@ struct LogRow: View {
     @State private var isExpanded: Bool = false
     @State private var showCopyFeedback: Bool = false
     @State private var copyFeedbackMessage: String = ""
-    @State private var isPressed: Bool = false
 
     /// 복사용 전체 문자열 (message + objectValue)
     private var fullCopyableString: String {
@@ -200,11 +199,8 @@ struct LogRow: View {
                             }
 
                             if let objValue = log.objectValue {
-                                // Object/Array value with tree view (horizontal scroll for long content)
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    ConsoleValueView(value: objValue)
-                                        .fixedSize(horizontal: true, vertical: false)
-                                }
+                                // Object/Array value with tree view
+                                ConsoleValueView(value: objValue)
                             }
                         }
                     }
@@ -225,7 +221,7 @@ struct LogRow: View {
                 }
             }
 
-            // Footer row: Source + Timestamp (always at the bottom)
+            // Footer row: Source + Copy + Timestamp (always at the bottom)
             HStack(spacing: 6) {
                 if let source = log.source {
                     Text(source)
@@ -235,6 +231,20 @@ struct LogRow: View {
                         .truncationMode(.middle)
                 }
                 Spacer(minLength: 4)
+                Button {
+                    UIPasteboard.general.string = fullCopyableString
+                    copyFeedbackMessage = "Copied"
+                    showCopyFeedback = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showCopyFeedback = false
+                    }
+                } label: {
+                    Image(systemName: showCopyFeedback ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 9))
+                        .foregroundStyle(showCopyFeedback ? Color.green : Color.gray)
+                }
+                .buttonStyle(.plain)
+                .animation(.easeInOut(duration: 0.2), value: showCopyFeedback)
                 Text(Self.timeFormatter.string(from: log.timestamp))
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundStyle(.tertiary)
@@ -245,9 +255,7 @@ struct LogRow: View {
         .padding(.trailing, 12)
         .padding(.vertical, 6)
         .background(
-            isPressed
-                ? Color.gray.opacity(0.3)
-                : (log.type == .error ? Color.red.opacity(0.08) : (isGroupHeader ? Color.secondary.opacity(0.05) : Color.clear))
+            log.type == .error ? Color.red.opacity(0.08) : (isGroupHeader ? Color.secondary.opacity(0.05) : Color.clear)
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -261,18 +269,6 @@ struct LogRow: View {
                 }
             }
         }
-        .onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = pressing
-            }
-        }, perform: {
-            UIPasteboard.general.string = fullCopyableString
-            copyFeedbackMessage = "Copied"
-            showCopyFeedback = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showCopyFeedback = false
-            }
-        })
         .overlay(alignment: .bottom) {
             Divider()
                 .padding(.leading, 12 + indentation)

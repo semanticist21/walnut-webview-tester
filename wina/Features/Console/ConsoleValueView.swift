@@ -50,6 +50,7 @@ struct ConsoleValueView: View {
                 Text(value.preview)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(valueTextColor)
+                    .lineLimit(5)
                     .textSelection(.enabled)
 
                 Spacer()
@@ -274,6 +275,7 @@ private struct MapEntryView: View {
                 Text(entryValue.preview)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(valueTextColor)
+                    .lineLimit(5)
                     .textSelection(.enabled)
 
                 Spacer()

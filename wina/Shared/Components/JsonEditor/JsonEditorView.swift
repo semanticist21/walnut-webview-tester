@@ -864,7 +864,7 @@ private struct ExplorerNodeView: View {
             Text("\"\(value)\"")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(stringColor)
-                .lineLimit(3)
+                .lineLimit(5)
         case .array(_, let values):
             Text("Array[\(values.count)]")
                 .font(.system(size: 11, design: .monospaced))
