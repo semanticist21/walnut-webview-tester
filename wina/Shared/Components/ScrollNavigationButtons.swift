@@ -20,6 +20,23 @@ struct ScrollNavigationButtons: View {
     /// Minimal mode: show only relevant button based on position
     var minimalMode: Bool = true
 
+    // MARK: - Environment
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    // MARK: - Hysteresis State
+
+    /// Tracks button visibility with hysteresis to prevent flickering
+    @State private var upButtonVisible: Bool = false
+    @State private var downButtonVisible: Bool = true
+
+    // MARK: - Thresholds (Hysteresis)
+
+    /// Threshold to show button (needs more scroll to appear)
+    private let showThreshold: CGFloat = 40
+    /// Threshold to hide button (needs to be closer to edge to disappear)
+    private let hideThreshold: CGFloat = 15
+
     // MARK: - Computed Properties
 
     private var canScroll: Bool {
@@ -27,19 +44,19 @@ struct ScrollNavigationButtons: View {
     }
 
     private var isNearTop: Bool {
-        scrollOffset <= 20
+        scrollOffset <= hideThreshold
     }
 
     private var isNearBottom: Bool {
-        (contentHeight - scrollOffset - viewportHeight) <= 20
+        (contentHeight - scrollOffset - viewportHeight) <= hideThreshold
     }
 
-    private var showUpButton: Bool {
-        !minimalMode || !isNearTop
+    private var distanceFromTop: CGFloat {
+        scrollOffset
     }
 
-    private var showDownButton: Bool {
-        !minimalMode || !isNearBottom
+    private var distanceFromBottom: CGFloat {
+        contentHeight - scrollOffset - viewportHeight
     }
 
     var body: some View {
@@ -48,7 +65,7 @@ struct ScrollNavigationButtons: View {
                 // Up button - always in layout, visibility controlled by opacity
                 scrollButton(
                     icon: "chevron.up.circle.fill",
-                    isVisible: showUpButton,
+                    isVisible: !minimalMode || upButtonVisible,
                     isEnabled: !isNearTop,
                     action: {
                         triggerHaptic()
@@ -59,7 +76,7 @@ struct ScrollNavigationButtons: View {
                 // Down button
                 scrollButton(
                     icon: "chevron.down.circle.fill",
-                    isVisible: showDownButton,
+                    isVisible: !minimalMode || downButtonVisible,
                     isEnabled: !isNearBottom,
                     action: {
                         triggerHaptic()
@@ -69,6 +86,30 @@ struct ScrollNavigationButtons: View {
             }
             .padding(.trailing, 12)
             .padding(.bottom, 12)
+            .onChange(of: scrollOffset) { _, _ in
+                updateButtonVisibility()
+            }
+            .onAppear {
+                updateButtonVisibility()
+            }
+        }
+    }
+
+    // MARK: - Hysteresis Logic
+
+    private func updateButtonVisibility() {
+        // Up button: show when scrolled down enough, hide when near top
+        if distanceFromTop > showThreshold && !upButtonVisible {
+            upButtonVisible = true
+        } else if distanceFromTop < hideThreshold && upButtonVisible {
+            upButtonVisible = false
+        }
+
+        // Down button: show when far from bottom, hide when near bottom
+        if distanceFromBottom > showThreshold && !downButtonVisible {
+            downButtonVisible = true
+        } else if distanceFromBottom < hideThreshold && downButtonVisible {
+            downButtonVisible = false
         }
     }
 
@@ -82,9 +123,12 @@ struct ScrollNavigationButtons: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundStyle(.primary)
+            Image(systemName: icon.replacingOccurrences(of: ".circle.fill", with: ""))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(colorScheme == .dark ? .black : .white)
+                .frame(width: 32, height: 32)
+                .background(colorScheme == .dark ? Color.white : Color.blue)
+                .clipShape(Circle())
         }
         .backport
         .glassEffect(in: .circle)

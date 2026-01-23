@@ -955,7 +955,7 @@ struct StorageView: View {
     }
 
     private func copyToClipboard(_ text: String) {
-        UIPasteboard.general.string = text
+        UIPasteboard.general.string = JSONParser.prettyPrintIfJSON(text)
         feedbackState.showCopied("Value")
     }
 

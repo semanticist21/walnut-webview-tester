@@ -90,7 +90,7 @@ extension WebViewScripts {
 
             // Serialize value for native (structured, JSON-safe)
             function serializeValue(value, depth, seen, path, protoDepth) {
-                const maxDepth = 3;
+                const maxDepth = 5;
                 const maxProtoDepth = 1;
                 const maxProps = 200;
                 const maxArrayLength = 2000;

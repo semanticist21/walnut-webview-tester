@@ -29,7 +29,8 @@ extension NetworkDetailView {
     }
 
     func copyToClipboard(_ text: String, label: String) {
-        UIPasteboard.general.string = text
+        // Pretty-print if JSON, otherwise return original
+        UIPasteboard.general.string = JSONParser.prettyPrintIfJSON(text)
         feedbackState.showCopied(label)
     }
 

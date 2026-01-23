@@ -86,8 +86,16 @@ indirect enum ConsoleValue {
         }
     }
 
-    /// 복사용 전체 문자열 (JSON 형식)
+    /// 복사용 전체 문자열 (Pretty-printed JSON 형식)
     var copyableString: String {
+        prettyPrinted(indent: 0)
+    }
+
+    /// 들여쓰기를 적용한 pretty-printed 문자열 생성
+    private func prettyPrinted(indent: Int) -> String {
+        let indentStr = String(repeating: "  ", count: indent)
+        let childIndent = String(repeating: "  ", count: indent + 1)
+
         switch self {
         case .string(let str):
             return "\"\(str)\""
@@ -111,18 +119,32 @@ indirect enum ConsoleValue {
         case .error(let message):
             return "Error: \(message)"
         case .object(let obj):
-            let props = obj.sortedProperties.map { "\"\($0.key)\": \($0.value.copyableString)" }
-            return "{ \(props.joined(separator: ", ")) }"
+            if obj.properties.isEmpty {
+                return "{}"
+            }
+            let props = obj.sortedProperties.map { "\(childIndent)\"\($0.key)\": \($0.value.prettyPrinted(indent: indent + 1))" }
+            return "{\n\(props.joined(separator: ",\n"))\n\(indentStr)}"
         case .array(let arr):
-            let items = arr.elements.map { $0.copyableString }
-            let suffix = arr.isTruncated ? ", ... (\(arr.totalCount) total)" : ""
-            return "[\(items.joined(separator: ", "))\(suffix)]"
+            if arr.elements.isEmpty {
+                return "[]"
+            }
+            var items = arr.elements.map { "\(childIndent)\($0.prettyPrinted(indent: indent + 1))" }
+            if arr.isTruncated {
+                items.append("\(childIndent)// ... (\(arr.totalCount) total)")
+            }
+            return "[\n\(items.joined(separator: ",\n"))\n\(indentStr)]"
         case .map(let entries):
-            let items = entries.map { "\($0.key) => \($0.value.copyableString)" }
-            return "Map { \(items.joined(separator: ", ")) }"
+            if entries.isEmpty {
+                return "Map {}"
+            }
+            let items = entries.map { "\(childIndent)\($0.key) => \($0.value.prettyPrinted(indent: indent + 1))" }
+            return "Map {\n\(items.joined(separator: ",\n"))\n\(indentStr)}"
         case .set(let values):
-            let items = values.map { $0.copyableString }
-            return "Set { \(items.joined(separator: ", ")) }"
+            if values.isEmpty {
+                return "Set {}"
+            }
+            let items = values.map { "\(childIndent)\($0.prettyPrinted(indent: indent + 1))" }
+            return "Set {\n\(items.joined(separator: ",\n"))\n\(indentStr)}"
         case .domElement(let tag, let attributes):
             return domPreview(tag: tag, attributes: attributes)
         }
@@ -258,7 +280,7 @@ extension ConsoleValue {
         depth: Int = 0,
         seenObjects: inout Set<String>
     ) -> ConsoleValue {
-        let maxDepth = 3
+        let maxDepth = 5
         if depth >= maxDepth {
             return .object(ConsoleObject(properties: [:], depth: depth))
         }
@@ -283,7 +305,7 @@ extension ConsoleValue {
         depth: Int = 0,
         seenObjects: inout Set<String>
     ) -> ConsoleValue {
-        let maxDepth = 3
+        let maxDepth = 5
         if depth >= maxDepth {
             return .array(ConsoleArray(elements: [], depth: depth))
         }
@@ -301,7 +323,7 @@ extension ConsoleValue {
         depth: Int = 0,
         seenObjects: inout Set<String>
     ) -> ConsoleValue {
-        let maxDepth = 3
+        let maxDepth = 5
         if depth >= maxDepth {
             return .string(String(describing: value))
         }
@@ -333,7 +355,7 @@ extension ConsoleValue {
 
     /// Serialized payload를 ConsoleValue로 변환 (WebView console hook)
     static func fromSerializedAny(_ value: Any, depth: Int = 0) -> ConsoleValue? {
-        let maxDepth = 3
+        let maxDepth = 5
         if depth >= maxDepth {
             return .string("[Max Depth]")
         }

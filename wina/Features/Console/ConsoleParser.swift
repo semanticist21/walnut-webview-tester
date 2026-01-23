@@ -67,6 +67,16 @@ enum JSONParser {
         return nil
     }
 
+    /// Pretty-print a string if it's valid JSON, otherwise return original
+    /// - Parameter str: String to pretty-print
+    /// - Returns: Pretty-printed JSON if valid, original string otherwise
+    static func prettyPrintIfJSON(_ str: String) -> String {
+        if let parsed = parse(str.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return parsed.formatted
+        }
+        return str
+    }
+
     /// Parse table data from a JSON array message (for console.table)
     /// - Parameter message: JSON array string
     /// - Returns: Array of dictionaries with string values, or nil if invalid
