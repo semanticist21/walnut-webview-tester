@@ -367,12 +367,14 @@ struct SourcesView: View {
         if matchingNodePaths.isEmpty {
             SearchMatchCountBadge(text: "0")
         } else {
-            SearchMatchCountBadge(text: "\(currentMatchIndex + 1)/\(matchingNodePaths.count)")
-            SearchNavigationButtons(
-                onPrevious: navigateToPreviousMatch,
-                onNext: navigateToNextMatch,
-                isDisabled: matchingNodePaths.count <= 1
-            )
+            HStack(spacing: 4) {
+                SearchMatchCountBadge(text: "\(currentMatchIndex + 1)/\(matchingNodePaths.count)")
+                SearchNavigationButtons(
+                    onPrevious: navigateToPreviousMatch,
+                    onNext: navigateToNextMatch,
+                    isDisabled: matchingNodePaths.count <= 1
+                )
+            }
         }
     }
 
@@ -381,12 +383,14 @@ struct SourcesView: View {
         if rawMatchLineIndices.isEmpty {
             SearchMatchCountBadge(text: "0")
         } else {
-            SearchMatchCountBadge(text: "\(currentRawMatchIndex + 1)/\(rawMatchLineIndices.count)")
-            SearchNavigationButtons(
-                onPrevious: navigateToPreviousRawMatch,
-                onNext: navigateToNextRawMatch,
-                isDisabled: rawMatchLineIndices.count <= 1
-            )
+            HStack(spacing: 4) {
+                SearchMatchCountBadge(text: "\(currentRawMatchIndex + 1)/\(rawMatchLineIndices.count)")
+                SearchNavigationButtons(
+                    onPrevious: navigateToPreviousRawMatch,
+                    onNext: navigateToNextRawMatch,
+                    isDisabled: rawMatchLineIndices.count <= 1
+                )
+            }
         }
     }
 
@@ -466,6 +470,12 @@ struct SourcesView: View {
                             }
                             .onChange(of: currentMatchIndex) { _, _ in
                                 scrollToCurrentMatch(proxy: proxy)
+                            }
+                            .onChange(of: matchingNodePaths) { _, newPaths in
+                                // Auto-scroll to first match when search results appear
+                                if !newPaths.isEmpty {
+                                    scrollToCurrentMatch(proxy: proxy)
+                                }
                             }
                             .onChange(of: breadcrumbPath) { _, newPath in
                                 // Scroll to the last breadcrumb node

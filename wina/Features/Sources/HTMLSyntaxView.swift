@@ -140,6 +140,12 @@ struct HTMLTextView: UIViewRepresentable {
         }
 
         // Scroll to current match using stored search result ranges
+        // Reset lastMatchIndex when search results change to force scroll on new results
+        if coordinator.lastMatchingLineIndices != matchingLineIndices {
+            coordinator.lastMatchingLineIndices = matchingLineIndices
+            coordinator.lastMatchIndex = nil
+        }
+
         if coordinator.lastMatchIndex != currentMatchIndex {
             coordinator.lastMatchIndex = currentMatchIndex
 
@@ -163,6 +169,7 @@ struct HTMLTextView: UIViewRepresentable {
         var lastText: String = ""
         var lastSearchText: String = ""
         var lastMatchIndex: Int?
+        var lastMatchingLineIndices: [Int] = []
         var lastFontSize: Double = 12
         var searchResultRanges: [NSRange] = []
 
