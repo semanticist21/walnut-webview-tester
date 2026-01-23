@@ -19,6 +19,11 @@ struct DevToolsSheetModifier: ViewModifier {
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             .presentationContentInteraction(.scrolls)
             .presentationDragIndicator(.visible)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                if detent != .large {
+                    detent = .large
+                }
+            }
     }
 }
 
