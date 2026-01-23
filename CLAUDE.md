@@ -75,6 +75,7 @@ wina/
 │   ├── Accessibility/   # AccessibilityAuditView (axe-core 기반)
 │   ├── Ad/              # AdManager (Google AdMob interstitial + banner)
 │   ├── AppBar/          # OverlayMenuBars, 버튼들
+│   ├── Callback/        # URL scheme callback testing (walnut://)
 │   ├── Console/         # ConsoleManager + UI (JS console 캡처 + %c styling + array chunking)
 │   ├── Info/            # SharedInfoWebView, API Capability 감지, 벤치마크
 │   ├── Network/         # NetworkManager + UI (fetch/XHR + scroll buttons + domain filtering)
@@ -84,7 +85,7 @@ wina/
 │   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView, EmulationSettingsView
 │   ├── Snippets/        # SnippetsView (JavaScript snippet execution)
 │   ├── Sources/         # DOM Tree, Stylesheets, Scripts, CSS parsing/specificity, search
-│   ├── Storage/         # StorageManager + UI (localStorage/sessionStorage/cookies, SWR 패턴)
+│   ├── Storage/         # Storage UI (localStorage/sessionStorage/cookies via WebViewNavigator)
 │   ├── UserAgent/       # UA 커스터마이징
 │   └── WebView/         # WebViewContainer, WebViewNavigator, WebViewScripts
 ├── Shared/
@@ -169,8 +170,16 @@ Two styles (Shared/Extensions/SheetModifiers.swift):
 
 | Modifier | Use | Behavior |
 |----------|-----|----------|
-| `.devToolsSheet()` | DevTools | Resizable (35%, medium, large), iPad `.form` |
+| `.devToolsSheet()` | DevTools | Resizable (35%, medium, large), auto-expands to large on keyboard |
 | `.fullSizeSheet()` | Settings/Info | Always large, `.page` sizing |
+
+**Keyboard handling in sheets**:
+```swift
+// Auto-dismiss keyboard when tapping outside (use in sheet content)
+.dismissKeyboardOnTap()
+
+// DevToolsSheet auto-expands to .large when keyboard appears
+```
 
 ### StoreKit 2 IAP (StoreManager)
 
@@ -414,6 +423,25 @@ struct MyView: View {
             // content uses dynamic padding
         }
     }
+}
+```
+
+### 9. @MainActor Singleton Manager Pattern
+```swift
+// ✅ Correct pattern for UI-bound singleton managers
+@Observable
+@MainActor
+final class SomeManager {
+    static let shared = SomeManager()
+    private init() {}
+
+    // All properties automatically MainActor-isolated
+    var someState: Bool = false
+}
+
+// Usage - no await needed when already on MainActor
+func viewAction() {
+    SomeManager.shared.someState = true
 }
 ```
 
