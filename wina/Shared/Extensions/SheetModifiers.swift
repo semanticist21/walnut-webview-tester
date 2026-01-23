@@ -44,4 +44,24 @@ extension View {
     func fullSizeSheet() -> some View {
         modifier(FullSizeSheetModifier())
     }
+
+    /// Dismiss keyboard by resigning first responder (works in sheets)
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
+    /// Dismiss keyboard when tapping outside input fields (for use in sheets)
+    /// Uses simultaneousGesture to allow button interactions to work
+    func dismissKeyboardOnTap() -> some View {
+        simultaneousGesture(
+            TapGesture().onEnded { _ in
+                hideKeyboard()
+            }
+        )
+    }
 }

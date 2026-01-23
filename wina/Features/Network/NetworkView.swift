@@ -234,6 +234,7 @@ struct NetworkView: View {
                 contentList
             }
         }
+        .dismissKeyboardOnTap()
         .sheet(item: $shareItem) { item in
             ExportContentSheet(content: item.content)
         }

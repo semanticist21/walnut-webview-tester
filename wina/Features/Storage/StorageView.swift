@@ -478,7 +478,7 @@ struct StorageView: View {
     @State private var scrollViewHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
     @State private var scrollProxy: ScrollViewProxy?
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
 
     private var currentHost: String? {
         navigator?.currentURL?.host()
@@ -561,6 +561,7 @@ struct StorageView: View {
                 itemList
             }
         }
+        .dismissKeyboardOnTap()
         .sheet(item: $shareItem) { item in
             ShareSheet(content: item.content)
         }
@@ -614,13 +615,7 @@ struct StorageView: View {
             urlCheckTimer?.invalidate()
             urlCheckTimer = nil
         }
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
+        .copiedFeedbackOverlay($feedbackState.message)
     }
 
     // MARK: - Storage Header
@@ -961,24 +956,12 @@ struct StorageView: View {
 
     private func copyToClipboard(_ text: String) {
         UIPasteboard.general.string = text
-        showCopiedFeedback("Value")
+        feedbackState.showCopied("Value")
     }
 
     private func copyKeyValue(_ item: StorageItem) {
         UIPasteboard.general.string = "\(item.key)=\(item.value)"
-        showCopiedFeedback("Key=Value")
-    }
-
-    private func showCopiedFeedback(_ label: String) {
-        copiedFeedback = "\(label) copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "\(label) copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
+        feedbackState.showCopied("Key=Value")
     }
 
     // MARK: - Export

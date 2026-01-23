@@ -451,6 +451,7 @@ struct SnippetsView: View {
             resultToast
         }
         .animation(.easeInOut(duration: 0.2), value: showResult)
+        .dismissKeyboardOnTap()
         .task {
             await AdManager.shared.showInterstitialAd(
                 options: AdOptions(id: "snippets_devtools"),

@@ -93,6 +93,7 @@ struct SourcesView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .dismissKeyboardOnTap()
         .onAppear {
             manager.setNavigator(navigator)
             lastURL = navigator?.currentURL

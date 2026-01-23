@@ -63,6 +63,7 @@ struct PerformanceView: View {
             }
         }
         .background(Color(uiColor: .systemBackground))
+        .dismissKeyboardOnTap()
         // Sheet 열릴 때 자동으로 데이터 수집
         .onAppear {
             if !hasData && !performanceManager.isLoading {

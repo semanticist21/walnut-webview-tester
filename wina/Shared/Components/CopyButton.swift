@@ -115,6 +115,56 @@ struct CopiedFeedbackToast: View {
     }
 }
 
+// MARK: - Copied Feedback State
+
+/// Observable state for managing copy feedback across views
+@Observable
+final class CopiedFeedbackState {
+    var message: String?
+
+    func show(_ message: String) {
+        self.message = message
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            await MainActor.run {
+                if self.message == message {
+                    self.message = nil
+                }
+            }
+        }
+    }
+
+    func showCopied(_ label: String = "Copied") {
+        show("\(label) copied")
+    }
+}
+
+// MARK: - Copied Feedback View Modifier
+
+/// View modifier that provides copy feedback overlay and state management
+struct CopiedFeedbackModifier: ViewModifier {
+    @Binding var feedback: String?
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .bottom) {
+                if let message = feedback {
+                    CopiedFeedbackToast(message: message)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: feedback)
+    }
+}
+
+extension View {
+    /// Adds copy feedback overlay with auto-dismiss behavior
+    /// Usage: .copiedFeedbackOverlay($copiedFeedback)
+    func copiedFeedbackOverlay(_ feedback: Binding<String?>) -> some View {
+        modifier(CopiedFeedbackModifier(feedback: feedback))
+    }
+}
+
 #Preview {
     VStack(spacing: 20) {
         HStack {

@@ -21,7 +21,7 @@ struct StorageEditSheet: View {
     @State private var isSaving: Bool = false
     @State private var isDeleting: Bool = false
     @State private var showJsonEditor: Bool = false
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
     @State private var isURLDecoded: Bool = true
 
     private var isValueJson: Bool {
@@ -153,7 +153,7 @@ struct StorageEditSheet: View {
                         Text("Key")
                         Spacer()
                         CopyIconButton(text: editedKey) {
-                            showCopiedFeedback("Key")
+                            feedbackState.showCopied("Key")
                         }
                     }
                 } footer: {
@@ -201,7 +201,7 @@ struct StorageEditSheet: View {
                         Text("Value")
                         Spacer()
                         CopyIconButton(text: editedValue) {
-                            showCopiedFeedback("Value")
+                            feedbackState.showCopied("Value")
                         }
                         if isValueJson {
                             HeaderActionButton(label: "Edit", icon: "pencil") {
@@ -270,28 +270,9 @@ struct StorageEditSheet: View {
                     editedValue = item.value
                 }
             }
-            .overlay(alignment: .bottom) {
-                if let feedback = copiedFeedback {
-                    CopiedFeedbackToast(message: feedback)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
+            .copiedFeedbackOverlay($feedbackState.message)
         }
     }
-
-    private func showCopiedFeedback(_ label: String) {
-        copiedFeedback = "\(label) copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "\(label) copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
-    }
-
     private func saveItem() {
         isSaving = true
         Task {

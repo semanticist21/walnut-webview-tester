@@ -30,19 +30,7 @@ extension NetworkDetailView {
 
     func copyToClipboard(_ text: String, label: String) {
         UIPasteboard.general.string = text
-        showCopiedFeedback(label)
-    }
-
-    func showCopiedFeedback(_ label: String) {
-        copiedFeedback = "\(label) copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "\(label) copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
+        feedbackState.showCopied(label)
     }
 
     func formatHeadersForCopy(_ headers: [String: String]) -> String {
@@ -114,7 +102,7 @@ extension NetworkDetailView {
         }
 
         UIPasteboard.general.string = curl
-        showCopiedFeedback("cURL")
+        feedbackState.showCopied("cURL")
     }
 
     func shareResponseBodyAsFile(body: String, contentType: NetworkContentType) {

@@ -34,7 +34,7 @@ struct StylesheetDetailView: View {
     @State private var isLoading: Bool = true
     @State private var errorMessage: String?
     @State private var showRaw: Bool = false
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,13 +49,7 @@ struct StylesheetDetailView: View {
                 content
             }
         }
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
+        .copiedFeedbackOverlay($feedbackState.message)
         .task {
             await fetchDetails()
         }
@@ -75,7 +69,7 @@ struct StylesheetDetailView: View {
                 },
                 .init(icon: "doc.on.doc") {
                     UIPasteboard.general.string = rawCSS
-                    showCopiedFeedback("CSS")
+                    feedbackState.showCopied("CSS")
                 }
             ]
         )
@@ -165,18 +159,6 @@ struct StylesheetDetailView: View {
         }
 
         isLoading = false
-    }
-
-    private func showCopiedFeedback(_ label: String) {
-        copiedFeedback = "\(label) copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "\(label) copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
     }
 }
 

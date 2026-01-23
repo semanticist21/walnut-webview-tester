@@ -19,7 +19,7 @@ struct URLInputOverlayView: View {
     let onURLChange: (String) -> Void
 
     @FocusState private var urlInputFocused: Bool
-    @State private var showCopiedFeedback = false
+    @State private var feedbackState = CopiedFeedbackState()
 
     private var urlValidationState: URLValidationState {
         guard !urlInputText.isEmpty else { return .empty }
@@ -68,13 +68,7 @@ struct URLInputOverlayView: View {
             .padding(.bottom, 10)
             .frame(width: 340)
             .backport.glassEffect(in: .rect(cornerRadius: 24))
-            .overlay(alignment: .bottom) {
-                if showCopiedFeedback {
-                    CopiedFeedbackToast(message: "Copied")
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: showCopiedFeedback)
+            .copiedFeedbackOverlay($feedbackState.message)
         }
         .onAppear {
             urlInputFocused = true
@@ -90,13 +84,7 @@ struct URLInputOverlayView: View {
                 Button {
                     UIPasteboard.general.string = currentURL
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    showCopiedFeedback = true
-                    Task {
-                        try? await Task.sleep(for: .seconds(1.5))
-                        await MainActor.run {
-                            showCopiedFeedback = false
-                        }
-                    }
+                    feedbackState.showCopied()
                 } label: {
                     Image(systemName: "doc.on.doc")
                         .font(.system(size: 16))

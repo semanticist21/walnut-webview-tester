@@ -158,7 +158,7 @@ struct AccessibilityAuditView: View {
     let navigator: WebViewNavigator?
 
     @Environment(\.dismiss) private var dismiss
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
     @State private var showingShareSheet: Bool = false
     @State private var scrollOffset: CGFloat = 0
     @State private var scrollViewHeight: CGFloat = 0
@@ -214,12 +214,8 @@ struct AccessibilityAuditView: View {
                 issuesList
             }
         }
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .copiedFeedbackOverlay($feedbackState.message)
+        .dismissKeyboardOnTap()
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(content: generateShareText())
         }
@@ -228,13 +224,6 @@ struct AccessibilityAuditView: View {
                 options: AdOptions(id: "accessibility_devtools"),
                 adUnitId: AdManager.interstitialAdUnitId
             )
-        }
-    }
-
-    private func showCopiedFeedback(_ message: String) {
-        withAnimation { copiedFeedback = message }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation { copiedFeedback = nil }
         }
     }
 
@@ -473,7 +462,7 @@ struct AccessibilityAuditView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(filteredIssues) { issue in
                             IssueRow(issue: issue) {
-                                showCopiedFeedback("Copied")
+                                feedbackState.showCopied()
                             }
                             .id(issue.id)
                         }

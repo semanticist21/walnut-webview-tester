@@ -18,7 +18,7 @@ struct ScriptDetailView: View {
     @State private var scriptContent: String = ""
     @State private var isLoading: Bool = true
     @State private var errorMessage: String?
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,14 +45,7 @@ struct ScriptDetailView: View {
                 .background(Color(uiColor: .systemBackground))
             }
         }
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
+        .copiedFeedbackOverlay($feedbackState.message)
         .task {
             await fetchDetails()
         }
@@ -69,7 +62,7 @@ struct ScriptDetailView: View {
             rightButtons: [
                 .init(icon: "doc.on.doc") {
                     UIPasteboard.general.string = scriptContent
-                    showCopiedFeedback("Script")
+                    feedbackState.showCopied("Script")
                 }
             ]
         )
@@ -138,7 +131,7 @@ struct ScriptDetailView: View {
 
                 if let src = script.src {
                     ExpandableURLView(url: src) {
-                        showCopiedFeedback()
+                        feedbackState.showCopied("URL")
                     }
                 }
             }
@@ -146,18 +139,6 @@ struct ScriptDetailView: View {
             .padding()
         }
         .background(Color(uiColor: .systemBackground))
-    }
-
-    private func showCopiedFeedback(_ label: String = "URL") {
-        copiedFeedback = "\(label) copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "\(label) copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
     }
 
     private func fetchDetails() async {

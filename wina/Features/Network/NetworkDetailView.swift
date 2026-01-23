@@ -15,7 +15,7 @@ struct NetworkDetailView: View {
     let request: NetworkRequest
     @Environment(\.dismiss) private var dismiss
     @State var selectedTab: DetailTab = .overview
-    @State var copiedFeedback: String?
+    @State var feedbackState = CopiedFeedbackState()
     @State var shareItem: NetworkShareContent?
     @State var shareFileURL: URL?
 
@@ -59,13 +59,8 @@ struct NetworkDetailView: View {
                 }
             }
         }
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
+        .copiedFeedbackOverlay($feedbackState.message)
+        .dismissKeyboardOnTap()
         .sheet(item: $shareItem) { item in
             ShareSheet(content: item.content)
         }
@@ -124,7 +119,7 @@ struct NetworkDetailView: View {
 
                 // Quick copy URL button
                 CopyIconButton(text: request.url) {
-                    showCopiedFeedback("URL")
+                    feedbackState.showCopied("URL")
                 }
             }
 

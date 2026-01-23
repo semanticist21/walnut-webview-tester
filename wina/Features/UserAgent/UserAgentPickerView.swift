@@ -377,7 +377,7 @@ private struct PresetDetailRow: View {
 
 private struct PresetDetailPopover: View {
     let preset: UserAgentPreset
-    @State private var copiedFeedback: String?
+    @State private var feedbackState = CopiedFeedbackState()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -392,7 +392,7 @@ private struct PresetDetailPopover: View {
 
             Button {
                 UIPasteboard.general.string = preset.userAgent
-                showCopiedFeedback()
+                feedbackState.showCopied("User Agent")
             } label: {
                 HStack {
                     Spacer()
@@ -410,25 +410,7 @@ private struct PresetDetailPopover: View {
         .padding()
         .frame(maxWidth: 320)
         .presentationCompactAdaptation(.popover)
-        .overlay(alignment: .bottom) {
-            if let feedback = copiedFeedback {
-                CopiedFeedbackToast(message: feedback)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: copiedFeedback)
-    }
-
-    private func showCopiedFeedback() {
-        copiedFeedback = "User Agent copied"
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run {
-                if copiedFeedback == "User Agent copied" {
-                    copiedFeedback = nil
-                }
-            }
-        }
+        .copiedFeedbackOverlay($feedbackState.message)
     }
 }
 
