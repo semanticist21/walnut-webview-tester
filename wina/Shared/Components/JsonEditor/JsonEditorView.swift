@@ -650,11 +650,9 @@ struct JsonExplorerView: View {
            let json = try? JSONSerialization.jsonObject(with: data)
         {
             let rootNode = ExplorerNode.parse(json)
-            ScrollView(.horizontal, showsIndicators: false) {
-                ScrollView(.vertical, showsIndicators: false) {
-                    ExplorerNodeView(node: rootNode, depth: 0, isLast: true)
-                        .padding(12)
-                }
+            ScrollView(.vertical, showsIndicators: true) {
+                ExplorerNodeView(node: rootNode, depth: 0, isLast: true)
+                    .padding(12)
             }
         }
     }
@@ -704,6 +702,35 @@ private enum ExplorerNode: Identifiable {
         }
     }
 
+    /// Convert node back to JSON-serializable value
+    func toJsonValue() -> Any {
+        switch self {
+        case .null: return NSNull()
+        case .bool(_, let value): return value
+        case .number(_, let value): return value
+        case .string(_, let value): return value
+        case .array(_, let values): return values.map { $0.toJsonValue() }
+        case .object(_, let pairs):
+            var dict: [String: Any] = [:]
+            for (key, node) in pairs {
+                dict[key] = node.toJsonValue()
+            }
+            return dict
+        }
+    }
+
+    /// Convert node to formatted JSON string
+    func toJsonString() -> String? {
+        let value = toJsonValue()
+        guard let data = try? JSONSerialization.data(
+            withJSONObject: value,
+            options: [.prettyPrinted, .sortedKeys, .fragmentsAllowed]
+        ),
+              let string = String(data: data, encoding: .utf8)
+        else { return nil }
+        return string
+    }
+
     static func parse(_ json: Any, key: String? = nil) -> ExplorerNode {
         switch json {
         case is NSNull:
@@ -733,6 +760,7 @@ private struct ExplorerNodeView: View {
     let depth: Int
     let isLast: Bool
     @State private var isExpanded: Bool = false
+    @State private var showCopiedFeedback: Bool = false
 
     // Chrome DevTools style colors
     private let primitiveColor = Color(red: 0.0, green: 0.45, blue: 0.73)  // Blue
@@ -772,6 +800,8 @@ private struct ExplorerNodeView: View {
 
                 // Value or preview
                 valueView
+
+                Spacer(minLength: 28)
             }
             .frame(minHeight: 20)
             .contentShape(Rectangle())
@@ -779,6 +809,31 @@ private struct ExplorerNodeView: View {
                 guard node.isExpandable else { return }
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isExpanded.toggle()
+                }
+            }
+            .overlay(alignment: .trailing) {
+                // Copy button - fixed to right edge
+                Button {
+                    if let jsonString = node.toJsonString() {
+                        UIPasteboard.general.string = jsonString
+                        showCopiedFeedback = true
+                    }
+                } label: {
+                    Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 10))
+                        .foregroundStyle(showCopiedFeedback ? .green : .secondary)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .opacity(showCopiedFeedback ? 1 : 0.4)
+                .animation(.easeInOut(duration: 0.2), value: showCopiedFeedback)
+                .onChange(of: showCopiedFeedback) { _, newValue in
+                    if newValue {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            showCopiedFeedback = false
+                        }
+                    }
                 }
             }
 
@@ -809,7 +864,7 @@ private struct ExplorerNodeView: View {
             Text("\"\(value)\"")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(stringColor)
-                .lineLimit(isExpanded ? nil : 1)
+                .lineLimit(3)
         case .array(_, let values):
             Text("Array[\(values.count)]")
                 .font(.system(size: 11, design: .monospaced))

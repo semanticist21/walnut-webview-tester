@@ -166,7 +166,8 @@ struct StorageEditSheet: View {
                 Section {
                     TextEditor(text: $editedValue)
                         .font(.system(size: 13, design: .monospaced))
-                        .frame(minHeight: 120)
+                        .frame(minHeight: 120, maxHeight: 200)
+                        .scrollIndicators(.visible)
 
                     if isCookie {
                         HStack(spacing: 8) {
@@ -202,6 +203,11 @@ struct StorageEditSheet: View {
                         Spacer()
                         CopyIconButton(text: editedValue) {
                             feedbackState.showCopied("Value")
+                        }
+                        if !editedValue.isEmpty {
+                            HeaderActionButton(label: "Clear", icon: "xmark") {
+                                editedValue = ""
+                            }
                         }
                         if isValueJson {
                             HeaderActionButton(label: "Edit", icon: "pencil") {
