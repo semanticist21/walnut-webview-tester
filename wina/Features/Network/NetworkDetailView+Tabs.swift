@@ -153,8 +153,13 @@ extension NetworkDetailView {
                 let networkContentType = detectContentType(body: body, headers: request.requestHeaders)
                 let responseFormatterType = networkContentType.toResponseContentType()
                 let bodySize = body.data(using: .utf8)?.count ?? 0
+                let discrepancyMessage = contentTypeDiscrepancyMessage(body: body, headers: request.requestHeaders)
                 DetailSection(title: "Request Body", rawText: body, onCopy: copyToClipboard) {
-                    BodyHeaderView(contentType: networkContentType, size: bodySize)
+                    BodyHeaderView(
+                        contentType: networkContentType,
+                        size: bodySize,
+                        discrepancyMessage: discrepancyMessage
+                    )
                     ResponseFormatterView(
                         responseBody: body,
                         contentType: responseFormatterType
@@ -187,6 +192,101 @@ extension NetworkDetailView {
         items.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&")
     }
 
+    private func contentTypeDiscrepancyMessage(body: String, headers: [String: String]?) -> String? {
+        guard let contentTypeHeader = headers?["Content-Type"] ?? headers?["content-type"] else {
+            return nil
+        }
+        guard let headerType = normalizedContentType(from: contentTypeHeader) else {
+            return nil
+        }
+        guard let bodyType = inferredBodyType(from: body) else {
+            return nil
+        }
+        guard headerType != bodyType else { return nil }
+        return "Content-Type is \(headerType.label), but the body looks like \(bodyType.label)."
+    }
+
+    private enum BodyContentHint: Equatable {
+        case json
+        case html
+        case xml
+        case text
+        case formUrlEncoded
+
+        var label: String {
+            switch self {
+            case .json:
+                return "JSON"
+            case .html:
+                return "HTML"
+            case .xml:
+                return "XML"
+            case .text:
+                return "Text"
+            case .formUrlEncoded:
+                return "form-urlencoded"
+            }
+        }
+    }
+
+    private func normalizedContentType(from header: String) -> BodyContentHint? {
+        let lowercased = header.lowercased()
+        if lowercased.contains("application/json") {
+            return .json
+        }
+        if lowercased.contains("text/html") {
+            return .html
+        }
+        if lowercased.contains("application/xml") || lowercased.contains("text/xml") {
+            return .xml
+        }
+        if lowercased.contains("text/plain") {
+            return .text
+        }
+        if lowercased.contains("application/x-www-form-urlencoded") {
+            return .formUrlEncoded
+        }
+        return nil
+    }
+
+    private func inferredBodyType(from body: String) -> BodyContentHint? {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if trimmed.hasPrefix("{") || trimmed.hasPrefix("[") {
+            return .json
+        }
+
+        if trimmed.hasPrefix("<") {
+            if trimmed.range(of: "<html", options: .caseInsensitive) != nil {
+                return .html
+            }
+            if trimmed.hasPrefix("<?xml") {
+                return .xml
+            }
+            if trimmed.range(of: "</", options: .caseInsensitive) != nil {
+                return .xml
+            }
+        }
+
+        if looksLikeFormUrlEncoded(trimmed) {
+            return .formUrlEncoded
+        }
+
+        return .text
+    }
+
+    private func looksLikeFormUrlEncoded(_ text: String) -> Bool {
+        // Quick heuristic: key=value pairs separated by '&', no leading JSON/XML markers.
+        let pairs = text.split(separator: "&", omittingEmptySubsequences: true)
+        guard !pairs.isEmpty else { return false }
+        let sampleCount = min(pairs.count, 6)
+        let validPairs = pairs.prefix(sampleCount).filter { pair in
+            pair.contains("=") && !pair.hasPrefix("=")
+        }
+        return validPairs.count == sampleCount
+    }
+
     // MARK: - Response Tab
 
     @ViewBuilder
@@ -197,6 +297,7 @@ extension NetworkDetailView {
                     let networkContentType = detectContentType(body: body, headers: request.responseHeaders)
                     let responseFormatterType = networkContentType.toResponseContentType()
                     let bodySize = body.data(using: .utf8)?.count ?? 0
+                    let discrepancyMessage = contentTypeDiscrepancyMessage(body: body, headers: request.responseHeaders)
 
                     DetailSection(
                         title: "Response Body",
@@ -206,7 +307,11 @@ extension NetworkDetailView {
                             shareResponseBodyAsFile(body: body, contentType: networkContentType)
                         },
                         content: {
-                            BodyHeaderView(contentType: networkContentType, size: bodySize)
+                            BodyHeaderView(
+                                contentType: networkContentType,
+                                size: bodySize,
+                                discrepancyMessage: discrepancyMessage
+                            )
                             ResponseFormatterView(
                                 responseBody: body,
                                 contentType: responseFormatterType

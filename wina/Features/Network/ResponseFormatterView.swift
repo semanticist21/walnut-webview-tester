@@ -24,6 +24,8 @@ struct ResponseFormatterView: View {
             XMLFormattedView(xmlString: responseBody)
         case .image:
             ImagePreviewView(base64String: responseBody)
+        case .formData:
+            FormDataFormattedView(formData: responseBody)
         case .text, .css, .javascript:
             PlainTextView(text: responseBody, language: contentType)
         }
@@ -40,6 +42,7 @@ enum ResponseContentType: String, CaseIterable {
     case css = "CSS"
     case javascript = "JavaScript"
     case image = "Image"
+    case formData = "Form Data"
 
     var color: Color {
         switch self {
@@ -50,6 +53,7 @@ enum ResponseContentType: String, CaseIterable {
         case .javascript: return .yellow
         case .text: return .gray
         case .image: return .green
+        case .formData: return .blue
         }
     }
 }
@@ -79,7 +83,10 @@ struct JSONFormattedView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             } else {
-                JSONSyntaxHighlightedView(jsonString: formattedJSON)
+                JSONSyntaxHighlightedView(
+                    jsonString: formattedJSON,
+                    minHeightMultiplier: 1.5
+                )
             }
         }
         .onAppear {
@@ -106,16 +113,37 @@ struct JSONFormattedView: View {
 
 struct JSONSyntaxHighlightedView: View {
     let jsonString: String
+    var useViewportSizing: Bool = true
+    var minHeightMultiplier: CGFloat = 1.0
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(jsonString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
-                    JSONLineView(line: String(line))
+        if useViewportSizing {
+            GeometryReader { proxy in
+                ScrollView([.horizontal, .vertical]) {
+                    formattedLines
+                        .frame(
+                            minWidth: proxy.size.width,
+                            minHeight: proxy.size.height * minHeightMultiplier,
+                            alignment: .topLeading
+                        )
                 }
+                .defaultScrollAnchor(.topLeading)
             }
-            .padding(12)
+        } else {
+            ScrollView([.horizontal, .vertical]) {
+                formattedLines
+            }
+            .defaultScrollAnchor(.topLeading)
         }
+    }
+
+    private var formattedLines: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(jsonString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
+                JSONLineView(line: String(line))
+            }
+        }
+        .padding(12)
     }
 }
 
@@ -130,13 +158,11 @@ struct JSONLineView: View {
 
     @ViewBuilder
     private var highlightedContent: some View {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-
-        if trimmed.isEmpty {
+        if line.trimmingCharacters(in: .whitespaces).isEmpty {
             Text("")
         } else {
             // Simple JSON syntax highlighting
-            let parts = parseJSONLine(trimmed)
+            let parts = parseJSONLine(line)
             HStack(spacing: 0) {
                 ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
                     switch part.type {
@@ -282,13 +308,21 @@ struct HTMLSyntaxHighlightedView: View {
     let htmlString: String
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(htmlString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
-                    HTMLLineView(line: String(line))
+        GeometryReader { proxy in
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(htmlString.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
+                        HTMLLineView(line: String(line))
+                    }
                 }
+                .padding(12)
+                .frame(
+                    minWidth: proxy.size.width,
+                    minHeight: proxy.size.height,
+                    alignment: .topLeading
+                )
             }
-            .padding(12)
+            .defaultScrollAnchor(.topLeading)
         }
     }
 }
@@ -396,16 +430,24 @@ struct XMLFormattedView: View {
     @State private var formatted: String = ""
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(formatted.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
-                    Text(String(line))
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+        GeometryReader { proxy in
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(formatted.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
+                        Text(String(line))
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .padding(12)
+                .frame(
+                    minWidth: proxy.size.width,
+                    minHeight: proxy.size.height,
+                    alignment: .topLeading
+                )
             }
-            .padding(12)
+            .defaultScrollAnchor(.topLeading)
         }
         .onAppear {
             formatXML()
@@ -502,26 +544,192 @@ struct PlainTextView: View {
     let text: String
     let language: ResponseContentType
 
-    var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { index, line in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-                            .frame(width: 40, alignment: .trailing)
+    private var lines: [String.SubSequence] {
+        text.split(separator: "\n", omittingEmptySubsequences: false)
+    }
 
-                        Text(String(line))
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+    /// 최소 3자리, 그 이상은 실제 라인 수에 맞춤
+    private var lineNumberWidth: CGFloat {
+        let digitCount = max(3, String(lines.count).count)
+        return CGFloat(digitCount) * 7 + 4
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("\(index + 1)")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                                .frame(width: lineNumberWidth, alignment: .trailing)
+
+                            Text(String(line))
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
+                }
+                .padding(12)
+                .frame(
+                    minWidth: proxy.size.width,
+                    minHeight: proxy.size.height,
+                    alignment: .topLeading
+                )
+            }
+        }
+        .defaultScrollAnchor(.topLeading)
+    }
+}
+
+// MARK: - Form Data Formatted View
+
+struct FormDataFormattedView: View {
+    let formData: String
+    @State private var parsedFields: [(key: String, value: String, isJSON: Bool)] = []
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(parsedFields.enumerated()), id: \.offset) { index, field in
+                        FormDataFieldView(
+                            key: field.key,
+                            value: field.value,
+                            isJSON: field.isJSON,
+                            showBorder: index < parsedFields.count - 1
+                        )
+                    }
+                }
+                .frame(
+                    minWidth: proxy.size.width,
+                    minHeight: proxy.size.height,
+                    alignment: .topLeading
+                )
+            }
+        }
+        .defaultScrollAnchor(.topLeading)
+        .onAppear {
+            parseFormData()
+        }
+    }
+
+    private func parseFormData() {
+        let pairs = formData.components(separatedBy: "&")
+        parsedFields = pairs.compactMap { pair in
+            let parts = pair.components(separatedBy: "=")
+            guard !parts.isEmpty else { return nil }
+
+            let key = parts[0].removingPercentEncoding ?? parts[0]
+            let rawValue = parts.count > 1 ? parts.dropFirst().joined(separator: "=") : ""
+            let value = rawValue.removingPercentEncoding ?? rawValue
+
+            // Check if value is JSON
+            let isJSON = isValidJSON(value)
+
+            return (key: key, value: value, isJSON: isJSON)
+        }
+    }
+
+    private func isValidJSON(_ string: String) -> Bool {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("{") || trimmed.hasPrefix("["),
+              let data = string.data(using: .utf8),
+              (try? JSONSerialization.jsonObject(with: data)) != nil else {
+            return false
+        }
+        return true
+    }
+}
+
+struct FormDataFieldView: View {
+    let key: String
+    let value: String
+    let isJSON: Bool
+    let showBorder: Bool
+
+    @State private var isExpanded: Bool = false
+    @State private var prettyJSON: String = ""
+
+    private var displayValue: String {
+        if isJSON && isExpanded {
+            return prettyJSON.isEmpty ? value : prettyJSON
+        }
+        return value
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Key header
+            HStack {
+                Text(key)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.blue)
+
+                Spacer()
+
+                if isJSON {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(isExpanded ? "Collapse" : "Expand JSON")
+                                .font(.system(size: 10, weight: .medium))
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundStyle(.purple)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(12)
+
+            // Value
+            if isJSON && isExpanded {
+                JSONSyntaxHighlightedView(
+                    jsonString: prettyJSON.isEmpty ? value : prettyJSON,
+                    useViewportSizing: false
+                )
+                    .background(Color(uiColor: .tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                Text(value)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .lineLimit(isJSON ? 1 : nil)
+                    .truncationMode(.tail)
+            }
         }
+        .padding(12)
+        .overlay(alignment: .bottom) {
+            if showBorder {
+                Divider()
+            }
+        }
+        .onAppear {
+            if isJSON {
+                formatJSON()
+            }
+        }
+    }
+
+    private func formatJSON() {
+        guard let data = value.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data),
+              let prettyData = try? JSONSerialization.data(
+                  withJSONObject: jsonObject,
+                  options: [.prettyPrinted, .sortedKeys]
+              ),
+              let prettyString = String(data: prettyData, encoding: .utf8) else {
+            return
+        }
+        prettyJSON = prettyString
     }
 }
 

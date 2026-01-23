@@ -383,6 +383,9 @@ struct DetailTableRow: View {
 struct BodyHeaderView: View {
     let contentType: NetworkContentType
     let size: Int
+    let discrepancyMessage: String?
+
+    @State private var showDiscrepancyInfo = false
 
     private func formatBytes(_ bytes: Int) -> String {
         if bytes < 1024 {
@@ -401,6 +404,36 @@ struct BodyHeaderView: View {
             Text(formatBytes(size))
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
                 .foregroundStyle(.secondary)
+
+            if let discrepancyMessage {
+                Button {
+                    showDiscrepancyInfo = true
+                } label: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.footnote)
+                        .padding(6)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showDiscrepancyInfo) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text("Discrepancy detected")
+                                .fontWeight(.semibold)
+                        }
+                        Text(discrepancyMessage)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(.footnote)
+                    .padding()
+                    .frame(maxWidth: 280)
+                    .presentationCompactAdaptation(.popover)
+                }
+            }
 
             Spacer()
         }
