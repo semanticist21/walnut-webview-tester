@@ -123,6 +123,46 @@ func applyChanges() { storedValue = localValue; webViewID = UUID(); dismiss() }
 func resetToDefaults() { localValue = false }  // 저장 X
 ```
 
+### DevTools Overlay State 패턴 (2026.02.03)
+
+**문제**: 여러 개의 `@State` Boolean으로 overlay 관리 시, 새 overlay 추가할 때 `onHome`에서 닫기 누락 위험
+
+**해결**: `Set<DevToolsOverlay>` 기반 `DevToolsOverlayState` 클래스 사용
+
+```swift
+// Shared/DevToolsOverlayState.swift
+enum DevToolsOverlay: String, Hashable, CaseIterable {
+    case console, network, storage, performance
+    case editor, accessibility, snippets, searchText
+}
+
+@Observable
+final class DevToolsOverlayState {
+    var active: Set<DevToolsOverlay> = []
+
+    func open(_ overlay: DevToolsOverlay) { active.insert(overlay) }
+    func close(_ overlay: DevToolsOverlay) { active.remove(overlay) }
+    func toggle(_ overlay: DevToolsOverlay) { /* ... */ }
+    func closeAll() { active.removeAll() }  // onHome에서 한 줄로 처리
+
+    func binding(for overlay: DevToolsOverlay) -> Binding<Bool> {
+        Binding(
+            get: { self.active.contains(overlay) },
+            set: { $0 ? self.open(overlay) : self.close(overlay) }
+        )
+    }
+}
+
+// 사용
+@State private var devToolsState = DevToolsOverlayState()
+
+// sheet에서 binding 사용
+.sheet(isPresented: devToolsState.binding(for: .console)) { ... }
+
+// onHome에서 모든 DevTools 닫기
+devToolsState.closeAll()
+```
+
 ### JavaScript Bridge Architecture
 
 **Core Data Flow**:
