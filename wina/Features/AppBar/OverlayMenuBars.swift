@@ -26,14 +26,7 @@ struct OverlayMenuBars: View {
     @Binding var showSettings: Bool
     @Binding var showBookmarks: Bool
     @Binding var showInfo: Bool
-    @Binding var showConsole: Bool
-    @Binding var showNetwork: Bool
-    @Binding var showStorage: Bool
-    @Binding var showPerformance: Bool
-    @Binding var showEditor: Bool
-    @Binding var showAccessibility: Bool
-    @Binding var showSnippets: Bool
-    @Binding var showSearchText: Bool
+    var devToolsState: DevToolsOverlayState
 
     @State private var isExpanded: Bool = false
     @State private var dragOffset: CGFloat = 0
@@ -288,7 +281,7 @@ private extension OverlayMenuBars {
                     if showWebView {
                         // URL button (glassEffect capsule 통일)
                         Button {
-                            showSearchText = false  // 검색바 자동 닫기
+                            devToolsState.close(.searchText)  // 검색바 자동 닫기
                             urlInputText = navigator?.currentURL?.absoluteString ?? ""
                             showURLInput = true
                         } label: {
@@ -448,28 +441,28 @@ private extension OverlayMenuBars {
     private func handleToolbarItemTap(_ item: DevToolsMenuItem) {
         switch item {
         case .console:
-            showSearchText = false
-            showConsole = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.console)
         case .sources:
-            showSearchText = false
-            showEditor = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.editor)
         case .network:
-            showSearchText = false
-            showNetwork = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.network)
         case .storage:
-            showSearchText = false
-            showStorage = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.storage)
         case .performance:
-            showSearchText = false
-            showPerformance = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.performance)
         case .accessibility:
-            showSearchText = false
-            showAccessibility = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.accessibility)
         case .snippets:
-            showSearchText = false
-            showSnippets = true
+            devToolsState.close(.searchText)
+            devToolsState.open(.snippets)
         case .searchInPage:
-            showSearchText.toggle()
+            devToolsState.toggle(.searchText)
         case .screenshot:
             takeScreenshotWithFeedback()
         case .recording:
@@ -777,14 +770,7 @@ private struct BottomBarIconButton: View {
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),
-            showConsole: .constant(false),
-            showNetwork: .constant(false),
-            showStorage: .constant(false),
-            showPerformance: .constant(false),
-            showEditor: .constant(false),
-            showAccessibility: .constant(false),
-            showSnippets: .constant(false),
-            showSearchText: .constant(false)
+            devToolsState: DevToolsOverlayState()
         )
     }
 }
@@ -810,14 +796,7 @@ private struct BottomBarIconButton: View {
             showSettings: .constant(false),
             showBookmarks: .constant(false),
             showInfo: .constant(false),
-            showConsole: .constant(false),
-            showNetwork: .constant(false),
-            showStorage: .constant(false),
-            showPerformance: .constant(false),
-            showEditor: .constant(false),
-            showAccessibility: .constant(false),
-            showSnippets: .constant(false),
-            showSearchText: .constant(false)
+            devToolsState: DevToolsOverlayState()
         )
     }
 }

@@ -17,14 +17,7 @@ struct ContentView: View {
     @State var showSettings: Bool = false
     @State var showBookmarks: Bool = false
     @State var showInfo: Bool = false
-    @State private var showConsole: Bool = false
-    @State private var showNetwork: Bool = false
-    @State private var showStorage: Bool = false
-    @State private var showPerformance: Bool = false
-    @State private var showEditor: Bool = false
-    @State private var showAccessibility: Bool = false
-    @State private var showSnippets: Bool = false
-    @State private var showSearchText: Bool = false
+    @State private var devToolsState = DevToolsOverlayState()
     @State private var showURLInput: Bool = false
     @State private var urlInputText: String = ""
     @State var showAbout: Bool = false
@@ -118,13 +111,10 @@ struct ContentView: View {
                     isOverlayMode: !shouldBarsBeExpanded,
                     erudaModeEnabled: erudaModeEnabled,
                     onHome: {
-                        // Close all DevTools sheets before going home
-                        showConsole = false
-                        showNetwork = false
-                        showStorage = false
-                        showPerformance = false
-                        showEditor = false
-                        showAccessibility = false
+                        // Close all DevTools overlays with single call
+                        devToolsState.closeAll()
+
+                        // Close other sheets
                         showSettings = false
                         showBookmarks = false
                         showInfo = false
@@ -160,14 +150,7 @@ struct ContentView: View {
                     showSettings: $showSettings,
                     showBookmarks: $showBookmarks,
                     showInfo: $showInfo,
-                    showConsole: $showConsole,
-                    showNetwork: $showNetwork,
-                    showStorage: $showStorage,
-                    showPerformance: $showPerformance,
-                    showEditor: $showEditor,
-                    showAccessibility: $showAccessibility,
-                    showSnippets: $showSnippets,
-                    showSearchText: $showSearchText
+                    devToolsState: devToolsState
                 )
             } else if !showWebView {
                 topBar
@@ -234,12 +217,12 @@ struct ContentView: View {
                     .preferredColorScheme(preferredScheme)
             }
         }
-        .sheet(isPresented: $showConsole) {
+        .sheet(isPresented: devToolsState.binding(for: .console)) {
             ConsoleView(consoleManager: webViewNavigator.consoleManager, navigator: webViewNavigator)
                 .devToolsSheet()
                 .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showNetwork) {
+        .sheet(isPresented: devToolsState.binding(for: .network)) {
             NetworkView(
                 networkManager: webViewNavigator.networkManager,
                 resourceManager: webViewNavigator.resourceManager
@@ -247,12 +230,12 @@ struct ContentView: View {
             .devToolsSheet()
             .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showStorage) {
+        .sheet(isPresented: devToolsState.binding(for: .storage)) {
             StorageView(storageManager: storageManager, navigator: webViewNavigator)
                 .devToolsSheet()
                 .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showPerformance) {
+        .sheet(isPresented: devToolsState.binding(for: .performance)) {
             PerformanceView(
                 performanceManager: webViewNavigator.performanceManager,
                 onCollect: {
@@ -271,26 +254,26 @@ struct ContentView: View {
             .devToolsSheet()
             .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(isPresented: devToolsState.binding(for: .editor)) {
             SourcesView(navigator: webViewNavigator)
                 .devToolsSheet()
                 .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showAccessibility) {
+        .sheet(isPresented: devToolsState.binding(for: .accessibility)) {
             AccessibilityAuditView(navigator: webViewNavigator)
                 .devToolsSheet()
                 .preferredColorScheme(preferredScheme)
         }
-        .sheet(isPresented: $showSnippets) {
+        .sheet(isPresented: devToolsState.binding(for: .snippets)) {
             SnippetsView(navigator: webViewNavigator)
                 .devToolsSheet()
                 .preferredColorScheme(preferredScheme)
         }
         .overlay {
-            if showSearchText {
+            if devToolsState.isOpen(.searchText) {
                 SearchTextOverlay(
                     navigator: webViewNavigator,
-                    isPresented: $showSearchText,
+                    isPresented: devToolsState.binding(for: .searchText),
                     bottomPaddingCalculator: searchOverlayBottomPadding
                 )
             }
