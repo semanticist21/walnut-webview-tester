@@ -121,7 +121,7 @@ struct DOMNodeRow: View {
                         .fill(Color.accentColor.opacity(0.15))
                 }
             }
-            .id(node.id)
+            .id("row-\(node.id)")
             .contentShape(Rectangle())
             .onTapGesture {
                 // Update breadcrumbs when element is tapped

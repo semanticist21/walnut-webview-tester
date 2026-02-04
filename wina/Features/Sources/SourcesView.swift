@@ -481,10 +481,10 @@ struct SourcesView: View {
                                 }
                             }
                             .onChange(of: breadcrumbPath) { _, newPath in
-                                // Scroll to the last breadcrumb node
+                                // Scroll to the last breadcrumb node (use row- prefix)
                                 if let last = newPath.last {
                                     withAnimation(.easeOut(duration: 0.2)) {
-                                        proxy.scrollTo(last.id, anchor: .center)
+                                        proxy.scrollTo("row-\(last.id)", anchor: .top)
                                     }
                                 }
                             }
