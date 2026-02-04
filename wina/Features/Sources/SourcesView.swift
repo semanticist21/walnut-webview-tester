@@ -70,6 +70,9 @@ struct SourcesView: View {
     // Breadcrumbs navigation
     @State var breadcrumbPath: [DOMNode] = []
 
+    // Search task for cancellation (prevents race conditions)
+    @State var searchTask: Task<Void, Never>?
+
     var body: some View {
         VStack(spacing: 0) {
             sourcesHeader

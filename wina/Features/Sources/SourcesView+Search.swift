@@ -11,6 +11,7 @@ import SwiftUI
 
 extension SourcesView {
     func clearSearch() {
+        searchTask?.cancel()
         searchText = ""
         currentMatchIndex = 0
         matchingNodePaths = []
@@ -19,6 +20,9 @@ extension SourcesView {
     }
 
     func updateMatchingNodes() {
+        // Cancel any previous search task to prevent race conditions
+        searchTask?.cancel()
+
         guard let root = manager.domTree, !debouncedSearchText.isEmpty else {
             matchingNodePaths = []
             currentMatchIndex = 0
@@ -28,8 +32,9 @@ extension SourcesView {
         let query = debouncedSearchText.lowercased()
 
         // Run search on MainActor (DOMNode properties are MainActor-isolated)
-        Task {
+        searchTask = Task {
             let paths = SourcesSearchHelper.collectMatchingPaths(node: root, currentPath: [], query: query)
+            guard !Task.isCancelled else { return }
             matchingNodePaths = paths
             currentMatchIndex = paths.isEmpty ? 0 : min(currentMatchIndex, paths.count - 1)
         }
@@ -46,6 +51,9 @@ extension SourcesView {
     }
 
     func updateRawHTMLMatches() {
+        // Cancel any previous search task to prevent race conditions
+        searchTask?.cancel()
+
         guard !debouncedSearchText.isEmpty else {
             rawMatchLineIndices = []
             currentRawMatchIndex = 0
@@ -56,8 +64,9 @@ extension SourcesView {
         let lines = cachedRawHTMLLines
 
         // Run search (simple string operations, no actor isolation needed)
-        Task {
+        searchTask = Task {
             let indices = SourcesSearchHelper.findMatchingLineIndices(lines: lines, query: query)
+            guard !Task.isCancelled else { return }
             rawMatchLineIndices = indices
             currentRawMatchIndex = indices.isEmpty ? 0 : min(currentRawMatchIndex, indices.count - 1)
         }
