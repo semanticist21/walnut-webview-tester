@@ -74,6 +74,8 @@ class SourcesManager {
     var scripts: [ScriptInfo] = []
     var isLoading: Bool = false
     var errorMessage: String?
+    /// Incremented each time domTree is updated (for change detection)
+    var domTreeRevision: Int = 0
 
     private weak var navigator: WebViewNavigator?
 
@@ -128,6 +130,7 @@ class SourcesManager {
             do {
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 domTree = parseNode(json, path: [0])
+                domTreeRevision += 1
             } catch {
                 errorMessage = "Failed to parse DOM: \(error.localizedDescription)"
             }

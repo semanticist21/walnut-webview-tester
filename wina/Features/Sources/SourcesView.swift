@@ -72,6 +72,8 @@ struct SourcesView: View {
 
     // Search task for cancellation (prevents race conditions)
     @State var searchTask: Task<Void, Never>?
+    // Scroll task for cancellation (prevents stale scrolls)
+    @State var scrollTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -143,8 +145,8 @@ struct SourcesView: View {
                 }
             }
         }
-        .onChange(of: manager.domTree?.id) { _, _ in
-            // Update search results when DOM tree loads
+        .onChange(of: manager.domTreeRevision) { _, _ in
+            // Update search results when DOM tree reloads
             if !debouncedSearchText.isEmpty && elementsViewMode == .tree {
                 updateMatchingNodes()
             }

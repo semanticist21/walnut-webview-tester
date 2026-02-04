@@ -89,11 +89,14 @@ extension SourcesView {
 
     func scrollToCurrentMatch(proxy: ScrollViewProxy) {
         guard let path = currentMatchPath, let targetId = path.last else { return }
+        // Cancel any previous scroll task to prevent stale scrolls
+        scrollTask?.cancel()
         // Use "row-" prefix to target only the row header, not the entire node container
         let scrollId = "row-\(targetId)"
         // Delay scroll to allow parent nodes to expand first
-        Task { @MainActor in
+        scrollTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.2)) {
                 proxy.scrollTo(scrollId, anchor: .top)
             }
