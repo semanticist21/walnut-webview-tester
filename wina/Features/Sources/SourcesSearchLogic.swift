@@ -10,19 +10,27 @@ import Foundation
 // MARK: - DOM Tree Search
 
 enum SourcesSearchHelper {
+    /// Check if a node matches the search query (shared logic for counting and highlighting)
+    static func nodeMatches(_ node: DOMNode, query: String) -> Bool {
+        let lowercasedQuery = query.lowercased()
+        // Match tag name
+        if node.nodeName.lowercased().contains(lowercasedQuery) { return true }
+        // Match id attribute
+        if let id = node.attributes["id"], id.lowercased().contains(lowercasedQuery) { return true }
+        // Match class attribute
+        if let cls = node.attributes["class"], cls.lowercased().contains(lowercasedQuery) { return true }
+        // Match text content
+        if let text = node.textContent, text.lowercased().contains(lowercasedQuery) { return true }
+        return false
+    }
+
     /// Collect paths to all matching nodes in the DOM tree
     @MainActor
     static func collectMatchingPaths(node: DOMNode, currentPath: [String], query: String) -> [[String]] {
         let nodePath = currentPath + [node.id]
         var paths: [[String]] = []
 
-        let matches =
-            node.nodeName.lowercased().contains(query) ||
-            (node.attributes["id"]?.lowercased().contains(query) ?? false) ||
-            (node.attributes["class"]?.lowercased().contains(query) ?? false) ||
-            (node.textContent?.lowercased().contains(query) ?? false)
-
-        if matches && node.isElement {
+        if nodeMatches(node, query: query) {
             paths.append(nodePath)
         }
 

@@ -30,19 +30,10 @@ struct DOMNodeRow: View {
         return name == "HTML" || name == "BODY"
     }
 
-    /// Check if this node matches the search text
+    /// Check if this node matches the search text (uses shared logic)
     private var matchesSearch: Bool {
         guard !searchText.isEmpty else { return false }
-        let query = searchText.lowercased()
-        // Match tag name
-        if node.nodeName.lowercased().contains(query) { return true }
-        // Match id
-        if let id = node.attributes["id"], id.lowercased().contains(query) { return true }
-        // Match class
-        if let cls = node.attributes["class"], cls.lowercased().contains(query) { return true }
-        // Match text content
-        if let text = node.textContent, text.lowercased().contains(query) { return true }
-        return false
+        return SourcesSearchHelper.nodeMatches(node, query: searchText)
     }
 
     /// Check if this is the currently focused match
@@ -66,11 +57,7 @@ struct DOMNodeRow: View {
     }
 
     private func nodeOrDescendantMatches(_ node: DOMNode) -> Bool {
-        let query = searchText.lowercased()
-        if node.nodeName.lowercased().contains(query) { return true }
-        if let id = node.attributes["id"], id.lowercased().contains(query) { return true }
-        if let cls = node.attributes["class"], cls.lowercased().contains(query) { return true }
-        if let text = node.textContent, text.lowercased().contains(query) { return true }
+        if SourcesSearchHelper.nodeMatches(node, query: searchText) { return true }
         return node.children.contains { nodeOrDescendantMatches($0) }
     }
 
