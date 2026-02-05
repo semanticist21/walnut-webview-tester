@@ -87,6 +87,18 @@ extension SourcesView {
         return matchingNodePaths[currentMatchIndex]
     }
 
+    /// Expand all ancestor nodes in the path to the current match
+    /// This ensures deeply nested matches are visible without waiting for each level to render
+    func expandPathToCurrentMatch() {
+        guard let path = currentMatchPath, path.count > 1 else { return }
+        // Expand all nodes except the last one (the match itself)
+        // The match node doesn't need to be expanded, only its ancestors
+        let ancestorIds = Set(path.dropLast())
+        withAnimation(.easeOut(duration: 0.15)) {
+            expandedNodeIds.formUnion(ancestorIds)
+        }
+    }
+
     func scrollToCurrentMatch(proxy: ScrollViewProxy) {
         guard let path = currentMatchPath, let targetId = path.last else { return }
         // Cancel any previous scroll task to prevent stale scrolls

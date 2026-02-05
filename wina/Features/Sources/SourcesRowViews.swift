@@ -18,8 +18,13 @@ struct DOMNodeRow: View {
     let onSelect: (DOMNode) -> Void
     var onBreadcrumbTap: ((DOMNode) -> Void)?
 
-    // HTML, BODY are expanded by default
-    @State private var isExpanded: Bool = false
+    // Centralized expand state managed by SourcesView
+    @Binding var expandedNodeIds: Set<String>
+
+    /// Whether this node is currently expanded
+    private var isExpanded: Bool {
+        expandedNodeIds.contains(node.id)
+    }
 
     private var hasChildren: Bool {
         !node.children.isEmpty
@@ -40,12 +45,6 @@ struct DOMNodeRow: View {
     private var isCurrentMatch: Bool {
         guard let path = currentMatchPath else { return false }
         return path.last == node.id
-    }
-
-    /// Check if this node is in the path to the current match (for auto-expand)
-    private var isInCurrentMatchPath: Bool {
-        guard let path = currentMatchPath else { return false }
-        return path.contains(node.id)
     }
 
     /// Check if any descendant matches the search
@@ -69,7 +68,7 @@ struct DOMNodeRow: View {
                 if hasChildren {
                     Button {
                         withAnimation(.easeOut(duration: 0.15)) {
-                            isExpanded.toggle()
+                            toggleExpanded()
                         }
                     } label: {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
@@ -129,7 +128,7 @@ struct DOMNodeRow: View {
 
                 if hasChildren {
                     withAnimation(.easeOut(duration: 0.15)) {
-                        isExpanded.toggle()
+                        toggleExpanded()
                     }
                 }
             }
@@ -144,30 +143,34 @@ struct DOMNodeRow: View {
                         searchText: searchText,
                         currentMatchPath: currentMatchPath,
                         onSelect: onSelect,
-                        onBreadcrumbTap: onBreadcrumbTap
+                        onBreadcrumbTap: onBreadcrumbTap,
+                        expandedNodeIds: $expandedNodeIds
                     )
                 }
             }
         }
         .onAppear {
             // Expand HTML, BODY by default
-            if shouldExpandByDefault {
-                isExpanded = true
+            if shouldExpandByDefault && !isExpanded {
+                expandedNodeIds.insert(node.id)
             }
         }
         .onChange(of: searchText) { _, newValue in
             // Auto-expand if descendants match
-            if !newValue.isEmpty && hasMatchingDescendant {
-                isExpanded = true
+            if !newValue.isEmpty && hasMatchingDescendant && !isExpanded {
+                expandedNodeIds.insert(node.id)
             }
         }
-        .onChange(of: currentMatchPath) { _, _ in
-            // Auto-expand if this node is in the path to the current match
-            if isInCurrentMatchPath && !isExpanded {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    isExpanded = true
-                }
-            }
+        // Note: currentMatchPath expansion is now handled centrally by
+        // SourcesView.expandPathToCurrentMatch() which expands entire paths at once
+    }
+
+    /// Toggle expand/collapse state for this node
+    private func toggleExpanded() {
+        if isExpanded {
+            expandedNodeIds.remove(node.id)
+        } else {
+            expandedNodeIds.insert(node.id)
         }
     }
 

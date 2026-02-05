@@ -75,6 +75,10 @@ struct SourcesView: View {
     // Scroll task for cancellation (prevents stale scrolls)
     @State var scrollTask: Task<Void, Never>?
 
+    // Centralized expand state for DOM tree nodes
+    // This allows expanding entire paths at once when navigating to deep matches
+    @State var expandedNodeIds: Set<String> = []
+
     var body: some View {
         VStack(spacing: 0) {
             sourcesHeader
@@ -130,6 +134,7 @@ struct SourcesView: View {
             currentRawMatchIndex = 0
             rawMatchLineIndices = []
             breadcrumbPath = []
+            expandedNodeIds = []
 
             Task {
                 await fetchCurrentTab()
@@ -182,6 +187,7 @@ struct SourcesView: View {
             if let newURL, newURL != lastURL {
                 lastURL = newURL
                 breadcrumbPath = []
+                expandedNodeIds = []
                 Task {
                     // Small delay to let page load
                     try? await Task.sleep(for: .milliseconds(500))
@@ -467,18 +473,21 @@ struct SourcesView: View {
                                         },
                                         onBreadcrumbTap: { node in
                                             updateBreadcrumbs(for: node, root: root)
-                                        }
+                                        },
+                                        expandedNodeIds: $expandedNodeIds
                                     )
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                             }
                             .onChange(of: currentMatchIndex) { _, _ in
+                                expandPathToCurrentMatch()
                                 scrollToCurrentMatch(proxy: proxy)
                             }
                             .onChange(of: matchingNodePaths) { _, newPaths in
                                 // Auto-scroll to first match when search results appear
                                 if !newPaths.isEmpty {
+                                    expandPathToCurrentMatch()
                                     scrollToCurrentMatch(proxy: proxy)
                                 }
                             }
