@@ -521,6 +521,20 @@ func viewAction() {
 // navigation 전 clear 전략 적용 + snippet reset 필요
 ```
 
+### 11. fetch(Request) Body Backfill 덮어쓰기 회귀
+```swift
+// ❌ add/start에서 placeholder("ReadableStream")가 저장된 뒤
+// requestBody backfill(실제 본문) 완료 후 complete/error에서 placeholder가 다시 오면
+// 실제 본문이 덮어써져 "No Request Body"처럼 보일 수 있음
+
+// ✅ request body 갱신 시 "품질 비교" 적용
+// - 실제 텍스트/JSON > placeholder(ReadablStream/Blob/File/TypedArray)
+// - 낮은 품질(placeholder)은 높은 품질(실제 본문)을 덮어쓰지 않음
+
+// ✅ 공백만 있는 본문("   \n")도 유효 요청으로 취급
+// trim 후 empty 판정하면 회귀가 발생하므로 raw string 기준으로 empty 체크
+```
+
 ---
 
 ## Troubleshooting

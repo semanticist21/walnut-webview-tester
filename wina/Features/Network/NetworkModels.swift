@@ -42,7 +42,7 @@ struct NetworkRequest: Identifiable, Equatable {
     let method: String
     let url: String
     let requestHeaders: [String: String]?
-    let requestBodyPreview: String?  // First 500 chars for list display
+    var requestBodyPreview: String?  // First 500 chars for list display
     let startTime: Date
     let pageIsSecure: Bool  // Whether the page was HTTPS when this request was made
     var status: Int?

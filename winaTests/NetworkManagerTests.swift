@@ -107,14 +107,310 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertNotNil(request?.endTime)
     }
 
-    func testUpdateNonexistentRequestDoesNothing() {
+    func testSimulatedFetchRequestBackfillsBodyOnComplete() {
+        let id = UUID().uuidString
+        let requestBody = #"{"user":"walnut","mode":"json"}"#
+
+        // fetch(Request) 시나리오를 시뮬레이션: start에는 body가 비어 있고 complete에서 보완됩니다.
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/login",
+            requestType: "fetch",
+            headers: ["Content-Type": "application/json"],
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
         manager.updateRequest(
-            id: UUID().uuidString,
+            id: id,
+            status: 201,
+            statusText: "Created",
+            responseHeaders: ["Content-Type": "application/json"],
+            responseBody: #"{"ok":true}"#,
+            error: nil,
+            requestBody: requestBody
+        )
+
+        let updateExpectation = expectation(description: "Request updated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, requestBody)
+        XCTAssertEqual(request?.requestBody, requestBody)
+    }
+
+    func testSimulatedFetchRequestBackfillsFormDataBodyOnError() {
+        let id = UUID().uuidString
+        let formBody = "email=test@example.com&name=walnut"
+
+        // 실패 요청도 error 이벤트에 포함된 requestBody로 보강되는지 확인합니다.
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/signup",
+            requestType: "fetch",
+            headers: ["Content-Type": "multipart/form-data"],
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequest(
+            id: id,
+            status: nil,
+            statusText: nil,
+            responseHeaders: nil,
+            responseBody: nil,
+            error: "Network error",
+            requestBody: formBody
+        )
+
+        let updateExpectation = expectation(description: "Request error updated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, formBody)
+        XCTAssertEqual(request?.requestBody, formBody)
+        XCTAssertEqual(request?.error, "Network error")
+    }
+
+    func testRequestBodyBackfillDoesNotMarkPendingRequestAsComplete() {
+        let id = UUID().uuidString
+        let requestBody = #"{"step":"pending"}"#
+
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/pending",
+            requestType: "fetch",
+            headers: nil,
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequestBody(id: id, requestBody: requestBody)
+
+        let updateExpectation = expectation(description: "Request body backfilled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, requestBody)
+        XCTAssertNil(request?.endTime)
+        XCTAssertTrue(request?.isPending ?? false)
+    }
+
+    func testUpdateRequestBodyIgnoresEmptyBody() {
+        let id = UUID().uuidString
+
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/empty",
+            requestType: "fetch",
+            headers: nil,
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequestBody(id: id, requestBody: "")
+
+        let updateExpectation = expectation(description: "Empty body ignored")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertNil(request?.requestBodyPreview)
+        XCTAssertNil(request?.requestBody)
+    }
+
+    func testUpdateRequestWithoutRequestBodyKeepsExistingBackfilledBody() {
+        let id = UUID().uuidString
+        let backfilled = "token=abc123"
+
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/session",
+            requestType: "fetch",
+            headers: nil,
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequestBody(id: id, requestBody: backfilled)
+
+        let bodyExpectation = expectation(description: "Request body backfilled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            bodyExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequest(
+            id: id,
+            status: 204,
+            statusText: "No Content",
+            responseHeaders: nil,
+            responseBody: nil,
+            error: nil,
+            requestBody: nil
+        )
+
+        let updateExpectation = expectation(description: "Request updated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, backfilled)
+        XCTAssertEqual(request?.requestBody, backfilled)
+    }
+
+    func testPlaceholderRequestBodyDoesNotOverrideExistingBackfilledBody() {
+        let id = UUID().uuidString
+        let actualBody = #"{"email":"hello@walnut.dev"}"#
+        let placeholder = "ReadableStream"
+
+        // fetch(Request) 시나리오: 실제 본문 backfill 이후 complete에서 placeholder가 다시 올 수 있습니다.
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/profile",
+            requestType: "fetch",
+            headers: nil,
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequestBody(id: id, requestBody: actualBody)
+
+        let backfillExpectation = expectation(description: "Body backfilled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            backfillExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequest(
+            id: id,
             status: 200,
             statusText: "OK",
             responseHeaders: nil,
             responseBody: nil,
-            error: nil
+            error: nil,
+            requestBody: placeholder
+        )
+
+        let updateExpectation = expectation(description: "Complete updated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, actualBody)
+        XCTAssertEqual(request?.requestBody, actualBody)
+    }
+
+    func testWhitespaceOnlyBodyIsPreservedAndNotOverriddenByPlaceholder() {
+        let id = UUID().uuidString
+        let whitespaceBody = "   \n"
+        let placeholder = "ReadableStream"
+
+        manager.addRequest(
+            id: id,
+            method: "POST",
+            url: "https://example.com/api/whitespace",
+            requestType: "fetch",
+            headers: nil,
+            body: nil
+        )
+
+        let addExpectation = expectation(description: "Request added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            addExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequestBody(id: id, requestBody: whitespaceBody)
+
+        let backfillExpectation = expectation(description: "Whitespace body backfilled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            backfillExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        manager.updateRequest(
+            id: id,
+            status: 200,
+            statusText: "OK",
+            responseHeaders: nil,
+            responseBody: nil,
+            error: nil,
+            requestBody: placeholder
+        )
+
+        let updateExpectation = expectation(description: "Complete updated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            updateExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        let request = manager.requests.first
+        XCTAssertEqual(request?.requestBodyPreview, whitespaceBody)
+        XCTAssertEqual(request?.requestBody, whitespaceBody)
+    }
+
+    func testUpdateNonexistentRequestDoesNothing() {
+        let missingId = UUID()
+        manager.updateRequest(
+            id: missingId.uuidString,
+            status: 200,
+            statusText: "OK",
+            responseHeaders: nil,
+            responseBody: "response",
+            error: nil,
+            requestBody: "request"
         )
 
         let expectation = expectation(description: "Update processed")
@@ -124,6 +420,8 @@ final class NetworkManagerTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         XCTAssertTrue(manager.requests.isEmpty)
+        XCTAssertNil(NetworkBodyStorage.shared.load(id: missingId, type: .request))
+        XCTAssertNil(NetworkBodyStorage.shared.load(id: missingId, type: .response))
     }
 
     func testPendingCountTracksIncompleteRequests() {

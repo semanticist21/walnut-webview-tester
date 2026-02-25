@@ -296,31 +296,61 @@ class NetworkManager {
         statusText: String?,
         responseHeaders: [String: String]?,
         responseBody: String?,
-        error: String?
+        error: String?,
+        requestBody: String? = nil
     ) {
         guard let uuid = UUID(uuidString: id) else { return }
 
-        // Save full response body to disk
-        if let responseBody, !responseBody.isEmpty {
-            bodyStorage.save(id: uuid, type: .response, body: responseBody)
-        }
-
-        // Store only preview in memory
-        let preview = responseBody.map { String($0.prefix(NetworkRequest.previewLength)) }
+        let responsePreview = responseBody.map { String($0.prefix(NetworkRequest.previewLength)) }
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if let index = self.requests.firstIndex(where: { $0.id == uuid }) {
-                // Replace entire struct to ensure @Observable detects the change
-                var updated = self.requests[index]
-                updated.status = status
-                updated.statusText = statusText
-                updated.responseHeaders = responseHeaders
-                updated.responseBodyPreview = preview
-                updated.error = error
-                updated.endTime = Date()
-                self.requests[index] = updated
+            guard let index = self.requests.firstIndex(where: { $0.id == uuid }) else { return }
+
+            if let responseBody, !responseBody.isEmpty {
+                self.bodyStorage.save(id: uuid, type: .response, body: responseBody)
             }
+
+            // Replace entire struct to ensure @Observable detects the change
+            var updated = self.requests[index]
+
+            // placeholder 본문이 실제 backfill 본문을 덮어쓰지 않도록 품질을 비교해 갱신합니다.
+            if let requestBody,
+               self.shouldReplaceRequestBody(existing: updated.requestBodyPreview, incoming: requestBody) {
+                self.bodyStorage.save(id: uuid, type: .request, body: requestBody)
+                updated.requestBodyPreview = String(requestBody.prefix(NetworkRequest.previewLength))
+            }
+            updated.status = status
+            updated.statusText = statusText
+            updated.responseHeaders = responseHeaders
+            updated.responseBodyPreview = responsePreview
+            updated.error = error
+            updated.endTime = Date()
+            self.requests[index] = updated
+        }
+    }
+
+    func updateRequestBody(
+        id: String,
+        requestBody: String?
+    ) {
+        guard let uuid = UUID(uuidString: id),
+              let requestBody,
+              !requestBody.isEmpty else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            guard let index = self.requests.firstIndex(where: { $0.id == uuid }) else { return }
+
+            // requestBody 전용 backfill은 완료 시각을 건드리지 않고 본문만 갱신합니다.
+            // placeholder보다 의미 있는 본문이 우선되도록 갱신 정책을 동일하게 적용합니다.
+            var updated = self.requests[index]
+            guard self.shouldReplaceRequestBody(existing: updated.requestBodyPreview, incoming: requestBody) else {
+                return
+            }
+            self.bodyStorage.save(id: uuid, type: .request, body: requestBody)
+            updated.requestBodyPreview = String(requestBody.prefix(NetworkRequest.previewLength))
+            self.requests[index] = updated
         }
     }
 
@@ -339,4 +369,43 @@ class NetworkManager {
     var pendingCount: Int { requests.filter(\.isPending).count }
     var errorCount: Int { requests.filter { $0.error != nil || ($0.status ?? 0) >= 400 }.count }
     var mixedContentCount: Int { requests.filter(\.isMixedContent).count }
+
+    // 본문 표기의 품질 점수를 비교해 실제 데이터가 placeholder보다 우선 유지되도록 합니다.
+    private func shouldReplaceRequestBody(existing: String?, incoming: String) -> Bool {
+        guard !incoming.isEmpty else { return false }
+
+        guard let existing else { return true }
+        guard !existing.isEmpty else { return true }
+
+        let incomingScore = requestBodyQualityScore(incoming)
+        let existingScore = requestBodyQualityScore(existing)
+
+        if incomingScore < existingScore {
+            return false
+        }
+        return true
+    }
+
+    // placeholder(ReadableStream/Blob/File/TypedArray)보다 실제 텍스트/JSON 본문을 더 높은 점수로 간주합니다.
+    private func requestBodyQualityScore(_ body: String) -> Int {
+        isRequestBodyPlaceholder(body) ? 1 : 2
+    }
+
+    // 자바스크립트 레벨에서 생성되는 바디 placeholder 표기를 판별합니다.
+    private func isRequestBodyPlaceholder(_ body: String) -> Bool {
+        if body == "ReadableStream" || body == "[Body already consumed]" {
+            return true
+        }
+        if body.hasPrefix("[File:") || body.hasPrefix("[Blob:") || body.hasPrefix("[ArrayBuffer ") {
+            return true
+        }
+
+        // TypedArray placeholder 예: [Uint8Array 128 bytes]
+        if body.hasPrefix("["),
+           body.hasSuffix(" bytes]"),
+           body.contains("Array") {
+            return true
+        }
+        return false
+    }
 }

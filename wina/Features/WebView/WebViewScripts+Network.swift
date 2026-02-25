@@ -119,17 +119,125 @@ extension WebViewScripts {
                 return Object.keys(obj).length > 0 ? obj : null;
             }
 
+            // FormData를 사람 읽기 쉬운 key=value 문자열로 변환합니다.
+            function formatFormData(formData) {
+                if (!formData || !formData.forEach) return null;
+                var pairs = [];
+                formData.forEach(function(value, key) {
+                    if (typeof File !== 'undefined' && value instanceof File) {
+                        pairs.push(key + '=[File:' + value.name + ', ' + value.size + ' bytes]');
+                    } else if (typeof Blob !== 'undefined' && value instanceof Blob) {
+                        pairs.push(key + '=[Blob:' + (value.type || 'application/octet-stream') + ', ' + value.size + ' bytes]');
+                    } else {
+                        pairs.push(key + '=' + String(value));
+                    }
+                });
+                return pairs.join('&');
+            }
+
+            // 다양한 Request body 타입을 문자열로 직렬화합니다.
+            function serializeBody(body) {
+                if (body === null || body === undefined) return null;
+                if (typeof body === 'string') return body;
+
+                if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+                    return body.toString();
+                }
+
+                if (typeof FormData !== 'undefined' && body instanceof FormData) {
+                    return formatFormData(body);
+                }
+
+                if (typeof File !== 'undefined' && body instanceof File) {
+                    return '[File:' + body.name + ', ' + body.size + ' bytes, ' + (body.type || 'application/octet-stream') + ']';
+                }
+
+                if (typeof Blob !== 'undefined' && body instanceof Blob) {
+                    return '[Blob:' + (body.type || 'application/octet-stream') + ', ' + body.size + ' bytes]';
+                }
+
+                if (typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer) {
+                    return '[ArrayBuffer ' + body.byteLength + ' bytes]';
+                }
+
+                if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView && ArrayBuffer.isView(body)) {
+                    return '[' + Object.prototype.toString.call(body).slice(8, -1) + ' ' + body.byteLength + ' bytes]';
+                }
+
+                if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) {
+                    return 'ReadableStream';
+                }
+
+                try { return JSON.stringify(body); } catch(e) {}
+                return String(body);
+            }
+
             // Truncate body for large payloads
             function truncateBody(body, maxLen) {
                 maxLen = maxLen || 10000;
-                if (!body) return null;
-                if (typeof body !== 'string') {
-                    try { body = JSON.stringify(body); } catch(e) { body = String(body); }
+                var serialized = serializeBody(body);
+                if (serialized === null || serialized === undefined) return null;
+                if (serialized.length > maxLen) {
+                    return serialized.substring(0, maxLen) + '... (truncated)';
                 }
-                if (body.length > maxLen) {
-                    return body.substring(0, maxLen) + '... (truncated)';
+                return serialized;
+            }
+
+            // init.body가 비어 있는 fetch(Request) 패턴도 보존하기 위해 Request 본문을 별도로 읽습니다.
+            function captureRequestBody(input, init) {
+                var hasInitBody = init && Object.prototype.hasOwnProperty.call(init, 'body');
+                if (hasInitBody) {
+                    return Promise.resolve(truncateBody(init.body));
                 }
-                return body;
+
+                if (typeof Request !== 'undefined' && input instanceof Request) {
+                    if (input.bodyUsed) {
+                        return Promise.resolve('[Body already consumed]');
+                    }
+
+                    var contentType = '';
+                    try {
+                        contentType = (input.headers && input.headers.get && input.headers.get('content-type')) || '';
+                        contentType = contentType.toLowerCase();
+                    } catch(e) {}
+
+                    try {
+                        if ((contentType.indexOf('multipart/form-data') >= 0 ||
+                             contentType.indexOf('application/x-www-form-urlencoded') >= 0) &&
+                            typeof input.formData === 'function') {
+                            return input.clone().formData()
+                                .then(function(formData) {
+                                    return truncateBody(formatFormData(formData));
+                                })
+                                .catch(function() {
+                                    return input.clone().text().then(function(text) {
+                                        if (text && text.length > 0) {
+                                            return truncateBody(text);
+                                        }
+                                        return truncateBody(input.body);
+                                    }).catch(function() {
+                                        return truncateBody(input.body);
+                                    });
+                                });
+                        }
+
+                        return input.clone().text()
+                            .then(function(text) {
+                                if (text && text.length > 0) {
+                                    return truncateBody(text);
+                                }
+                                return truncateBody(input.body);
+                            })
+                            .catch(function() {
+                                return truncateBody(input.body);
+                            });
+                    } catch(e) {
+                        return Promise.resolve(truncateBody(input.body));
+                    }
+                }
+
+                var fallbackBody = (input && typeof input === 'object' && 'body' in input) ? input.body : null;
+                return Promise.resolve(truncateBody(fallbackBody));
             }
 
             // Hook fetch
@@ -140,7 +248,11 @@ extension WebViewScripts {
                 var url = resolveURL(rawUrl);
                 var method = (init && init.method) || (input && input.method) || 'GET';
                 var headers = (init && init.headers) || (input && input.headers) || null;
-                var body = (init && init.body) || null;
+                var hasInitBody = init && Object.prototype.hasOwnProperty.call(init, 'body');
+                var immediateBody = hasInitBody ? truncateBody(init.body) : truncateBody(input && input.body);
+                var requestBodyPromise = captureRequestBody(input, init).catch(function() {
+                    return immediateBody;
+                });
                 var stackFrames = captureStackTrace();
 
                 try {
@@ -151,11 +263,23 @@ extension WebViewScripts {
                         url: url,
                         type: 'fetch',
                         headers: headersToObject(headers),
-                        body: truncateBody(body),
+                        body: immediateBody,
                         stackFrames: stackFrames,
                         initiatorFunction: stackFrames.length > 0 ? stackFrames[0].functionName : null
                     });
                 } catch(e) {}
+
+                // request body 추출이 늦게 끝나면 별도 이벤트로 본문만 보강합니다.
+                requestBodyPromise.then(function(resolvedBody) {
+                    if (!resolvedBody || resolvedBody === immediateBody) return;
+                    try {
+                        window.webkit.messageHandlers.networkRequest.postMessage({
+                            action: 'requestBody',
+                            id: requestId,
+                            body: resolvedBody
+                        });
+                    } catch(e) {}
+                }).catch(function() {});
 
                 return originalFetch.apply(this, arguments)
                     .then(function(response) {
@@ -166,7 +290,11 @@ extension WebViewScripts {
 
                         // Clone response to read body
                         var cloned = response.clone();
-                        cloned.text().then(function(text) {
+                        var responseBodyPromise = cloned.text()
+                            .then(function(text) { return truncateBody(text); })
+                            .catch(function() { return null; });
+
+                        responseBodyPromise.then(function(responseBody) {
                             try {
                                 window.webkit.messageHandlers.networkRequest.postMessage({
                                     action: 'complete',
@@ -174,18 +302,8 @@ extension WebViewScripts {
                                     status: response.status,
                                     statusText: response.statusText,
                                     headers: responseHeaders,
-                                    body: truncateBody(text)
-                                });
-                            } catch(e) {}
-                        }).catch(function() {
-                            try {
-                                window.webkit.messageHandlers.networkRequest.postMessage({
-                                    action: 'complete',
-                                    id: requestId,
-                                    status: response.status,
-                                    statusText: response.statusText,
-                                    headers: responseHeaders,
-                                    body: null
+                                    body: responseBody,
+                                    requestBody: immediateBody
                                 });
                             } catch(e) {}
                         });
@@ -197,7 +315,8 @@ extension WebViewScripts {
                             window.webkit.messageHandlers.networkRequest.postMessage({
                                 action: 'error',
                                 id: requestId,
-                                error: error.message || String(error)
+                                error: error.message || String(error),
+                                requestBody: immediateBody
                             });
                         } catch(e) {}
                         throw error;

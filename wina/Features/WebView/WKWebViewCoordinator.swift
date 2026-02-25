@@ -51,8 +51,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             let method = body["method"] as? String ?? "GET"
             let url = body["url"] as? String ?? ""
             let requestType = body["type"] as? String ?? "other"
-            let headers = body["headers"] as? [String: String]
-            let requestBody = body["body"] as? String
+            let headers = toStringDictionary(body["headers"])
+            let requestBody = toMessageString(body["body"])
             navigator?.networkManager.addRequest(
                 id: requestId,
                 method: method,
@@ -64,32 +64,75 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
 
         case "complete":
             let status = body["status"] as? Int
-            let statusText = body["statusText"] as? String
-            let headers = body["headers"] as? [String: String]
-            let responseBody = body["body"] as? String
+            let statusText = toMessageString(body["statusText"])
+            let headers = toStringDictionary(body["headers"])
+            let responseBody = toMessageString(body["body"])
+            let requestBody = toMessageString(body["requestBody"])
             navigator?.networkManager.updateRequest(
                 id: requestId,
                 status: status,
                 statusText: statusText,
                 responseHeaders: headers,
                 responseBody: responseBody,
-                error: nil
+                error: nil,
+                requestBody: requestBody
             )
 
         case "error":
-            let error = body["error"] as? String
+            let error = toMessageString(body["error"])
+            let requestBody = toMessageString(body["requestBody"])
             navigator?.networkManager.updateRequest(
                 id: requestId,
                 status: nil,
                 statusText: nil,
                 responseHeaders: nil,
                 responseBody: nil,
-                error: error
+                error: error,
+                requestBody: requestBody
+            )
+
+        case "requestBody":
+            let requestBody = toMessageString(body["body"])
+            navigator?.networkManager.updateRequestBody(
+                id: requestId,
+                requestBody: requestBody
             )
 
         default:
             break
         }
+    }
+
+    // JavaScript bridge payload를 안정적으로 문자열로 정규화합니다.
+    private func toMessageString(_ raw: Any?) -> String? {
+        guard let raw else { return nil }
+        if raw is NSNull { return nil }
+        if let text = raw as? String { return text }
+        if JSONSerialization.isValidJSONObject(raw),
+           let jsonData = try? JSONSerialization.data(withJSONObject: raw),
+           let jsonText = String(data: jsonData, encoding: .utf8) {
+            return jsonText
+        }
+        if let number = raw as? NSNumber {
+            return number.stringValue
+        }
+        return String(describing: raw)
+    }
+
+    // JavaScript object 형태 헤더를 [String: String]으로 변환합니다.
+    private func toStringDictionary(_ raw: Any?) -> [String: String]? {
+        guard let raw = raw as? [String: Any] else { return nil }
+        var converted: [String: String] = [:]
+        for (key, value) in raw where !(value is NSNull) {
+            if let text = value as? String {
+                converted[key] = text
+            } else if let number = value as? NSNumber {
+                converted[key] = number.stringValue
+            } else {
+                converted[key] = String(describing: value)
+            }
+        }
+        return converted.isEmpty ? nil : converted
     }
 
     private func handleResourceTimingMessage(_ message: WKScriptMessage) {

@@ -165,6 +165,46 @@ final class NetworkHookTests: XCTestCase {
         XCTAssertTrue(script.contains("init.body") || script.contains("body:"), "Fetch hook should extract request body")
     }
 
+    func testFetchHookDetectsInitBodyWithOwnProperty() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("Object.prototype.hasOwnProperty.call(init, 'body')"),
+            "Fetch hook should distinguish explicit init.body from missing body"
+        )
+    }
+
+    func testFetchHookReadsRequestBodyFromRequestObject() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("input instanceof Request") && script.contains("input.clone()"),
+            "Fetch hook should read body when fetch is called with Request input"
+        )
+    }
+
+    func testFetchHookHandlesAlreadyConsumedRequestBody() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("input.bodyUsed") && script.contains("[Body already consumed]"),
+            "Fetch hook should handle Request with already-consumed body safely"
+        )
+    }
+
+    func testFetchHookParsesMultipartRequestAsFormDataWhenPossible() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("contentType.indexOf('multipart/form-data')") && script.contains("input.clone().formData()"),
+            "Fetch hook should try formData parsing for multipart requests"
+        )
+    }
+
+    func testFetchHookParsesUrlEncodedRequestAsFormDataWhenPossible() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("contentType.indexOf('application/x-www-form-urlencoded')") && script.contains("input.clone().formData()"),
+            "Fetch hook should try formData parsing for urlencoded requests"
+        )
+    }
+
     func testFetchHookGeneratesRequestID() {
         let script = getNetworkHookScript()
         XCTAssertTrue(script.contains("generateId()"), "Fetch hook should generate request ID")
@@ -321,12 +361,63 @@ final class NetworkHookTests: XCTestCase {
 
     func testBodyTruncationHandlesStringBody() {
         let script = getNetworkHookScript()
-        XCTAssertTrue(script.contains("typeof body !== 'string'"), "Script should handle non-string bodies")
+        XCTAssertTrue(
+            script.contains("typeof body === 'string'") && script.contains("return body"),
+            "Script should keep plain string body without conversion"
+        )
     }
 
     func testBodyTruncationAddsEllipsis() {
         let script = getNetworkHookScript()
         XCTAssertTrue(script.contains("... (truncated)"), "Truncated body should indicate truncation")
+    }
+
+    func testSerializeBodyHandlesFormData() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("body instanceof FormData") && script.contains("formatFormData(body)"),
+            "FormData body should be converted to readable key-value text"
+        )
+    }
+
+    func testSerializeBodyHandlesReadableStream() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("body instanceof ReadableStream") && script.contains("return 'ReadableStream'"),
+            "ReadableStream body should be represented with a safe placeholder"
+        )
+    }
+
+    func testSerializeBodyHandlesFileBody() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("body instanceof File") && script.contains("[File:"),
+            "File body should include lightweight metadata"
+        )
+    }
+
+    func testFetchCompleteMessageIncludesImmediateRequestBody() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("requestBody: immediateBody"),
+            "Complete payload should include immediate request body when available"
+        )
+    }
+
+    func testFetchHookSendsRequestBodyBackfillEvent() {
+        let script = getNetworkHookScript()
+        XCTAssertTrue(
+            script.contains("action: 'requestBody'") && script.contains("body: resolvedBody"),
+            "Fetch hook should send requestBody backfill event after async extraction"
+        )
+    }
+
+    func testFetchCompleteDoesNotWaitForRequestBodyPromise() {
+        let script = getNetworkHookScript()
+        XCTAssertFalse(
+            script.contains("Promise.all([responseBodyPromise, requestBodyPromise])"),
+            "Complete event should not be blocked by request body extraction"
+        )
     }
 
     // MARK: - UUID Generation Tests
