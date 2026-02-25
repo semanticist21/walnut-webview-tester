@@ -114,30 +114,48 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
 
     // MARK: - Clear Strategy
 
-    private func applyClearStrategy(currentURL: URL?, newURL: URL?) {
-        let strategyRaw = UserDefaults.standard.string(forKey: "logClearStrategy") ?? LogClearStrategy.keep.rawValue
-        let strategy = LogClearStrategy(rawValue: strategyRaw) ?? .keep
+    private func applyClearStrategies(currentURL: URL?, newURL: URL?) {
+        let consoleStrategy = resolvedClearStrategy(forKey: LogClearStrategy.consoleDefaultsKey)
+        let networkStrategy = resolvedClearStrategy(forKey: LogClearStrategy.networkDefaultsKey)
 
-        switch strategy {
-        case .keep:
-            // Never auto-clear
-            return
-        case .page:
-            // Clear on every navigation
-            clearAllLogs()
-        case .origin:
-            // Clear only when origin changes
-            guard let currentHost = currentURL?.host,
-                  let newHost = newURL?.host,
-                  currentHost != newHost else { return }
-            clearAllLogs()
+        if shouldClearLogs(strategy: consoleStrategy, currentURL: currentURL, newURL: newURL) {
+            navigator?.consoleManager.clear()
+        }
+
+        if shouldClearLogs(strategy: networkStrategy, currentURL: currentURL, newURL: newURL) {
+            navigator?.networkManager.clear()
+            navigator?.resourceManager.clear()
         }
     }
 
-    private func clearAllLogs() {
-        navigator?.consoleManager.clear()
-        navigator?.networkManager.clear()
-        navigator?.resourceManager.clear()
+    private func shouldClearLogs(strategy: LogClearStrategy, currentURL: URL?, newURL: URL?) -> Bool {
+        switch strategy {
+        case .keep:
+            return false
+        case .page:
+            return true
+        case .origin:
+            guard let currentHost = currentURL?.host,
+                  let newHost = newURL?.host else { return false }
+            return currentHost != newHost
+        }
+    }
+
+    private func resolvedClearStrategy(forKey key: String) -> LogClearStrategy {
+        let defaults = UserDefaults.standard
+        if let strategyRaw = defaults.string(forKey: key),
+           let strategy = LogClearStrategy(rawValue: strategyRaw) {
+            return strategy
+        }
+
+        // 기존 단일 전략 키를 신규 키로 이관해 설정을 보존합니다.
+        if let legacyRaw = defaults.string(forKey: LogClearStrategy.legacyDefaultsKey),
+           let strategy = LogClearStrategy(rawValue: legacyRaw) {
+            defaults.set(strategy.rawValue, forKey: key)
+            return strategy
+        }
+
+        return .keep
     }
 
     private func resetActiveSnippets() {
@@ -161,7 +179,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             resetActiveSnippets()
         } else if navigationAction.targetFrame?.isMainFrame == true {
             // Handle navigation: use clearStrategy
-            applyClearStrategy(
+            applyClearStrategies(
                 currentURL: webView.url,
                 newURL: navigationAction.request.url
             )
@@ -274,6 +292,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     ) -> WKWebView? {
         // Load in same webView instead of opening new window
         if navigationAction.targetFrame == nil {
+            applyClearStrategies(currentURL: webView.url, newURL: navigationAction.request.url)
+            resetActiveSnippets()
             webView.load(navigationAction.request)
         }
         return nil

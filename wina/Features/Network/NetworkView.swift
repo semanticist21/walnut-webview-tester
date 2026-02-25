@@ -105,7 +105,7 @@ struct NetworkView: View {
     @State private var selectedRequest: NetworkRequest?
     @State private var selectedResource: ResourceEntry?
     @AppStorage("networkPreserveLog") private var preserveLog: Bool = false
-    @AppStorage("logClearStrategy") private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
+    @AppStorage(LogClearStrategy.networkDefaultsKey) private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
     @State private var scrollOffset: CGFloat = 0
     @State private var scrollViewHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
@@ -839,7 +839,7 @@ private struct ResourceRow: View {
 private struct NetworkSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("networkPreserveLog") private var preserveLog: Bool = false
-    @AppStorage("logClearStrategy") private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
+    @AppStorage(LogClearStrategy.networkDefaultsKey) private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
 
     private var clearStrategy: Binding<LogClearStrategy> {
         Binding(

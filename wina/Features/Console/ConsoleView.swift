@@ -22,7 +22,7 @@ struct ConsoleView: View {
     @State var enabledLogTypes: Set<ConsoleLog.LogType> = Set(ConsoleLog.LogType.displayableTypes)
     // AppStorage for settings indicator (matches ConsoleSettingsSheet)
     @AppStorage("consolePreserveLog") private var preserveLog: Bool = false
-    @AppStorage("logClearStrategy") private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
+    @AppStorage(LogClearStrategy.consoleDefaultsKey) private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
     // JavaScript input
     @State var jsInput: String = ""
     @State var commandHistory: [String] = []

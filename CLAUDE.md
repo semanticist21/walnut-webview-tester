@@ -485,6 +485,19 @@ func viewAction() {
 }
 ```
 
+### 10. DevTools Clear Strategy Key 분리
+```swift
+// ❌ console/network가 같은 key("logClearStrategy")를 공유하면
+// 한쪽 설정 변경이 다른 쪽에 즉시 반영됨
+
+// ✅ console/network 각각 독립 key 사용
+@AppStorage("consoleLogClearStrategy") var consoleStrategy = "keep"
+@AppStorage("networkLogClearStrategy") var networkStrategy = "keep"
+
+// WKUIDelegate target="_blank" 경로(createWebViewWith)에서도
+// navigation 전 clear 전략 적용 + snippet reset 필요
+```
+
 ---
 
 ## Troubleshooting

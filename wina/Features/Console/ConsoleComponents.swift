@@ -448,7 +448,7 @@ struct ConsoleSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var useRegex: Bool
     @AppStorage("consolePreserveLog") private var preserveLog: Bool = false
-    @AppStorage("logClearStrategy") private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
+    @AppStorage(LogClearStrategy.consoleDefaultsKey) private var clearStrategyRaw: String = LogClearStrategy.keep.rawValue
     @Binding var enabledLogTypes: Set<ConsoleLog.LogType>
 
     private var clearStrategy: Binding<LogClearStrategy> {

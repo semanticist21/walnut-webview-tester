@@ -15,6 +15,12 @@ enum LogClearStrategy: String, CaseIterable {
     case page    // Clear on every page navigation
     case keep    // Never auto-clear, manual only
 
+    // 각 DevTools 별로 clear 전략을 독립 저장하기 위한 UserDefaults 키
+    static let consoleDefaultsKey = "consoleLogClearStrategy"
+    static let networkDefaultsKey = "networkLogClearStrategy"
+    // 과거 단일 전략 키(마이그레이션 fallback 용도)
+    static let legacyDefaultsKey = "logClearStrategy"
+
     var displayName: String {
         switch self {
         case .origin: return "Same Origin"
