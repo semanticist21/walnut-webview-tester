@@ -20,6 +20,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     private var lastCommittedMainFrameURL: URL?
     // reload 직후 didCommit에서 clear 전략 중복 실행을 막습니다.
     private var shouldSkipNextCommitClearStrategy: Bool = false
+    // didFinish 연속 호출 시 이전 Eruda 동기화 작업을 취소하고 최신 작업만 유지합니다.
+    private var erudaSyncTask: Task<Void, Never>?
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "wina", category: "ConsoleBridge")
 
     init(isLoading: Binding<Bool>, navigator: WebViewNavigator?) {
@@ -160,6 +162,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     func invalidateObservation() {
         loadingObservation?.invalidate()
         loadingObservation = nil
+        erudaSyncTask?.cancel()
+        erudaSyncTask = nil
     }
 
     // MARK: - Clear Strategy
@@ -267,6 +271,12 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     // Mark document navigation as complete
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         pendingDocumentRequestId = nil
+
+        // 새로고침처럼 URL이 바뀌지 않는 경우도 didFinish에서 Eruda를 다시 보장합니다.
+        erudaSyncTask?.cancel()
+        erudaSyncTask = Task { [weak navigator] in
+            await navigator?.syncErudaWithSettings()
+        }
     }
 
     // 메인 문서가 실제로 커밋된 시점의 URL로 clear 전략을 적용합니다.

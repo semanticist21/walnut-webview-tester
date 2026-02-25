@@ -309,15 +309,6 @@ struct ContentView: View {
                 }
             }
         }
-        // Inject Eruda when WebView loads (if Eruda mode is enabled)
-        .onChange(of: webViewNavigator.currentURL) { _, _ in
-            guard erudaModeEnabled && showWebView && !useSafariWebView else { return }
-            Task {
-                // Small delay to ensure page is ready
-                try? await Task.sleep(for: .milliseconds(500))
-                await webViewNavigator.injectEruda()
-            }
-        }
     }
 
     // MARK: - Search Overlay Position

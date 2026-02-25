@@ -42,6 +42,17 @@ class WebViewNavigator {
     let snippetsManager = SnippetsManager()
     let recorder = WebViewRecorder()
 
+    // Eruda 설정 키를 한 곳에서 관리합니다.
+    private static let erudaModeKey = "erudaModeEnabled"
+    // Eruda 번들 스크립트는 최초 1회만 읽고 재사용합니다.
+    private static let cachedErudaScript: String? = {
+        guard let erudaURL = Bundle.main.url(forResource: "eruda.min", withExtension: "js"),
+              let script = try? String(contentsOf: erudaURL, encoding: .utf8) else {
+            return nil
+        }
+        return script
+    }()
+
     private weak var webView: WKWebView?
     private var canGoBackObservation: NSKeyValueObservation?
     private var canGoForwardObservation: NSKeyValueObservation?
@@ -296,6 +307,17 @@ class WebViewNavigator {
 
     // MARK: - Eruda Console
 
+    // 현재 설정값 기준으로 Eruda 상태를 페이지에 동기화합니다.
+    func syncErudaWithSettings() async {
+        guard webView != nil else { return }
+        let isEnabled = UserDefaults.standard.bool(forKey: Self.erudaModeKey)
+        if isEnabled {
+            await injectEruda()
+        } else {
+            await destroyEruda()
+        }
+    }
+
     /// Inject Eruda console into the current page
     /// Eruda is loaded from bundled JS file to bypass CSP restrictions
     func injectEruda() async {
@@ -310,9 +332,8 @@ class WebViewNavigator {
             return
         }
 
-        // Load Eruda from bundle
-        guard let erudaURL = Bundle.main.url(forResource: "eruda.min", withExtension: "js"),
-              let erudaScript = try? String(contentsOf: erudaURL, encoding: .utf8) else {
+        // Load Eruda from cached bundle script
+        guard let erudaScript = Self.cachedErudaScript else {
             // eruda.min.js not found in bundle
             return
         }
