@@ -411,3 +411,119 @@ final class LogClearStrategyTests: XCTestCase {
         XCTAssertEqual(LogClearStrategy.allCases.count, 3)
     }
 }
+
+final class LogClearStrategyResolverTests: XCTestCase {
+    private var suiteName: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "LogClearStrategyResolverTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        suiteName = nil
+        super.tearDown()
+    }
+
+    func testResolveStrategiesUsesIndependentKeys() {
+        defaults.set(LogClearStrategy.page.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
+        defaults.set(LogClearStrategy.keep.rawValue, forKey: LogClearStrategy.networkDefaultsKey)
+        defaults.set(true, forKey: LogClearStrategy.migrationFlagKey)
+
+        let resolver = LogClearStrategyResolver(defaults: defaults)
+        let resolved = resolver.resolveStrategies()
+
+        XCTAssertEqual(resolved.console, .page)
+        XCTAssertEqual(resolved.network, .keep)
+    }
+
+    func testMigrateLegacyCopiesOnlyMissingKey() {
+        defaults.set(LogClearStrategy.page.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
+        defaults.set(LogClearStrategy.origin.rawValue, forKey: LogClearStrategy.legacyDefaultsKey)
+
+        let resolver = LogClearStrategyResolver(defaults: defaults)
+        let resolved = resolver.resolveStrategies()
+
+        XCTAssertEqual(resolved.console, .page)
+        XCTAssertEqual(resolved.network, .origin)
+        XCTAssertNil(defaults.string(forKey: LogClearStrategy.legacyDefaultsKey))
+        XCTAssertTrue(defaults.bool(forKey: LogClearStrategy.migrationFlagKey))
+    }
+
+    func testMigrateLegacyDoesNotOverrideExistingSeparatedKeys() {
+        defaults.set(LogClearStrategy.page.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
+        defaults.set(LogClearStrategy.keep.rawValue, forKey: LogClearStrategy.networkDefaultsKey)
+        defaults.set(LogClearStrategy.origin.rawValue, forKey: LogClearStrategy.legacyDefaultsKey)
+
+        let resolver = LogClearStrategyResolver(defaults: defaults)
+        let resolved = resolver.resolveStrategies()
+
+        XCTAssertEqual(resolved.console, .page)
+        XCTAssertEqual(resolved.network, .keep)
+    }
+
+    func testShouldClearForEachPageAlwaysTrue() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .page,
+            currentURL: URL(string: "https://example.com/a"),
+            newURL: URL(string: "https://example.com/b")
+        )
+
+        XCTAssertTrue(shouldClear)
+    }
+
+    func testShouldClearForSameOriginIsFalseWithinSameHost() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .origin,
+            currentURL: URL(string: "https://example.com/a"),
+            newURL: URL(string: "https://example.com/b")
+        )
+
+        XCTAssertFalse(shouldClear)
+    }
+
+    func testShouldClearForSameOriginTreatsDefaultPortAsSameOrigin() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .origin,
+            currentURL: URL(string: "https://example.com:443/a"),
+            newURL: URL(string: "https://example.com/b")
+        )
+
+        XCTAssertFalse(shouldClear)
+    }
+
+    func testShouldClearForSameOriginIsTrueWhenHostChanges() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .origin,
+            currentURL: URL(string: "https://example.com"),
+            newURL: URL(string: "https://api.example.com")
+        )
+
+        XCTAssertTrue(shouldClear)
+    }
+
+    func testShouldClearForSameOriginIsTrueWhenSchemeChanges() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .origin,
+            currentURL: URL(string: "http://example.com/page"),
+            newURL: URL(string: "https://example.com/page")
+        )
+
+        XCTAssertTrue(shouldClear)
+    }
+
+    func testShouldClearForSameOriginIsFalseWhenOriginCannotBeResolved() {
+        let shouldClear = LogClearStrategyResolver.shouldClear(
+            strategy: .origin,
+            currentURL: URL(string: "about:blank"),
+            newURL: URL(string: "file:///tmp/index.html")
+        )
+
+        XCTAssertFalse(shouldClear)
+    }
+}

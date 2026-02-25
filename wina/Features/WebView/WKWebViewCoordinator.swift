@@ -16,6 +16,10 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     let navigator: WebViewNavigator?
 
     private var loadingObservation: NSKeyValueObservation?
+    // 마지막으로 커밋된 메인 프레임 URL을 기준점으로 사용합니다.
+    private var lastCommittedMainFrameURL: URL?
+    // reload 직후 didCommit에서 clear 전략 중복 실행을 막습니다.
+    private var shouldSkipNextCommitClearStrategy: Bool = false
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "wina", category: "ConsoleBridge")
 
     init(isLoading: Binding<Bool>, navigator: WebViewNavigator?) {
@@ -100,6 +104,9 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     }
 
     func observeWebView(_ webView: WKWebView) {
+        // 최초 기준 URL을 저장해 Same Origin 비교에 사용합니다.
+        lastCommittedMainFrameURL = webView.url
+
         loadingObservation = webView.observe(\.isLoading, options: .new) { [weak self] webView, _ in
             DispatchQueue.main.async {
                 self?.isLoading = webView.isLoading
@@ -115,88 +122,17 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     // MARK: - Clear Strategy
 
     private func applyClearStrategies(currentURL: URL?, newURL: URL?) {
-        migrateLegacyClearStrategyIfNeeded()
+        let resolver = LogClearStrategyResolver()
+        let strategies = resolver.resolveStrategies()
 
-        let consoleStrategy = resolvedClearStrategy(forKey: LogClearStrategy.consoleDefaultsKey)
-        let networkStrategy = resolvedClearStrategy(forKey: LogClearStrategy.networkDefaultsKey)
-
-        if shouldClearLogs(strategy: consoleStrategy, currentURL: currentURL, newURL: newURL) {
+        if LogClearStrategyResolver.shouldClear(strategy: strategies.console, currentURL: currentURL, newURL: newURL) {
             navigator?.consoleManager.clear()
         }
 
-        if shouldClearLogs(strategy: networkStrategy, currentURL: currentURL, newURL: newURL) {
+        if LogClearStrategyResolver.shouldClear(strategy: strategies.network, currentURL: currentURL, newURL: newURL) {
             navigator?.networkManager.clear()
             navigator?.resourceManager.clear()
         }
-    }
-
-    private func shouldClearLogs(strategy: LogClearStrategy, currentURL: URL?, newURL: URL?) -> Bool {
-        switch strategy {
-        case .keep:
-            return false
-        case .page:
-            return true
-        case .origin:
-            guard let currentOrigin = normalizedOrigin(from: currentURL),
-                  let newOrigin = normalizedOrigin(from: newURL) else { return false }
-            return currentOrigin != newOrigin
-        }
-    }
-
-    private func resolvedClearStrategy(forKey key: String) -> LogClearStrategy {
-        if let strategyRaw = UserDefaults.standard.string(forKey: key),
-           let strategy = LogClearStrategy(rawValue: strategyRaw) {
-            return strategy
-        }
-        return .keep
-    }
-
-    private func migrateLegacyClearStrategyIfNeeded() {
-        let defaults = UserDefaults.standard
-
-        // 마이그레이션은 한 번만 수행해 legacy 값 재주입을 방지합니다.
-        guard !defaults.bool(forKey: LogClearStrategy.migrationFlagKey) else { return }
-
-        let hasConsole = defaults.string(forKey: LogClearStrategy.consoleDefaultsKey) != nil
-        let hasNetwork = defaults.string(forKey: LogClearStrategy.networkDefaultsKey) != nil
-
-        if let legacyRaw = defaults.string(forKey: LogClearStrategy.legacyDefaultsKey),
-           let legacyStrategy = LogClearStrategy(rawValue: legacyRaw) {
-            if !hasConsole {
-                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
-            }
-            if !hasNetwork {
-                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.networkDefaultsKey)
-            }
-        }
-
-        defaults.removeObject(forKey: LogClearStrategy.legacyDefaultsKey)
-        defaults.set(true, forKey: LogClearStrategy.migrationFlagKey)
-    }
-
-    private func normalizedOrigin(from url: URL?) -> String? {
-        guard let url,
-              let scheme = url.scheme?.lowercased(),
-              let host = url.host?.lowercased() else { return nil }
-
-        let normalizedPort: Int? = if let explicitPort = url.port {
-            explicitPort
-        } else {
-            switch scheme {
-            case "http":
-                80
-            case "https":
-                443
-            default:
-                nil
-            }
-        }
-
-        if let normalizedPort {
-            return "\(scheme)://\(host):\(normalizedPort)"
-        }
-
-        return "\(scheme)://\(host)"
     }
 
     private func resetActiveSnippets() {
@@ -212,19 +148,15 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
+        let isMainFrameNavigation = navigationAction.targetFrame?.isMainFrame ?? true
+
         // Handle reload: use preserveLog setting
-        if navigationAction.navigationType == .reload {
+        if navigationAction.navigationType == .reload, isMainFrameNavigation {
             navigator?.consoleManager.clearIfNotPreserved()
             navigator?.networkManager.clearIfNotPreserved()
             navigator?.resourceManager.clearIfNotPreserved()
             resetActiveSnippets()
-        } else if navigationAction.targetFrame?.isMainFrame == true {
-            // Handle navigation: use clearStrategy
-            applyClearStrategies(
-                currentURL: webView.url,
-                newURL: navigationAction.request.url
-            )
-            resetActiveSnippets()
+            shouldSkipNextCommitClearStrategy = true
         }
 
         // Track document navigation for main frame only
@@ -294,6 +226,24 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         pendingDocumentRequestId = nil
     }
 
+    // 메인 문서가 실제로 커밋된 시점의 URL로 clear 전략을 적용합니다.
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        let committedURL = webView.url
+
+        if shouldSkipNextCommitClearStrategy {
+            shouldSkipNextCommitClearStrategy = false
+            lastCommittedMainFrameURL = committedURL
+            return
+        }
+
+        applyClearStrategies(
+            currentURL: lastCommittedMainFrameURL,
+            newURL: committedURL
+        )
+        resetActiveSnippets()
+        lastCommittedMainFrameURL = committedURL
+    }
+
     // Handle document navigation failure
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         if let requestId = pendingDocumentRequestId {
@@ -333,8 +283,6 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     ) -> WKWebView? {
         // Load in same webView instead of opening new window
         if navigationAction.targetFrame == nil {
-            applyClearStrategies(currentURL: webView.url, newURL: navigationAction.request.url)
-            resetActiveSnippets()
             webView.load(navigationAction.request)
         }
         return nil

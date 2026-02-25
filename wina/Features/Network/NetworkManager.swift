@@ -40,6 +40,99 @@ enum LogClearStrategy: String, CaseIterable {
     }
 }
 
+// MARK: - Log Clear Strategy Resolver
+
+struct LogClearStrategyResolver {
+    let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    // 마이그레이션을 먼저 보장한 뒤 콘솔/네트워크 전략을 각각 해석합니다.
+    func resolveStrategies() -> (console: LogClearStrategy, network: LogClearStrategy) {
+        migrateLegacyStrategyIfNeeded()
+        return (
+            resolvedStrategy(forKey: LogClearStrategy.consoleDefaultsKey),
+            resolvedStrategy(forKey: LogClearStrategy.networkDefaultsKey)
+        )
+    }
+
+    // 저장된 rawValue가 유효하지 않으면 안전하게 keep으로 폴백합니다.
+    func resolvedStrategy(forKey key: String) -> LogClearStrategy {
+        if let strategyRaw = defaults.string(forKey: key),
+           let strategy = LogClearStrategy(rawValue: strategyRaw) {
+            return strategy
+        }
+        return .keep
+    }
+
+    // 레거시 단일 키를 분리 키로 1회만 옮기고 재주입을 막습니다.
+    func migrateLegacyStrategyIfNeeded() {
+        guard !defaults.bool(forKey: LogClearStrategy.migrationFlagKey) else { return }
+
+        let hasConsole = defaults.string(forKey: LogClearStrategy.consoleDefaultsKey) != nil
+        let hasNetwork = defaults.string(forKey: LogClearStrategy.networkDefaultsKey) != nil
+
+        if let legacyRaw = defaults.string(forKey: LogClearStrategy.legacyDefaultsKey),
+           let legacyStrategy = LogClearStrategy(rawValue: legacyRaw) {
+            if !hasConsole {
+                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
+            }
+            if !hasNetwork {
+                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.networkDefaultsKey)
+            }
+        }
+
+        defaults.removeObject(forKey: LogClearStrategy.legacyDefaultsKey)
+        defaults.set(true, forKey: LogClearStrategy.migrationFlagKey)
+    }
+
+    // URL 전환 시 clear 여부를 정책별로 일관되게 계산합니다.
+    static func shouldClear(
+        strategy: LogClearStrategy,
+        currentURL: URL?,
+        newURL: URL?
+    ) -> Bool {
+        switch strategy {
+        case .keep:
+            return false
+        case .page:
+            return true
+        case .origin:
+            guard let currentOrigin = normalizedOrigin(from: currentURL),
+                  let nextOrigin = normalizedOrigin(from: newURL) else { return false }
+            return currentOrigin != nextOrigin
+        }
+    }
+
+    // 스킴/호스트/정규화된 포트로 Same Origin 비교 기준 문자열을 생성합니다.
+    static func normalizedOrigin(from url: URL?) -> String? {
+        guard let url,
+              let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased() else { return nil }
+
+        let normalizedPort: Int? = if let explicitPort = url.port {
+            explicitPort
+        } else {
+            switch scheme {
+            case "http":
+                80
+            case "https":
+                443
+            default:
+                nil
+            }
+        }
+
+        if let normalizedPort {
+            return "\(scheme)://\(host):\(normalizedPort)"
+        }
+
+        return "\(scheme)://\(host)"
+    }
+}
+
 // MARK: - Network Body Storage (Disk-based)
 
 final class NetworkBodyStorage {

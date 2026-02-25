@@ -163,6 +163,24 @@ final class DevToolsOverlayState {
 devToolsState.closeAll()
 ```
 
+### DevTools Log Clear 전략 패턴 (2026.02.25)
+
+`Console`/`Network` 삭제 전략은 반드시 독립 키를 사용하고, 판정 시점은 `decidePolicyFor navigationAction`이 아니라 `didCommit`(실제 메인 문서 커밋 URL) 기준으로 처리한다.
+
+```swift
+// ✅ 키 분리
+LogClearStrategy.consoleDefaultsKey
+LogClearStrategy.networkDefaultsKey
+
+// ✅ 커밋 URL 기준 비교
+func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    applyClearStrategies(currentURL: lastCommittedMainFrameURL, newURL: webView.url)
+    lastCommittedMainFrameURL = webView.url
+}
+```
+
+이렇게 해야 리다이렉트/target=_blank/중간 URL 케이스에서 Same Origin 전략이 기대대로 동작한다.
+
 ### JavaScript Bridge Architecture
 
 **Core Data Flow**:
