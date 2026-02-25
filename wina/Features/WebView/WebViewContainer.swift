@@ -350,6 +350,10 @@ struct WKWebViewRepresentable: UIViewRepresentable {
 
         // Attach navigator for external control
         context.coordinator.navigator?.attach(to: webView)
+        // AppBar refresh 경로에서도 coordinator reload 전략이 동작하도록 연결합니다.
+        context.coordinator.navigator?.setReloadPreparationHandler { [weak coordinator = context.coordinator] in
+            coordinator?.prepareForManualReloadRequest()
+        }
 
         if let url = URL(string: urlString) {
             webView.load(URLRequest(url: url))

@@ -5,6 +5,7 @@
 //  WebView navigation controller with KVO observation.
 //
 
+import Observation
 import Photos
 import WebKit
 
@@ -41,6 +42,9 @@ class WebViewNavigator {
     let accessibilityManager = AccessibilityManager()
     let snippetsManager = SnippetsManager()
     let recorder = WebViewRecorder()
+    // 수동 새로고침 시 coordinator에 reload 준비를 알리는 콜백입니다.
+    @ObservationIgnored
+    private var reloadPreparationHandler: (() -> Void)?
 
     // Eruda 설정 키를 한 곳에서 관리합니다.
     private static let erudaModeKey = "erudaModeEnabled"
@@ -146,9 +150,15 @@ class WebViewNavigator {
         canGoForwardObservation = nil
         urlObservation = nil
         webView = nil
+        reloadPreparationHandler = nil
         canGoBack = false
         canGoForward = false
         currentURL = nil
+    }
+
+    /// 수동 새로고침 직전에 실행할 coordinator 콜백을 등록합니다.
+    func setReloadPreparationHandler(_ handler: (() -> Void)?) {
+        reloadPreparationHandler = handler
     }
 
     func goBack() {
@@ -182,6 +192,8 @@ class WebViewNavigator {
     }
 
     func reload() {
+        // AppBar 새로고침에서도 coordinator가 동일한 reload 전략을 적용하도록 보장합니다.
+        reloadPreparationHandler?()
         webView?.reload()
     }
 

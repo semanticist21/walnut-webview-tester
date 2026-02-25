@@ -189,6 +189,16 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         navigator?.snippetsManager.resetActiveSnippets()
     }
 
+    // refresh 전략(보존/clear + Eruda force-init + snippet reset)을 공통으로 적용합니다.
+    func prepareForManualReloadRequest() {
+        navigator?.consoleManager.clearIfNotPreserved()
+        navigator?.networkManager.clearIfNotPreserved()
+        navigator?.resourceManager.clearIfNotPreserved()
+        resetActiveSnippets()
+        shouldSkipNextCommitClearStrategy = true
+        scheduleForceErudaInitOnNextFinish()
+    }
+
     // reload 이후 다음 didFinish에서 Eruda 강제 재초기화를 예약합니다.
     func scheduleForceErudaInitOnNextFinish() {
         shouldForceErudaInitOnNextFinish = true
@@ -207,12 +217,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
 
         // Handle reload: use preserveLog setting
         if navigationAction.navigationType == .reload, isMainFrameNavigation {
-            navigator?.consoleManager.clearIfNotPreserved()
-            navigator?.networkManager.clearIfNotPreserved()
-            navigator?.resourceManager.clearIfNotPreserved()
-            resetActiveSnippets()
-            shouldSkipNextCommitClearStrategy = true
-            scheduleForceErudaInitOnNextFinish()
+            prepareForManualReloadRequest()
         }
 
         // Track document navigation for main frame only

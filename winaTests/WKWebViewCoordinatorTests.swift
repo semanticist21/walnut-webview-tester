@@ -82,6 +82,75 @@ final class WKWebViewCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDidFinishUsesForceInitAfterManualReloadPreparation() {
+        // header refresh 경로처럼 수동 reload 준비를 하면 forceInit=true가 전달되어야 합니다.
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = CoordinatorSpyNavigator()
+        Self.retainedNavigators.append(navigator)
+        let expectation = expectation(description: "sync called")
+        navigator.onSync = {
+            expectation.fulfill()
+        }
+
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+        let webView = WKWebView(frame: .zero)
+
+        coordinator.prepareForManualReloadRequest()
+        coordinator.webView(webView, didFinish: nil)
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(navigator.syncForceInitValues.last, true)
+    }
+
+    @MainActor
+    func testForceInitFlagResetsAfterFirstDidFinish() {
+        // force-init 플래그는 첫 didFinish에서만 true이고 이후에는 false로 돌아와야 합니다.
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = CoordinatorSpyNavigator()
+        Self.retainedNavigators.append(navigator)
+
+        let firstSyncExpectation = expectation(description: "first sync called")
+        let secondSyncExpectation = expectation(description: "second sync called")
+        var syncCount = 0
+        navigator.onSync = {
+            syncCount += 1
+            if syncCount == 1 {
+                firstSyncExpectation.fulfill()
+            } else if syncCount == 2 {
+                secondSyncExpectation.fulfill()
+            }
+        }
+
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+        let webView = WKWebView(frame: .zero)
+
+        coordinator.scheduleForceErudaInitOnNextFinish()
+        coordinator.webView(webView, didFinish: nil)
+
+        wait(for: [firstSyncExpectation], timeout: 1.0)
+        // 첫 sync Task 완료 후 플래그 해제가 반영되도록 한 번 양보합니다.
+        let settleExpectation = expectation(description: "force-init flag settle")
+        Task { @MainActor in
+            await Task.yield()
+            settleExpectation.fulfill()
+        }
+        wait(for: [settleExpectation], timeout: 1.0)
+
+        coordinator.webView(webView, didFinish: nil)
+        wait(for: [secondSyncExpectation], timeout: 1.0)
+
+        XCTAssertEqual(navigator.syncForceInitValues, [true, false])
+    }
+
+    @MainActor
     func testDidFailClearsPendingForceInitFlag() {
         // reload 실패 후에는 다음 didFinish에 forceInit이 남지 않아야 합니다.
         var isLoading = false

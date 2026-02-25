@@ -115,4 +115,32 @@ final class WebViewNavigatorErudaTests: XCTestCase {
         XCTAssertEqual(navigator.reinitializeScriptCount, 1)
         XCTAssertEqual(navigator.entryCheckCount, 0)
     }
+
+    func testInjectErudaForceInitLoadsBundleWhenMissing() async {
+        // force-init이어도 미로드 상태면 번들 주입 후 재초기화가 이어져야 합니다.
+        let navigator = makeNavigator()
+        navigator.loadedResponses = [false, true]
+
+        await navigator.injectEruda(forceInit: true)
+
+        XCTAssertEqual(navigator.loadedCheckCount, 2)
+        XCTAssertEqual(navigator.bundleLoadCount, 1)
+        XCTAssertEqual(navigator.reinitializeScriptCount, 1)
+        XCTAssertEqual(navigator.entryCheckCount, 0)
+    }
+
+    func testReloadCallsPreparationHandler() {
+        // navigator.reload()가 coordinator 준비 콜백을 반드시 호출해야 합니다.
+        let navigator = WebViewNavigator()
+        // 테스트 종료 시점 deinit 경로 크래시를 피하기 위해 기존 테스트 패턴과 동일하게 보존합니다.
+        Self.retainedNavigators.append(navigator)
+        var callCount = 0
+        navigator.setReloadPreparationHandler {
+            callCount += 1
+        }
+
+        navigator.reload()
+
+        XCTAssertEqual(callCount, 1)
+    }
 }
