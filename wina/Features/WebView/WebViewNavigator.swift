@@ -44,6 +44,54 @@ class WebViewNavigator {
 
     // Eruda 설정 키를 한 곳에서 관리합니다.
     private static let erudaModeKey = "erudaModeEnabled"
+    // Eruda 로드 여부를 확인하는 JavaScript입니다.
+    static let erudaLoadedCheckScript = "typeof eruda !== 'undefined'"
+    // Eruda 엔트리 버튼 존재 여부를 확인하는 JavaScript입니다.
+    static let erudaEntryButtonCheckScript = "typeof eruda !== 'undefined' && !!document.querySelector('.eruda-entry-btn')"
+    // Eruda를 초기화하고 엔트리 버튼을 표시하는 JavaScript입니다.
+    static let erudaInitializeScript = """
+        if (typeof eruda !== 'undefined' && typeof eruda.init === 'function') {
+            eruda.init();
+        }
+        if (typeof eruda !== 'undefined') {
+            try {
+                const entryBtn = eruda.get && eruda.get('entryBtn');
+                if (entryBtn && typeof entryBtn.show === 'function') {
+                    entryBtn.show();
+                }
+            } catch (_) {}
+        }
+        """
+    // Eruda를 강제로 재초기화하는 JavaScript입니다.
+    static let erudaReinitializeScript = """
+        if (typeof eruda !== 'undefined') {
+            try {
+                if (typeof eruda.destroy === 'function') {
+                    eruda.destroy();
+                }
+            } catch (_) {}
+            if (typeof eruda.init === 'function') {
+                eruda.init();
+            }
+            try {
+                const entryBtn = eruda.get && eruda.get('entryBtn');
+                if (entryBtn && typeof entryBtn.show === 'function') {
+                    entryBtn.show();
+                }
+            } catch (_) {}
+        }
+        """
+    // 초기화된 Eruda의 엔트리 버튼을 다시 표시하는 JavaScript입니다.
+    static let erudaEnsureEntryVisibleScript = """
+        if (typeof eruda !== 'undefined') {
+            try {
+                const entryBtn = eruda.get && eruda.get('entryBtn');
+                if (entryBtn && typeof entryBtn.show === 'function') {
+                    entryBtn.show();
+                }
+            } catch (_) {}
+        }
+        """
     // Eruda 번들 스크립트는 최초 1회만 읽고 재사용합니다.
     private static let cachedErudaScript: String? = {
         guard let erudaURL = Bundle.main.url(forResource: "eruda.min", withExtension: "js"),
@@ -308,11 +356,11 @@ class WebViewNavigator {
     // MARK: - Eruda Console
 
     // 현재 설정값 기준으로 Eruda 상태를 페이지에 동기화합니다.
-    func syncErudaWithSettings() async {
+    func syncErudaWithSettings(forceInit: Bool = false) async {
         guard webView != nil else { return }
         let isEnabled = UserDefaults.standard.bool(forKey: Self.erudaModeKey)
         if isEnabled {
-            await injectEruda()
+            await injectEruda(forceInit: forceInit)
         } else {
             await destroyEruda()
         }
@@ -320,27 +368,33 @@ class WebViewNavigator {
 
     /// Inject Eruda console into the current page
     /// Eruda is loaded from bundled JS file to bypass CSP restrictions
-    func injectEruda() async {
+    func injectEruda(forceInit: Bool = false) async {
         guard webView != nil else { return }
 
-        // Check if Eruda is already loaded
-        let checkEruda = "typeof eruda !== 'undefined'"
-        let erudaLoaded = await evaluateJavaScript(checkEruda) as? Bool ?? false
+        // 현재 페이지에 Eruda 스크립트가 이미 로드됐는지 확인합니다.
+        var erudaLoaded = await evaluateJavaScript(Self.erudaLoadedCheckScript) as? Bool ?? false
 
-        if erudaLoaded {
-            // Already loaded, nothing to do (user can tap Eruda button to open)
+        // 스크립트가 없으면 번들 스크립트를 주입합니다.
+        if !erudaLoaded {
+            guard let erudaScript = erudaBundleScript() else { return }
+            _ = await evaluateJavaScript(erudaScript)
+            erudaLoaded = await evaluateJavaScript(Self.erudaLoadedCheckScript) as? Bool ?? false
+            guard erudaLoaded else { return }
+        }
+
+        // 새로고침 경로에서는 강제 재초기화로 엔트리 버튼 누락을 복구합니다.
+        if forceInit {
+            _ = await evaluateJavaScript(Self.erudaReinitializeScript)
             return
         }
 
-        // Load Eruda from cached bundle script
-        guard let erudaScript = Self.cachedErudaScript else {
-            // eruda.min.js not found in bundle
-            return
+        // 엔트리 버튼이 없으면 init을 다시 수행하고, 있으면 표시 상태만 복구합니다.
+        let hasEntryButton = await evaluateJavaScript(Self.erudaEntryButtonCheckScript) as? Bool ?? false
+        if hasEntryButton {
+            _ = await evaluateJavaScript(Self.erudaEnsureEntryVisibleScript)
+        } else {
+            _ = await evaluateJavaScript(Self.erudaInitializeScript)
         }
-
-        // Inject and initialize Eruda (starts hidden, user taps button to open)
-        _ = await evaluateJavaScript(erudaScript)
-        _ = await evaluateJavaScript("eruda.init();")
     }
 
     /// Hide Eruda console if loaded
@@ -351,5 +405,10 @@ class WebViewNavigator {
     /// Destroy Eruda console completely
     func destroyEruda() async {
         _ = await evaluateJavaScript("if (typeof eruda !== 'undefined') eruda.destroy();")
+    }
+
+    // 테스트에서 Eruda 번들 스크립트를 대체할 수 있도록 분리합니다.
+    func erudaBundleScript() -> String? {
+        Self.cachedErudaScript
     }
 }

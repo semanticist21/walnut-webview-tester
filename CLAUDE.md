@@ -554,6 +554,11 @@ brew uninstall swiftlint && brew install swiftlint
 - Only inline scripts work (external fetch blocked by CORS)
 - Use `evaluateJavaScript()` only
 
+### Eruda Refresh Icon Missing (WKWebView)
+- Header `Refresh` (`navigationType == .reload`) 경로에서는 `didFinish`에서 Eruda를 강제 재초기화해야 아이콘 누락을 막을 수 있음.
+- `didFinish` sync task 취소 시 force-init 플래그가 유실되지 않도록, 성공 완료 시점에만 플래그를 해제하고 `didFail`/`didFailProvisionalNavigation`에서 플래그 정리 필요.
+- Eruda 전역 존재 여부만 체크하지 말고 `.eruda-entry-btn` 존재 여부까지 확인해 `script loaded but init not completed` 케이스를 복구할 것.
+
 ### Network Monitoring Missing
 - Enable "Preserve Network Log" toggle
 - SafariVC: network data unavailable (security)

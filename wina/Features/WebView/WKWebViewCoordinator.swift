@@ -20,6 +20,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     private var lastCommittedMainFrameURL: URL?
     // reload 직후 didCommit에서 clear 전략 중복 실행을 막습니다.
     private var shouldSkipNextCommitClearStrategy: Bool = false
+    // reload 직후 Eruda init을 다시 실행해야 하는지를 추적합니다.
+    private var shouldForceErudaInitOnNextFinish: Bool = false
     // didFinish 연속 호출 시 이전 Eruda 동기화 작업을 취소하고 최신 작업만 유지합니다.
     private var erudaSyncTask: Task<Void, Never>?
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "wina", category: "ConsoleBridge")
@@ -164,6 +166,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         loadingObservation = nil
         erudaSyncTask?.cancel()
         erudaSyncTask = nil
+        shouldForceErudaInitOnNextFinish = false
     }
 
     // MARK: - Clear Strategy
@@ -186,6 +189,11 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         navigator?.snippetsManager.resetActiveSnippets()
     }
 
+    // reload 이후 다음 didFinish에서 Eruda 강제 재초기화를 예약합니다.
+    func scheduleForceErudaInitOnNextFinish() {
+        shouldForceErudaInitOnNextFinish = true
+    }
+
     // Track pending document request (only one at a time for main frame)
     private var pendingDocumentRequestId: String?
 
@@ -204,6 +212,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             navigator?.resourceManager.clearIfNotPreserved()
             resetActiveSnippets()
             shouldSkipNextCommitClearStrategy = true
+            scheduleForceErudaInitOnNextFinish()
         }
 
         // Track document navigation for main frame only
@@ -272,10 +281,15 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         pendingDocumentRequestId = nil
 
-        // 새로고침처럼 URL이 바뀌지 않는 경우도 didFinish에서 Eruda를 다시 보장합니다.
+        // 새로고침 force-init 플래그를 취소된 Task가 소거하지 않도록 완료 시점에만 해제합니다.
+        let forceInit = shouldForceErudaInitOnNextFinish
         erudaSyncTask?.cancel()
-        erudaSyncTask = Task { [weak navigator] in
-            await navigator?.syncErudaWithSettings()
+        erudaSyncTask = Task { [weak self, weak navigator] in
+            await navigator?.syncErudaWithSettings(forceInit: forceInit)
+            guard forceInit, !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.shouldForceErudaInitOnNextFinish = false
+            }
         }
     }
 
@@ -310,6 +324,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             )
         }
         pendingDocumentRequestId = nil
+        // reload 실패 시 다음 정상 탐색에 force-init이 남지 않도록 정리합니다.
+        shouldForceErudaInitOnNextFinish = false
     }
 
     // Handle provisional navigation failure
@@ -325,6 +341,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             )
         }
         pendingDocumentRequestId = nil
+        // provisional 실패도 동일하게 force-init 플래그를 정리합니다.
+        shouldForceErudaInitOnNextFinish = false
     }
 
     // Handle new window requests (target="_blank")

@@ -8,10 +8,12 @@ final class WKWebViewCoordinatorTests: XCTestCase {
 
     private final class CoordinatorSpyNavigator: WebViewNavigator {
         var syncCallCount: Int = 0
+        var syncForceInitValues: [Bool] = []
         var onSync: (() -> Void)?
 
-        override func syncErudaWithSettings() async {
+        override func syncErudaWithSettings(forceInit: Bool = false) async {
             syncCallCount += 1
+            syncForceInitValues.append(forceInit)
             onSync?()
         }
     }
@@ -20,7 +22,7 @@ final class WKWebViewCoordinatorTests: XCTestCase {
         var injectCallCount: Int = 0
         var destroyCallCount: Int = 0
 
-        override func injectEruda() async {
+        override func injectEruda(forceInit: Bool = false) async {
             injectCallCount += 1
         }
 
@@ -51,6 +53,84 @@ final class WKWebViewCoordinatorTests: XCTestCase {
 
         waitForExpectations(timeout: 1.0)
         XCTAssertEqual(navigator.syncCallCount, 1)
+        XCTAssertEqual(navigator.syncForceInitValues, [false])
+    }
+
+    @MainActor
+    func testDidFinishUsesForceInitWhenScheduled() {
+        // reload 예약 플래그가 있으면 forceInit=true로 동기화되는지 확인합니다.
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = CoordinatorSpyNavigator()
+        Self.retainedNavigators.append(navigator)
+        let expectation = expectation(description: "sync called")
+        navigator.onSync = {
+            expectation.fulfill()
+        }
+
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+        let webView = WKWebView(frame: .zero)
+
+        coordinator.scheduleForceErudaInitOnNextFinish()
+        coordinator.webView(webView, didFinish: nil)
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(navigator.syncForceInitValues.last, true)
+    }
+
+    @MainActor
+    func testDidFailClearsPendingForceInitFlag() {
+        // reload 실패 후에는 다음 didFinish에 forceInit이 남지 않아야 합니다.
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = CoordinatorSpyNavigator()
+        Self.retainedNavigators.append(navigator)
+        let expectation = expectation(description: "sync called")
+        navigator.onSync = {
+            expectation.fulfill()
+        }
+
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+        let webView = WKWebView(frame: .zero)
+
+        coordinator.scheduleForceErudaInitOnNextFinish()
+        coordinator.webView(webView, didFail: nil, withError: URLError(.timedOut))
+        coordinator.webView(webView, didFinish: nil)
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(navigator.syncForceInitValues.last, false)
+    }
+
+    @MainActor
+    func testDidFailProvisionalNavigationClearsPendingForceInitFlag() {
+        // provisional 실패 후에도 forceInit 잔존 없이 동기화되어야 합니다.
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = CoordinatorSpyNavigator()
+        Self.retainedNavigators.append(navigator)
+        let expectation = expectation(description: "sync called")
+        navigator.onSync = {
+            expectation.fulfill()
+        }
+
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+        let webView = WKWebView(frame: .zero)
+
+        coordinator.scheduleForceErudaInitOnNextFinish()
+        coordinator.webView(webView, didFailProvisionalNavigation: nil, withError: URLError(.cannotFindHost))
+        coordinator.webView(webView, didFinish: nil)
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(navigator.syncForceInitValues.last, false)
     }
 
     @MainActor
