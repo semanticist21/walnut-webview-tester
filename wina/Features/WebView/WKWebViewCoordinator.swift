@@ -115,6 +115,8 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     // MARK: - Clear Strategy
 
     private func applyClearStrategies(currentURL: URL?, newURL: URL?) {
+        migrateLegacyClearStrategyIfNeeded()
+
         let consoleStrategy = resolvedClearStrategy(forKey: LogClearStrategy.consoleDefaultsKey)
         let networkStrategy = resolvedClearStrategy(forKey: LogClearStrategy.networkDefaultsKey)
 
@@ -135,27 +137,66 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         case .page:
             return true
         case .origin:
-            guard let currentHost = currentURL?.host,
-                  let newHost = newURL?.host else { return false }
-            return currentHost != newHost
+            guard let currentOrigin = normalizedOrigin(from: currentURL),
+                  let newOrigin = normalizedOrigin(from: newURL) else { return false }
+            return currentOrigin != newOrigin
         }
     }
 
     private func resolvedClearStrategy(forKey key: String) -> LogClearStrategy {
-        let defaults = UserDefaults.standard
-        if let strategyRaw = defaults.string(forKey: key),
+        if let strategyRaw = UserDefaults.standard.string(forKey: key),
            let strategy = LogClearStrategy(rawValue: strategyRaw) {
             return strategy
         }
+        return .keep
+    }
 
-        // 기존 단일 전략 키를 신규 키로 이관해 설정을 보존합니다.
+    private func migrateLegacyClearStrategyIfNeeded() {
+        let defaults = UserDefaults.standard
+
+        // 마이그레이션은 한 번만 수행해 legacy 값 재주입을 방지합니다.
+        guard !defaults.bool(forKey: LogClearStrategy.migrationFlagKey) else { return }
+
+        let hasConsole = defaults.string(forKey: LogClearStrategy.consoleDefaultsKey) != nil
+        let hasNetwork = defaults.string(forKey: LogClearStrategy.networkDefaultsKey) != nil
+
         if let legacyRaw = defaults.string(forKey: LogClearStrategy.legacyDefaultsKey),
-           let strategy = LogClearStrategy(rawValue: legacyRaw) {
-            defaults.set(strategy.rawValue, forKey: key)
-            return strategy
+           let legacyStrategy = LogClearStrategy(rawValue: legacyRaw) {
+            if !hasConsole {
+                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.consoleDefaultsKey)
+            }
+            if !hasNetwork {
+                defaults.set(legacyStrategy.rawValue, forKey: LogClearStrategy.networkDefaultsKey)
+            }
         }
 
-        return .keep
+        defaults.removeObject(forKey: LogClearStrategy.legacyDefaultsKey)
+        defaults.set(true, forKey: LogClearStrategy.migrationFlagKey)
+    }
+
+    private func normalizedOrigin(from url: URL?) -> String? {
+        guard let url,
+              let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased() else { return nil }
+
+        let normalizedPort: Int? = if let explicitPort = url.port {
+            explicitPort
+        } else {
+            switch scheme {
+            case "http":
+                80
+            case "https":
+                443
+            default:
+                nil
+            }
+        }
+
+        if let normalizedPort {
+            return "\(scheme)://\(host):\(normalizedPort)"
+        }
+
+        return "\(scheme)://\(host)"
     }
 
     private func resetActiveSnippets() {

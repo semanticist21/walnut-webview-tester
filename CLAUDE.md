@@ -494,7 +494,12 @@ func viewAction() {
 @AppStorage("consoleLogClearStrategy") var consoleStrategy = "keep"
 @AppStorage("networkLogClearStrategy") var networkStrategy = "keep"
 
-// WKUIDelegate target="_blank" 경로(createWebViewWith)에서도
+// ✅ legacy key는 1회만 마이그레이션 후 제거
+// (runtime fallback을 남기면 legacy 값이 다시 주입되어 동기화 문제가 재발)
+
+// ✅ Same Origin 비교는 host만이 아니라 scheme+host+port 기준으로 처리
+
+// ✅ WKUIDelegate target="_blank" 경로(createWebViewWith)에서도
 // navigation 전 clear 전략 적용 + snippet reset 필요
 ```
 

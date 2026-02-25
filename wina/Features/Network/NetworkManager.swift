@@ -18,8 +18,10 @@ enum LogClearStrategy: String, CaseIterable {
     // 각 DevTools 별로 clear 전략을 독립 저장하기 위한 UserDefaults 키
     static let consoleDefaultsKey = "consoleLogClearStrategy"
     static let networkDefaultsKey = "networkLogClearStrategy"
-    // 과거 단일 전략 키(마이그레이션 fallback 용도)
+    // 과거 단일 전략 키(1회 마이그레이션 전용)
     static let legacyDefaultsKey = "logClearStrategy"
+    // 1회 마이그레이션 완료 플래그
+    static let migrationFlagKey = "didMigrateLogClearStrategyKeys"
 
     var displayName: String {
         switch self {
