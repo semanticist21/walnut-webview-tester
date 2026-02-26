@@ -535,6 +535,16 @@ func viewAction() {
 // trim 후 empty 판정하면 회귀가 발생하므로 raw string 기준으로 empty 체크
 ```
 
+### 12. NetworkBodyStorage 비동기 큐 경합(간헐적 nil 로드)
+```swift
+// ❌ save/clearAll은 queue.async인데 load가 큐 밖에서 즉시 파일을 읽으면
+// 이전 작업이 끝나기 전에 읽어 간헐적으로 nil이 반환될 수 있음(테스트 플래키)
+
+// ✅ load도 같은 직렬 큐에서 순서를 보장하도록 queue.sync로 동기화
+// 단, loadAsync 내부(queue.async)에서 load 호출 시 sync 재진입 데드락 방지를 위해
+// DispatchSpecificKey로 "현재 같은 큐인지" 확인 후 direct read 경로를 사용
+```
+
 ---
 
 ## Troubleshooting

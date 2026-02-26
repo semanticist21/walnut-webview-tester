@@ -140,6 +140,8 @@ final class NetworkBodyStorage {
 
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "com.wina.networkbodystorage", qos: .utility)
+    // 같은 큐 내부 재진입 여부를 판별해 sync 데드락을 방지합니다.
+    private let queueKey = DispatchSpecificKey<Void>()
 
     private lazy var cacheDirectory: URL = {
         // Use caches directory, fallback to temp directory if unavailable
@@ -155,7 +157,10 @@ final class NetworkBodyStorage {
         case response
     }
 
-    private init() {}
+    private init() {
+        // 저장소 큐 식별자를 세팅해 load 동기화 시 재진입을 안전하게 처리합니다.
+        queue.setSpecific(key: queueKey, value: ())
+    }
 
     // MARK: - Public API
 
@@ -168,8 +173,11 @@ final class NetworkBodyStorage {
     }
 
     func load(id: UUID, type: BodyType) -> String? {
-        let url = fileURL(for: id, type: type)
-        return try? String(contentsOf: url, encoding: .utf8)
+        // save/delete/clearAll과 동일한 직렬 큐 순서를 보장해 파일 읽기 경합을 없앱니다.
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            return loadDirect(id: id, type: type)
+        }
+        return queue.sync { loadDirect(id: id, type: type) }
     }
 
     func loadAsync(id: UUID, type: BodyType, completion: @escaping (String?) -> Void) {
@@ -222,6 +230,11 @@ final class NetworkBodyStorage {
 
     private func fileURL(for id: UUID, type: BodyType) -> URL {
         cacheDirectory.appendingPathComponent("\(id.uuidString)_\(type.rawValue).txt")
+    }
+
+    private func loadDirect(id: UUID, type: BodyType) -> String? {
+        let url = fileURL(for: id, type: type)
+        return try? String(contentsOf: url, encoding: .utf8)
     }
 }
 

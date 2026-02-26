@@ -212,6 +212,35 @@ final class NetworkBodyStorageTests: XCTestCase {
         waitForExpectations(timeout: 2.0)
     }
 
+    func testImmediateLoadAfterSaveReturnsBodyWithoutDelay() {
+        let id = UUID()
+        let body = "immediate load regression body"
+
+        storage.save(id: id, type: .request, body: body)
+
+        // save 직후 즉시 읽어도 같은 직렬 큐 순서가 보장되어야 합니다.
+        let loaded = storage.load(id: id, type: .request)
+        XCTAssertEqual(loaded, body)
+    }
+
+    func testAsyncLoadCompletionRunsOnMainThread() {
+        let id = UUID()
+        let body = "main thread completion"
+
+        storage.save(id: id, type: .request, body: body)
+
+        let loadExpectation = expectation(description: "Async load main thread")
+
+        storage.loadAsync(id: id, type: .request) { result in
+            // UI 갱신 안정성을 위해 completion은 메인 스레드에서 호출되어야 합니다.
+            XCTAssertTrue(Thread.isMainThread)
+            XCTAssertEqual(result, body)
+            loadExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 2.0)
+    }
+
     // MARK: - Special Characters Tests
 
     func testSaveBodyWithSpecialCharacters() {
