@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Walnut (wina)** is an iOS developer tool built with SwiftUI (targeting iOS 16.0+) designed to test `WKWebView` configurations and behaviors in real-time.
+**Walnut (wina)** is an iOS developer tool built with SwiftUI (targeting iOS 18.4+) designed to test `WKWebView` configurations and behaviors in real-time.
 
 **Key Features:**
 *   **WebView Testing:** Toggle between `WKWebView` and `SFSafariViewController`.
@@ -32,7 +32,7 @@ The project follows a feature-based architecture where each major functional are
 ## Building and Running
 
 ### Prerequisites
-*   Xcode 14+ (Targeting iOS 16.0+)
+*   Xcode 16+ (project deployment target: iOS 18.4+; verified with iOS 26 SDK)
 *   SwiftLint (for linting)
 
 ### Commands

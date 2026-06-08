@@ -333,7 +333,7 @@ enum OAuthPreset: CaseIterable {
 
 ### 5.1 ASWebAuthenticationSession 제한
 
-- **iOS 12+ 필요** (Walnut은 iOS 26 타겟이라 문제없음)
+- **iOS 12+ 필요** (Walnut은 iOS 18.4+ 타겟이며 iOS 26 SDK 호환)
 - **prefersEphemeralWebBrowserSession = true** 설정 시 Safari 쿠키 공유 안 됨
 - 사용자에게 "앱이 로그인하려 합니다" 시스템 다이얼로그 표시됨
 

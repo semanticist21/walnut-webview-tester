@@ -324,9 +324,7 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = allowsBackForwardGestures
         webView.allowsLinkPreview = allowsLinkPreview
 
-        if #available(iOS 16.4, *) {
-            webView.isInspectable = true
-        }
+        webView.isInspectable = true
 
         webView.configuration.ignoresViewportScaleLimits = allowZoom
 
@@ -503,8 +501,14 @@ struct SafariWebView: UIViewControllerRepresentable {
         default: vc.dismissButtonStyle = .done
         }
 
-        // Note: preferredControlTintColor and preferredBarTintColor were deprecated in iOS 26.0
-        // as they interfere with Liquid Glass background effects that the system provides.
+        if #unavailable(iOS 26.0) {
+            if let color = UIColor(hex: controlTintColorHex) {
+                vc.preferredControlTintColor = color
+            }
+            if let color = UIColor(hex: barTintColorHex) {
+                vc.preferredBarTintColor = color
+            }
+        }
     }
 }
 

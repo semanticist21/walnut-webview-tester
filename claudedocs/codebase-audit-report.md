@@ -244,10 +244,10 @@ if logs.count > maxLogs {
 
 | File | Line | API | Status |
 |------|------|-----|--------|
-| `SafariVCSettingsView.swift` | 219, 225 | preferredControlTintColor/preferredBarTintColor | iOS 26에서 deprecated (의도적, UI 표시됨) |
-| `WebViewContainer.swift` | 502 | 동일 | 의도적 사용 (fallback) |
+| `SafariVCSettingsView.swift` | Colors section | preferredControlTintColor/preferredBarTintColor | iOS 18.4-25 호환 설정 유지, iOS 26 deprecated 안내 표시 |
+| `WebViewContainer.swift` | `applyRuntimeSettings` | 동일 | `#unavailable(iOS 26.0)`에서만 런타임 적용 |
 
-**현황**: ✅ 올바르게 처리됨 - deprecation 정보 UI에 표시
+**현황**: ✅ 올바르게 처리됨 - 구버전 호환을 유지하되 iOS 26 Liquid Glass와 충돌하지 않도록 런타임 적용 제한
 
 ---
 

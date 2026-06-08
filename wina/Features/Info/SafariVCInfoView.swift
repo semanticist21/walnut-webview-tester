@@ -36,8 +36,8 @@ struct SafariVCInfoView: View {
             SafariInfoSearchItem(category: "Active Settings", label: "Reader Mode", value: entersReaderIfAvailable ? "Enabled" : "Disabled"),
             SafariInfoSearchItem(category: "Active Settings", label: "Bar Collapsing", value: barCollapsingEnabled ? "Enabled" : "Disabled"),
             SafariInfoSearchItem(category: "Active Settings", label: "Dismiss Button", value: SettingsFormatter.dismissButtonStyleText(dismissButtonStyle)),
-            SafariInfoSearchItem(category: "Active Settings", label: "Control Tint", value: controlTintColorHex.isEmpty ? "System" : controlTintColorHex),
-            SafariInfoSearchItem(category: "Active Settings", label: "Bar Tint", value: barTintColorHex.isEmpty ? "System" : barTintColorHex),
+            SafariInfoSearchItem(category: "Active Settings", label: "Control Tint", value: controlTintColorHex.isEmpty ? "System" : "\(controlTintColorHex) (iOS 18.4-25)"),
+            SafariInfoSearchItem(category: "Active Settings", label: "Bar Tint", value: barTintColorHex.isEmpty ? "System" : "\(barTintColorHex) (iOS 18.4-25)"),
             SafariInfoSearchItem(category: "Active Settings", label: "SafariVC Width", value: "\(Int(widthRatio * 100))%"),
             SafariInfoSearchItem(category: "Active Settings", label: "SafariVC Height", value: "\(Int(heightRatio * 100))%")
         ])
@@ -55,8 +55,8 @@ struct SafariVCInfoView: View {
         items.append(contentsOf: [
             SafariInfoSearchItem(category: "API Availability", label: "SFSafariViewController", value: "Supported"),
             SafariInfoSearchItem(category: "API Availability", label: "Configuration", value: "Supported"),
-            SafariInfoSearchItem(category: "API Availability", label: "preferredBarTintColor", value: "Supported"),
-            SafariInfoSearchItem(category: "API Availability", label: "preferredControlTintColor", value: "Supported"),
+            SafariInfoSearchItem(category: "API Availability", label: "preferredBarTintColor", value: "iOS 18.4-25"),
+            SafariInfoSearchItem(category: "API Availability", label: "preferredControlTintColor", value: "iOS 18.4-25"),
             SafariInfoSearchItem(category: "API Availability", label: "dismissButtonStyle", value: "Supported"),
             SafariInfoSearchItem(category: "API Availability", label: "prewarmConnections", value: "Supported"),
             SafariInfoSearchItem(category: "API Availability", label: "Activity Button", value: "Supported")
@@ -339,12 +339,12 @@ private struct SafariActiveSettingsDetailView: View {
                 SafariInfoRow(
                     label: "Control Tint",
                     value: controlTintColorHex.isEmpty ? "System" : controlTintColorHex,
-                    info: "Tint color for buttons and controls."
+                    info: "Tint color for buttons and controls.\nApplied on iOS 18.4-25 only."
                 )
                 SafariInfoRow(
                     label: "Bar Tint",
                     value: barTintColorHex.isEmpty ? "System" : barTintColorHex,
-                    info: "Background color of navigation bar."
+                    info: "Background color of navigation bar.\nApplied on iOS 18.4-25 only."
                 )
             }
 
@@ -469,11 +469,11 @@ private struct SafariAPIDetailView: View {
             Section("Appearance") {
                 SafariAPIRow(
                     api: "preferredBarTintColor",
-                    description: "Navigation bar background color"
+                    description: "Navigation bar background color. Deprecated in iOS 26."
                 )
                 SafariAPIRow(
                     api: "preferredControlTintColor",
-                    description: "Button and control tint color"
+                    description: "Button and control tint color. Deprecated in iOS 26."
                 )
                 SafariAPIRow(
                     api: "dismissButtonStyle",
