@@ -1,1 +1,1 @@
-홈 화면 Chip 버튼 터치 문제를 수정했어요.
+iOS 26에서 SafariVC 색상 설정이 Liquid Glass와 충돌하지 않도록 개선했어요.

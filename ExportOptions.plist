@@ -6,6 +6,8 @@
     <string>app-store-connect</string>
     <key>teamID</key>
     <string>X6M5USK89L</string>
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
     <key>destination</key>
     <string>upload</string>
 </dict>

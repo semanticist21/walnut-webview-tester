@@ -1,1 +1,1 @@
-Fixed an issue where Home screen Chip buttons did not respond to taps.
+Improved SafariVC colour handling on iOS 26 so it no longer conflicts with Liquid Glass.
