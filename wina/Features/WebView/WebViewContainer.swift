@@ -166,11 +166,7 @@ struct WebViewContainer: View {
     }
 
     private var normalizedURL: String {
-        var url = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !url.lowercased().hasPrefix("http://") && !url.lowercased().hasPrefix("https://") {
-            url = "https://" + url
-        }
-        return url
+        URLValidator.normalizeURL(urlString)
     }
 
     private var webViewConfiguration: WKWebViewConfiguration {

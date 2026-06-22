@@ -24,11 +24,8 @@ enum URLValidator {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
 
-        // Add https:// if no scheme present
-        var urlString = trimmed
-        if !urlString.lowercased().hasPrefix("http://") && !urlString.lowercased().hasPrefix("https://") {
-            urlString = "https://" + urlString
-        }
+        // Add scheme if none present (http for local/private hosts, https otherwise)
+        let urlString = normalizeURL(trimmed)
 
         guard let url = URL(string: urlString), let host = url.host else {
             return false
@@ -88,7 +85,12 @@ enum URLValidator {
         }
     }
 
-    /// Normalizes a URL string by adding https:// scheme if missing
+    /// Normalizes a URL string by adding a scheme if missing.
+    ///
+    /// Schemeless input gets `http://` when the host is local (localhost or a
+    /// private/loopback/link-local IPv4 address) and `https://` otherwise.
+    /// Local dev servers almost always speak plain HTTP, so forcing https on a
+    /// bare IP/localhost would break the very local-testing flow this app exists for.
     /// - Parameter string: URL string to normalize
     /// - Returns: Normalized URL string with scheme
     static func normalizeURL(_ string: String) -> String {
@@ -96,7 +98,38 @@ enum URLValidator {
         if trimmed.lowercased().hasPrefix("http://") || trimmed.lowercased().hasPrefix("https://") {
             return trimmed
         }
-        return "https://" + trimmed
+        let scheme = isLocalHost(trimmed) ? "http://" : "https://"
+        return scheme + trimmed
+    }
+
+    /// Returns whether a schemeless URL string points at a local host
+    /// (localhost or a private/loopback/link-local IPv4 address).
+    /// Strips any path, query, fragment, and port before checking.
+    static func isLocalHost(_ string: String) -> Bool {
+        // Isolate the authority, then the host (drop path/query/fragment, then port)
+        let authority = string.prefix { $0 != "/" && $0 != "?" && $0 != "#" }
+        let host = authority.split(separator: ":", maxSplits: 1).first.map(String.init) ?? String(authority)
+
+        if host.lowercased() == "localhost" { return true }
+        return isPrivateOrLoopbackIPv4(host)
+    }
+
+    /// Returns whether the string is an IPv4 address in a private, loopback,
+    /// link-local, or unspecified range (RFC 1918 / 5735).
+    static func isPrivateOrLoopbackIPv4(_ string: String) -> Bool {
+        guard isValidIPv4Address(string) else { return false }
+        let octets = string.split(separator: ".").compactMap { Int($0) }
+        guard octets.count == 4 else { return false }
+
+        switch (octets[0], octets[1]) {
+        case (0, _):                       return true   // 0.0.0.0/8 unspecified ("this host")
+        case (10, _):                      return true   // 10.0.0.0/8 private
+        case (127, _):                     return true   // 127.0.0.0/8 loopback
+        case (169, 254):                   return true   // 169.254.0.0/16 link-local
+        case (172, 16...31):               return true   // 172.16.0.0/12 private
+        case (192, 168):                   return true   // 192.168.0.0/16 private
+        default:                           return false
+        }
     }
 
     /// Checks whether the URL string is supported by SFSafariViewController.

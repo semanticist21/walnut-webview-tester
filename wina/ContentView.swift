@@ -334,11 +334,9 @@ struct ContentView: View {
             targetURL = urlText
         }
 
-        // Normalize URL for initialURL tracking
-        var normalized = targetURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !normalized.contains("://") {
-            normalized = "https://\(normalized)"
-        }
+        // Normalize URL for initialURL tracking (must match the scheme the
+        // WebView actually loads, so "go to initial" matches the loaded page)
+        let normalized = URLValidator.normalizeURL(targetURL)
         let initialURLValue = URL(string: normalized)
 
         // Clean Start: clear all website data and DevTools logs before loading
