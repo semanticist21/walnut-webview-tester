@@ -198,13 +198,80 @@ struct URLValidatorEdgeCaseTests {
         ("HTTPS://example.com", "HTTPS://example.com"),
         ("  example.com  ", "https://example.com"),
         ("\nhttps://example.com\n", "https://example.com"),
-        ("\tlocalhost\t", "https://localhost"),
-        ("127.0.0.1", "https://127.0.0.1")
+        // Local/private hosts default to http:// (dev servers speak plain HTTP)
+        ("\tlocalhost\t", "http://localhost"),
+        ("localhost:3000", "http://localhost:3000"),
+        ("127.0.0.1", "http://127.0.0.1"),
+        ("192.168.0.1", "http://192.168.0.1"),
+        ("192.168.0.1:8080/path", "http://192.168.0.1:8080/path"),
+        ("10.0.0.5", "http://10.0.0.5"),
+        ("172.16.0.1", "http://172.16.0.1"),
+        ("172.31.255.255", "http://172.31.255.255"),
+        ("169.254.1.1", "http://169.254.1.1"),
+        ("0.0.0.0:8080", "http://0.0.0.0:8080"),
+        // Public IPs and domains keep https://
+        ("8.8.8.8", "https://8.8.8.8"),
+        ("172.32.0.1", "https://172.32.0.1"),
+        ("172.15.0.1", "https://172.15.0.1"),
+        ("11.0.0.1", "https://11.0.0.1")
     ]
 
     @Test("Normalize URL", arguments: normalizeCases)
     func testNormalizeURL(_ input: String, _ expected: String) {
         #expect(URLValidator.normalizeURL(input) == expected)
+    }
+
+    // MARK: - isPrivateOrLoopbackIPv4
+
+    private static let privateOrLoopbackIPv4: [String] = [
+        "0.0.0.0", "10.0.0.0", "10.255.255.255", "127.0.0.1", "127.255.255.255",
+        "169.254.0.1", "169.254.255.255", "172.16.0.0", "172.31.255.255",
+        "192.168.0.0", "192.168.255.255"
+    ]
+
+    private static let publicIPv4: [String] = [
+        "1.1.1.1", "8.8.8.8", "9.9.9.9", "11.0.0.1", "126.255.255.255",
+        "128.0.0.1", "169.253.255.255", "169.255.0.1", "172.15.255.255",
+        "172.32.0.0", "192.167.255.255", "192.169.0.0", "203.0.113.5", "255.255.255.255"
+    ]
+
+    @Test("Private/loopback IPv4", arguments: privateOrLoopbackIPv4)
+    func testPrivateOrLoopbackIPv4(_ input: String) {
+        #expect(URLValidator.isPrivateOrLoopbackIPv4(input))
+    }
+
+    @Test("Public IPv4 is not private/loopback", arguments: publicIPv4)
+    func testPublicIPv4(_ input: String) {
+        #expect(!URLValidator.isPrivateOrLoopbackIPv4(input))
+    }
+
+    @Test("Non-IPv4 is not private/loopback")
+    func testNonIPv4NotPrivate() {
+        #expect(!URLValidator.isPrivateOrLoopbackIPv4("localhost"))
+        #expect(!URLValidator.isPrivateOrLoopbackIPv4("example.com"))
+        #expect(!URLValidator.isPrivateOrLoopbackIPv4("192.168.01.1"))  // invalid (leading zero)
+        #expect(!URLValidator.isPrivateOrLoopbackIPv4(""))
+    }
+
+    // MARK: - isLocalHost
+
+    @Test("isLocalHost true cases")
+    func testIsLocalHostTrue() {
+        #expect(URLValidator.isLocalHost("localhost"))
+        #expect(URLValidator.isLocalHost("LOCALHOST"))
+        #expect(URLValidator.isLocalHost("localhost:3000"))
+        #expect(URLValidator.isLocalHost("localhost/api"))
+        #expect(URLValidator.isLocalHost("192.168.0.1"))
+        #expect(URLValidator.isLocalHost("192.168.0.1:8080/path?q=1#x"))
+        #expect(URLValidator.isLocalHost("127.0.0.1"))
+    }
+
+    @Test("isLocalHost false cases")
+    func testIsLocalHostFalse() {
+        #expect(!URLValidator.isLocalHost("example.com"))
+        #expect(!URLValidator.isLocalHost("8.8.8.8"))
+        #expect(!URLValidator.isLocalHost("localhostx"))
+        #expect(!URLValidator.isLocalHost("notlocalhost.com"))
     }
 
     // MARK: - extractHost

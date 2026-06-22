@@ -205,11 +205,8 @@ class WebViewNavigator {
     func loadURL(_ urlString: String) {
         guard let webView else { return }
 
-        // Normalize URL (add https:// if no scheme)
-        var normalized = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !normalized.contains("://") {
-            normalized = "https://\(normalized)"
-        }
+        // Normalize URL (http for local/private hosts, https otherwise)
+        let normalized = URLValidator.normalizeURL(urlString)
 
         guard let url = URL(string: normalized) else { return }
         webView.load(URLRequest(url: url))
