@@ -255,23 +255,31 @@ extension ContentView {
                 Button {
                     showPreloadSettings = true
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: preloadProfileSummary == "Off" ? "square" : "checkmark.square.fill")
-                            .foregroundStyle(preloadProfileSummary == "Off" ? Color.secondary : Color.blue)
-                        Text("Preload")
+                    HStack(spacing: 10) {
+                        Image(systemName: preloadProfileSummary == "Off" ? "circle" : "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(preloadProfileSummary == "Off" ? .tertiary : .primary)
+                            .contentTransition(.symbolEffect(.replace))
+
+                        Text("Startup Setup")
+                            .foregroundStyle(preloadProfileSummary == "Off" ? .secondary : .primary)
+
                         Spacer()
+
                         Text(preloadProfileSummary)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                     .font(.system(size: 14, weight: .medium))
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Capsule())
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
                 }
                 .buttonStyle(.plain)
-                .backport.glassEffect(in: .capsule)
+                .backport.glassEffect(in: .rect(cornerRadius: 12))
             }
             .frame(width: inputWidth)
             .padding(.top, 12)

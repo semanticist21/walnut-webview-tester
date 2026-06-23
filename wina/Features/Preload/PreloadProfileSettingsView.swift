@@ -9,11 +9,46 @@ import SwiftUI
 
 // MARK: - Preload Profile Settings
 
+struct PreloadProfileSettingsState {
+    var profile: WebViewPreloadProfile = .empty
+    var savedProfiles: [WebViewPreloadProfile] = []
+    private(set) var hasLoaded = false
+
+    mutating func loadIfNeeded(
+        activeProfile: () -> WebViewPreloadProfile = { PreloadProfileStore.activeProfile() },
+        savedProfiles: () -> [WebViewPreloadProfile] = { PreloadProfileStore.savedProfiles() }
+    ) {
+        guard !hasLoaded else { return }
+        hasLoaded = true
+        profile = activeProfile()
+        self.savedProfiles = savedProfiles()
+    }
+
+    mutating func saveCurrentProfile(
+        defaults: UserDefaults = .standard
+    ) {
+        var reusable = profile
+        if reusable.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            reusable.name = "Untitled Setup"
+        }
+        profile = PreloadProfileStore.upsertSavedProfile(reusable, defaults: defaults)
+        savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+    }
+
+    mutating func deleteSavedProfiles(
+        at offsets: IndexSet,
+        defaults: UserDefaults = .standard
+    ) {
+        savedProfiles.remove(atOffsets: offsets)
+        PreloadProfileStore.saveProfiles(savedProfiles, defaults: defaults)
+        savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+    }
+}
+
 struct PreloadProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var profile: WebViewPreloadProfile = .empty
-    @State private var savedProfiles: [WebViewPreloadProfile] = []
+    @State private var state = PreloadProfileSettingsState()
 
     var body: some View {
         NavigationStack {
@@ -25,7 +60,7 @@ struct PreloadProfileSettingsView: View {
                 bridgeSection
                 customScriptsSection
             }
-            .navigationTitle(Text(verbatim: "Preload"))
+            .navigationTitle(Text(verbatim: "Page Startup Setup"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -33,53 +68,42 @@ struct PreloadProfileSettingsView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Apply") {
-                        PreloadProfileStore.saveActiveProfile(profile)
+                        PreloadProfileStore.saveActiveProfile(state.profile)
                         dismiss()
                     }
                     .fontWeight(.semibold)
                 }
             }
-            .onAppear(perform: load)
+            .onAppear(perform: loadIfNeeded)
         }
     }
 
     @ViewBuilder
     private var profileSection: some View {
         Section {
-            Toggle("Enable Preload", isOn: $profile.isEnabled)
+            Toggle("Enable Startup Setup", isOn: $state.profile.isEnabled)
 
-            TextField("Profile name", text: $profile.name)
+            TextField("Profile name", text: $state.profile.name)
                 .textInputAutocapitalization(.words)
 
             Button {
-                var reusable = profile
-                if reusable.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    reusable.name = "Untitled Preload"
-                }
-                PreloadProfileStore.upsertSavedProfile(reusable)
-                savedProfiles = PreloadProfileStore.savedProfiles()
+                state.saveCurrentProfile()
             } label: {
-                Label("Save Current Profile", systemImage: "square.and.arrow.down")
+                Label("Save Current Setup", systemImage: "square.and.arrow.down")
             }
         } header: {
-            Text("Active Profile")
+            Text("Current Setup")
         } footer: {
-            Text("Applied only to new WKWebView loads. SafariVC does not support script injection.")
+            Text("Applies cookies, window values, and bridge mocks before a new WKWebView page starts loading.")
         }
     }
 
     @ViewBuilder
     private var savedProfilesSection: some View {
         Section {
-            Button {
-                profile = .nativeBridgeDemoPreset
-            } label: {
-                Label("Load Native Bridge Demo", systemImage: "sparkles")
-            }
-
-            ForEach(savedProfiles) { saved in
+            ForEach(state.savedProfiles) { saved in
                 Button {
-                    profile = saved
+                    state.profile = saved
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -90,37 +114,38 @@ struct PreloadProfileSettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Image(systemName: saved.id == profile.id ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(saved.id == profile.id ? .blue : .secondary)
+                        Image(systemName: saved.id == state.profile.id ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(saved.id == state.profile.id ? .blue : .secondary)
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .deleteDisabled(PreloadProfileStore.isBuiltInProfile(saved))
             }
             .onDelete(perform: deleteSavedProfiles)
         } header: {
-            Text("Load")
+            Text("Saved Setups")
         }
     }
 
     @ViewBuilder
     private var cookiesSection: some View {
         Section {
-            ForEach($profile.cookies) { $cookie in
+            ForEach(state.profile.cookies) { cookie in
                 NavigationLink {
-                    PreloadCookieEditorView(cookie: $cookie)
+                    PreloadCookieEditorView(cookie: binding(forCookieID: cookie.id))
                 } label: {
                     PreloadEditableRow(
                         title: cookie.name.isEmpty ? "Cookie" : cookie.name,
                         subtitle: cookie.domainMode == .currentHost ? "Current host" : cookie.customDomain,
-                        isEnabled: $cookie.isEnabled
+                        isEnabled: cookie.isEnabled
                     )
                 }
             }
-            .onDelete { profile.cookies.remove(atOffsets: $0) }
+            .onDelete { state.profile.cookies.remove(atOffsets: $0) }
 
             Button {
-                profile.cookies.append(PreloadCookie(name: "session", value: "demo"))
+                state.profile.cookies.append(PreloadCookie(name: "session", value: "demo"))
             } label: {
                 Label("Add Cookie", systemImage: "plus.circle")
             }
@@ -132,21 +157,21 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var windowItemsSection: some View {
         Section {
-            ForEach($profile.windowItems) { $item in
+            ForEach(state.profile.windowItems) { item in
                 NavigationLink {
-                    WindowInjectionEditorView(item: $item)
+                    WindowInjectionEditorView(item: binding(forWindowItemID: item.id))
                 } label: {
                     PreloadEditableRow(
                         title: item.name.isEmpty ? "Window Item" : "window.\(item.name)",
                         subtitle: item.kind.title,
-                        isEnabled: $item.isEnabled
+                        isEnabled: item.isEnabled
                     )
                 }
             }
-            .onDelete { profile.windowItems.remove(atOffsets: $0) }
+            .onDelete { state.profile.windowItems.remove(atOffsets: $0) }
 
             Button {
-                profile.windowItems.append(WindowInjectionItem(name: "appVersion", value: "1.0.0"))
+                state.profile.windowItems.append(WindowInjectionItem(name: "appVersion", value: "1.0.0"))
             } label: {
                 Label("Add Window Item", systemImage: "plus.circle")
             }
@@ -158,23 +183,23 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var bridgeSection: some View {
         Section {
-            Toggle("Capture window.postMessage", isOn: $profile.capturesWindowPostMessage)
+            Toggle("Capture window.postMessage", isOn: $state.profile.capturesWindowPostMessage)
 
-            ForEach($profile.bridgeChannels) { $channel in
+            ForEach(state.profile.bridgeChannels) { channel in
                 NavigationLink {
-                    BridgeChannelEditorView(channel: $channel)
+                    BridgeChannelEditorView(channel: binding(forBridgeChannelID: channel.id))
                 } label: {
                     PreloadEditableRow(
                         title: channel.name.isEmpty ? "Channel" : channel.name,
                         subtitle: "\(channel.responseRules.filter(\.isEnabled).count) rules",
-                        isEnabled: $channel.isEnabled
+                        isEnabled: channel.isEnabled
                     )
                 }
             }
-            .onDelete { profile.bridgeChannels.remove(atOffsets: $0) }
+            .onDelete { state.profile.bridgeChannels.remove(atOffsets: $0) }
 
             Button {
-                profile.bridgeChannels.append(
+                state.profile.bridgeChannels.append(
                     BridgeChannel(
                         name: "request",
                         responseRules: [BridgeResponseRule(name: "Log only", matcher: .any)]
@@ -193,21 +218,21 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var customScriptsSection: some View {
         Section {
-            ForEach($profile.customScripts) { $script in
+            ForEach(state.profile.customScripts) { script in
                 NavigationLink {
-                    CustomPreloadScriptEditorView(script: $script)
+                    CustomPreloadScriptEditorView(script: binding(forCustomScriptID: script.id))
                 } label: {
                     PreloadEditableRow(
                         title: script.name,
                         subtitle: script.forMainFrameOnly ? "Main frame" : "All frames",
-                        isEnabled: $script.isEnabled
+                        isEnabled: script.isEnabled
                     )
                 }
             }
-            .onDelete { profile.customScripts.remove(atOffsets: $0) }
+            .onDelete { state.profile.customScripts.remove(atOffsets: $0) }
 
             Button {
-                profile.customScripts.append(PreloadCustomScript())
+                state.profile.customScripts.append(PreloadCustomScript())
             } label: {
                 Label("Add Custom Script", systemImage: "plus.circle")
             }
@@ -216,16 +241,48 @@ struct PreloadProfileSettingsView: View {
         }
     }
 
-    private func load() {
-        profile = PreloadProfileStore.activeProfile()
-        savedProfiles = PreloadProfileStore.savedProfiles()
+    private func loadIfNeeded() {
+        state.loadIfNeeded()
     }
 
     private func deleteSavedProfiles(at offsets: IndexSet) {
-        savedProfiles.remove(atOffsets: offsets)
-        savedProfiles.removeAll { $0.name == WebViewPreloadProfile.nativeBridgeDemoPreset.name }
-        PreloadProfileStore.saveProfiles(savedProfiles)
-        savedProfiles = PreloadProfileStore.savedProfiles()
+        state.deleteSavedProfiles(at: offsets)
+    }
+
+    private func binding(forCookieID id: UUID) -> Binding<PreloadCookie> {
+        Binding {
+            state.profile.cookies.first { $0.id == id } ?? PreloadCookie(id: id, isEnabled: false)
+        } set: { updated in
+            guard let index = state.profile.cookies.firstIndex(where: { $0.id == id }) else { return }
+            state.profile.cookies[index] = updated
+        }
+    }
+
+    private func binding(forWindowItemID id: UUID) -> Binding<WindowInjectionItem> {
+        Binding {
+            state.profile.windowItems.first { $0.id == id } ?? WindowInjectionItem(id: id, isEnabled: false)
+        } set: { updated in
+            guard let index = state.profile.windowItems.firstIndex(where: { $0.id == id }) else { return }
+            state.profile.windowItems[index] = updated
+        }
+    }
+
+    private func binding(forBridgeChannelID id: UUID) -> Binding<BridgeChannel> {
+        Binding {
+            state.profile.bridgeChannels.first { $0.id == id } ?? BridgeChannel(id: id, isEnabled: false)
+        } set: { updated in
+            guard let index = state.profile.bridgeChannels.firstIndex(where: { $0.id == id }) else { return }
+            state.profile.bridgeChannels[index] = updated
+        }
+    }
+
+    private func binding(forCustomScriptID id: UUID) -> Binding<PreloadCustomScript> {
+        Binding {
+            state.profile.customScripts.first { $0.id == id } ?? PreloadCustomScript(id: id, isEnabled: false)
+        } set: { updated in
+            guard let index = state.profile.customScripts.firstIndex(where: { $0.id == id }) else { return }
+            state.profile.customScripts[index] = updated
+        }
     }
 }
 
@@ -234,7 +291,7 @@ struct PreloadProfileSettingsView: View {
 private struct PreloadEditableRow: View {
     let title: String
     let subtitle: String
-    @Binding var isEnabled: Bool
+    let isEnabled: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -249,8 +306,8 @@ private struct PreloadEditableRow: View {
                 }
             }
             Spacer()
-            Toggle("", isOn: $isEnabled)
-                .labelsHidden()
+            Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isEnabled ? Color.blue : Color.gray)
         }
     }
 }
@@ -375,14 +432,14 @@ private struct BridgeChannelEditorView: View {
             }
 
             Section {
-                ForEach($channel.responseRules) { $rule in
+                ForEach(channel.responseRules) { rule in
                     NavigationLink {
-                        BridgeRuleEditorView(rule: $rule)
+                        BridgeRuleEditorView(rule: binding(forRuleID: rule.id))
                     } label: {
                         PreloadEditableRow(
                             title: rule.name,
                             subtitle: rule.response.target.title,
-                            isEnabled: $rule.isEnabled
+                            isEnabled: rule.isEnabled
                         )
                     }
                 }
@@ -405,6 +462,15 @@ private struct BridgeChannelEditorView: View {
         }
         .navigationTitle(Text(verbatim: "Channel"))
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func binding(forRuleID id: UUID) -> Binding<BridgeResponseRule> {
+        Binding {
+            channel.responseRules.first { $0.id == id } ?? BridgeResponseRule(id: id, isEnabled: false)
+        } set: { updated in
+            guard let index = channel.responseRules.firstIndex(where: { $0.id == id }) else { return }
+            channel.responseRules[index] = updated
+        }
     }
 }
 

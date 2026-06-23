@@ -57,6 +57,23 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(object["id"], #"quote"and\slash"#)
     }
 
+    func testTemplateRendererPreservesBooleanAndNumberTypesInJSON() throws {
+        let rendered = BridgeTemplateRenderer.render(
+            #"{"ok":{{message.payload.ok}},"count":{{message.payload.count}}}"#,
+            message: [
+                "payload": [
+                    "ok": true,
+                    "count": 3,
+                ]
+            ]
+        )
+        let data = try XCTUnwrap(rendered.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(object["ok"] as? Bool, true)
+        XCTAssertEqual((object["count"] as? NSNumber)?.intValue, 3)
+    }
+
     func testBridgeRuleMatcherSupportsTypeAndJSONPath() {
         let message: [String: Any] = [
             "type": "getAuthToken",
@@ -70,6 +87,20 @@ final class PreloadProfileTests: XCTestCase {
             BridgeRuleMatcher.matches(.jsonPathEquals(path: "payload.action", value: "login"), message: message))
         XCTAssertFalse(
             BridgeRuleMatcher.matches(.jsonPathEquals(path: "payload.action", value: "logout"), message: message))
+    }
+
+    func testBridgeRuleMatcherUsesBooleanTextValues() {
+        let message: [String: Any] = [
+            "payload": [
+                "ok": true,
+                "cached": NSNumber(value: false),
+            ]
+        ]
+
+        XCTAssertTrue(BridgeRuleMatcher.matches(.jsonPathEquals(path: "payload.ok", value: "true"), message: message))
+        XCTAssertTrue(
+            BridgeRuleMatcher.matches(.jsonPathEquals(path: "payload.cached", value: "false"), message: message))
+        XCTAssertFalse(BridgeRuleMatcher.matches(.jsonPathEquals(path: "payload.ok", value: "1"), message: message))
     }
 
     func testResponseScriptPostsRenderedMessage() {
@@ -95,10 +126,117 @@ final class PreloadProfileTests: XCTestCase {
                 BridgeChannel(name: "request"),
                 BridgeChannel(name: "bad-name"),
                 BridgeChannel(name: "consoleLog"),
+                BridgeChannel(name: "winaPostMessage"),
             ]
         )
 
         XCTAssertEqual(profile.enabledBridgeChannelNames, ["request"])
+    }
+
+    func testStoreKeepsBuiltInPresetSyntheticAndUpdatesSavedCopy() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults).map(\.name), ["Native Bridge Demo"])
+
+        let firstCopy = PreloadProfileStore.upsertSavedProfile(.nativeBridgeDemoPreset, defaults: defaults)
+        var editedCopy = firstCopy
+        editedCopy.windowItems.append(WindowInjectionItem(name: "savedAfterCopy", value: "yes"))
+        let secondSave = PreloadProfileStore.upsertSavedProfile(editedCopy, defaults: defaults)
+        let profiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+
+        XCTAssertEqual(secondSave.id, firstCopy.id)
+        XCTAssertEqual(profiles.map(\.name), ["Native Bridge Demo", "Native Bridge Demo Copy"])
+        XCTAssertEqual(profiles.last?.windowItems.last?.name, "savedAfterCopy")
+    }
+
+    func testStoreKeepsUserProfileWithSameNameAsBuiltIn() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let userProfile = WebViewPreloadProfile(
+            name: WebViewPreloadProfile.nativeBridgeDemoPreset.name,
+            isEnabled: true,
+            cookies: [PreloadCookie(name: "custom", value: "value")]
+        )
+
+        PreloadProfileStore.upsertSavedProfile(userProfile, defaults: defaults)
+        let profiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+
+        XCTAssertEqual(profiles.count, 2)
+        XCTAssertEqual(profiles[0].id, WebViewPreloadProfile.nativeBridgeDemoPresetID)
+        XCTAssertEqual(profiles[1].id, userProfile.id)
+        XCTAssertEqual(profiles[1].cookies.first?.name, "custom")
+    }
+
+    func testActiveProfileRoundTripsAllPreloadCollections() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let profile = WebViewPreloadProfile(
+            name: "Round Trip",
+            isEnabled: true,
+            cookies: [PreloadCookie(name: "session", value: "abc")],
+            windowItems: [WindowInjectionItem(name: "app.flag", valueKind: .json, value: "true")],
+            bridgeChannels: [
+                BridgeChannel(
+                    name: "request",
+                    responseRules: [
+                        BridgeResponseRule(name: "ok", matcher: .jsonPathEquals(path: "payload.ok", value: "true"))
+                    ]
+                )
+            ],
+            capturesWindowPostMessage: true,
+            customScripts: [PreloadCustomScript(name: "Boot", source: "window.ready = true;")]
+        )
+
+        PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
+        let restored = PreloadProfileStore.activeProfile(defaults: defaults)
+
+        XCTAssertEqual(restored, profile)
+    }
+
+    func testPreloadSettingsStateDoesNotReloadOverDraftAfterNavigationReturn() {
+        var state = PreloadProfileSettingsState()
+        var loadCount = 0
+        let storedProfile = WebViewPreloadProfile(name: "Stored", isEnabled: true)
+
+        state.loadIfNeeded(
+            activeProfile: {
+                loadCount += 1
+                return storedProfile
+            },
+            savedProfiles: { [.nativeBridgeDemoPreset] }
+        )
+
+        state.profile.cookies.append(PreloadCookie(name: "session", value: "demo"))
+        state.profile.windowItems.append(WindowInjectionItem(name: "appVersion", value: "1.0.0"))
+        state.profile.bridgeChannels.append(
+            BridgeChannel(
+                name: "request",
+                responseRules: [BridgeResponseRule(name: "Reply", matcher: .any)]
+            )
+        )
+        state.profile.customScripts.append(PreloadCustomScript(name: "Boot", source: "window.ready = true;"))
+
+        state.loadIfNeeded(
+            activeProfile: {
+                loadCount += 1
+                return WebViewPreloadProfile(name: "Reloaded")
+            },
+            savedProfiles: { [] }
+        )
+
+        XCTAssertEqual(loadCount, 1)
+        XCTAssertEqual(state.profile.name, "Stored")
+        XCTAssertEqual(state.profile.cookies.map(\.name), ["session"])
+        XCTAssertEqual(state.profile.windowItems.map(\.name), ["appVersion"])
+        XCTAssertEqual(state.profile.bridgeChannels.map(\.name), ["request"])
+        XCTAssertEqual(state.profile.bridgeChannels.first?.responseRules.map(\.name), ["Reply"])
+        XCTAssertEqual(state.profile.customScripts.map(\.name), ["Boot"])
     }
 
     func testCurrentHostCookieUsesNavigationHost() {
@@ -113,4 +251,5 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(httpCookie?.domain, "example.com")
         XCTAssertEqual(httpCookie?.path, "/")
     }
+
 }

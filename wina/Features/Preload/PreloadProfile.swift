@@ -66,8 +66,11 @@ struct WebViewPreloadProfile: Codable, Equatable, Identifiable {
         WebViewPreloadProfile()
     }
 
+    static let nativeBridgeDemoPresetID = UUID(uuidString: "C1E5AC13-F5CC-4CF2-A609-C2E38484B854")!
+
     static var nativeBridgeDemoPreset: WebViewPreloadProfile {
         WebViewPreloadProfile(
+            id: nativeBridgeDemoPresetID,
             name: "Native Bridge Demo",
             isEnabled: true,
             cookies: [

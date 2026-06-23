@@ -216,6 +216,7 @@ enum BridgeTemplateRenderer {
     private static func stringValue(_ value: Any) -> String {
         if value is NSNull { return "null" }
         if let text = value as? String { return JavaScriptLiteral.escapedStringContent(text) }
+        if let bool = value as? Bool { return bool ? "true" : "false" }
         if let number = value as? NSNumber { return number.stringValue }
         if JSONSerialization.isValidJSONObject(value),
             let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
@@ -261,6 +262,7 @@ enum BridgeRuleMatcher {
         guard let current else { return nil }
         if current is NSNull { return nil }
         if let text = current as? String { return text }
+        if let bool = current as? Bool { return bool ? "true" : "false" }
         if let number = current as? NSNumber { return number.stringValue }
         return String(describing: current)
     }
@@ -273,6 +275,7 @@ enum BridgeChannelNameValidator {
         "consoleLog",
         "networkRequest",
         "resourceTiming",
+        PreloadBridgeConstants.postMessageCaptureChannel,
     ]
 
     nonisolated static func isValid(_ name: String) -> Bool {
