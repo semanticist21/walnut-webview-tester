@@ -14,8 +14,10 @@ import WebKit
 class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
     @Binding var isLoading: Bool
     let navigator: WebViewNavigator?
+    let preloadProfile: WebViewPreloadProfile
 
     private var loadingObservation: NSKeyValueObservation?
+    private weak var webView: WKWebView?
     // 마지막으로 커밋된 메인 프레임 URL을 기준점으로 사용합니다.
     private var lastCommittedMainFrameURL: URL?
     // reload 직후 didCommit에서 clear 전략 중복 실행을 막습니다.
@@ -26,9 +28,14 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     private var erudaSyncTask: Task<Void, Never>?
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "wina", category: "ConsoleBridge")
 
-    init(isLoading: Binding<Bool>, navigator: WebViewNavigator?) {
+    init(
+        isLoading: Binding<Bool>,
+        navigator: WebViewNavigator?,
+        preloadProfile: WebViewPreloadProfile = .empty
+    ) {
         _isLoading = isLoading
         self.navigator = navigator
+        self.preloadProfile = preloadProfile
     }
 
     // MARK: - WKScriptMessageHandler
@@ -40,6 +47,56 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             handleNetworkMessage(message)
         } else if message.name == "resourceTiming" {
             handleResourceTimingMessage(message)
+        } else if preloadProfile.enabledBridgeChannelNames.contains(message.name) {
+            handlePreloadBridgeMessage(message)
+        }
+    }
+
+    private func handlePreloadBridgeMessage(_ message: WKScriptMessage) {
+        let bodyText = toMessageString(message.body) ?? String(describing: message.body)
+        navigator?.preloadBridgeLogManager.add(
+            channel: message.name,
+            direction: .received,
+            body: bodyText
+        )
+
+        guard message.name != PreloadBridgeConstants.postMessageCaptureChannel,
+              let channel = preloadProfile.bridgeChannels.first(where: {
+                  $0.isEnabled && $0.name == message.name
+              }) else {
+            return
+        }
+
+        for rule in channel.responseRules where rule.isEnabled && BridgeRuleMatcher.matches(rule.matcher, message: message.body) {
+            let script = PreloadScriptBuilder.responseScript(
+                for: rule.response,
+                message: message.body,
+                channel: message.name
+            )
+            schedulePreloadBridgeResponse(script, channel: message.name, delayMilliseconds: rule.delayMilliseconds)
+        }
+    }
+
+    private func schedulePreloadBridgeResponse(
+        _ script: String,
+        channel: String,
+        delayMilliseconds: Int
+    ) {
+        guard !script.isEmpty else { return }
+
+        let execute = { [weak self] in
+            self?.webView?.evaluateJavaScript(script)
+            self?.navigator?.preloadBridgeLogManager.add(
+                channel: channel,
+                direction: .responded,
+                body: script
+            )
+        }
+
+        if delayMilliseconds > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delayMilliseconds), execute: execute)
+        } else {
+            execute()
         }
     }
 
@@ -151,6 +208,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     }
 
     func observeWebView(_ webView: WKWebView) {
+        self.webView = webView
         // 최초 기준 URL을 저장해 Same Origin 비교에 사용합니다.
         lastCommittedMainFrameURL = webView.url
 
@@ -164,6 +222,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     func invalidateObservation() {
         loadingObservation?.invalidate()
         loadingObservation = nil
+        webView = nil
         erudaSyncTask?.cancel()
         erudaSyncTask = nil
         shouldForceErudaInitOnNextFinish = false

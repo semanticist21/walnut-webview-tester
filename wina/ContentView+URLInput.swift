@@ -252,6 +252,26 @@ extension ContentView {
             VStack(spacing: 8) {
                 ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
                 ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")
+                Button {
+                    showPreloadSettings = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: preloadProfileSummary == "Off" ? "square" : "checkmark.square.fill")
+                            .foregroundStyle(preloadProfileSummary == "Off" ? Color.secondary : Color.blue)
+                        Text("Preload")
+                        Spacer()
+                        Text(preloadProfileSummary)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .backport.glassEffect(in: .capsule)
             }
             .frame(width: inputWidth)
             .padding(.top, 12)
