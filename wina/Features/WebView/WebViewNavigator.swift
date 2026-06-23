@@ -41,6 +41,7 @@ class WebViewNavigator {
     let resourceManager = ResourceManager()
     let accessibilityManager = AccessibilityManager()
     let snippetsManager = SnippetsManager()
+    let preloadBridgeLogManager = PreloadBridgeLogManager()
     let recorder = WebViewRecorder()
     // 수동 새로고침 시 coordinator에 reload 준비를 알리는 콜백입니다.
     @ObservationIgnored

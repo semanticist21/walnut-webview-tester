@@ -19,6 +19,7 @@ struct ContentView: View {
     @State var showInfo: Bool = false
     @State private var devToolsState = DevToolsOverlayState()
     @State private var showURLInput: Bool = false
+    @State var showPreloadSettings: Bool = false
     @State private var urlInputText: String = ""
     @State var showAbout: Bool = false
     @State var urlValidationState: URLValidationState = .empty
@@ -50,6 +51,7 @@ struct ContentView: View {
 
     // Eruda mode (third-party in-page console)
     @AppStorage("erudaModeEnabled") private var erudaModeEnabled = false
+    @AppStorage(PreloadProfileStore.activeProfileKey) var preloadActiveProfileData: Data = Data()
 
     // WebView size settings (for fullscreen detection)
     @AppStorage("webViewWidthRatio") private var webViewWidthRatio: Double = 1.0
@@ -76,6 +78,16 @@ struct ContentView: View {
 
     var filteredURLs: [String] {
         urlStorage.filteredHistory(query: urlText)
+    }
+
+    var preloadProfileSummary: String {
+        guard let profile = try? JSONDecoder().decode(
+            WebViewPreloadProfile.self,
+            from: preloadActiveProfileData
+        ) else {
+            return "Off"
+        }
+        return profile.enabledSummary
     }
 
     let urlParts = [
@@ -170,6 +182,11 @@ struct ContentView: View {
                 .fullSizeSheet()
                 .preferredColorScheme(preferredScheme)
             }
+        }
+        .sheet(isPresented: $showPreloadSettings) {
+            PreloadProfileSettingsView()
+                .fullSizeSheet()
+                .preferredColorScheme(preferredScheme)
         }
         .sheet(isPresented: $showBookmarks) {
             BookmarksSheet(

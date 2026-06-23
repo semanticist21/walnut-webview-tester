@@ -252,12 +252,41 @@ struct WKWebViewRepresentable: UIViewRepresentable {
     @AppStorage("emulationReducedTransparency") private var emulationReducedTransparency: Bool = false
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(isLoading: $isLoading, navigator: navigator)
+        Coordinator(
+            isLoading: $isLoading,
+            navigator: navigator,
+            preloadProfile: PreloadProfileStore.activeProfile()
+        )
     }
 
     func makeUIView(context: Context) -> WKWebView {
         // Add console and network hook scripts and message handlers to configuration
         let userContentController = configuration.userContentController
+        let preloadProfile = context.coordinator.preloadProfile
+
+        // User preload bridge channels
+        for channelName in preloadProfile.enabledBridgeChannelNames {
+            userContentController.add(context.coordinator, name: channelName)
+        }
+
+        let preloadScriptSource = PreloadScriptBuilder.bootstrapScript(for: preloadProfile)
+        if !preloadScriptSource.isEmpty {
+            let preloadScript = WKUserScript(
+                source: preloadScriptSource,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+            userContentController.addUserScript(preloadScript)
+        }
+
+        for customScript in PreloadScriptBuilder.customScripts(for: preloadProfile) {
+            let script = WKUserScript(
+                source: customScript.source,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: customScript.forMainFrameOnly
+            )
+            userContentController.addUserScript(script)
+        }
 
         // Console hook
         userContentController.add(context.coordinator, name: "consoleLog")
@@ -350,7 +379,14 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         }
 
         if let url = URL(string: urlString) {
-            webView.load(URLRequest(url: url))
+            let request = URLRequest(url: url)
+            PreloadCookieApplicator.apply(
+                profile: preloadProfile,
+                url: url,
+                cookieStore: webView.configuration.websiteDataStore.httpCookieStore
+            ) {
+                webView.load(request)
+            }
         }
 
         return webView
@@ -390,6 +426,9 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         // Remove message handlers to prevent retain cycle
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "consoleLog")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "networkRequest")
+        for channelName in coordinator.preloadProfile.enabledBridgeChannelNames {
+            uiView.configuration.userContentController.removeScriptMessageHandler(forName: channelName)
+        }
         coordinator.invalidateObservation()
         coordinator.navigator?.detach()
     }
