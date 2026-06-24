@@ -612,6 +612,26 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertFalse(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
     }
 
+    func testStoreFiltersDisabledLegacyGeneratedNativeBridgeDemoCopy() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var legacyCopy = WebViewPreloadProfile.nativeBridgeDemoPreset
+        legacyCopy.id = UUID()
+        legacyCopy.name = "Native Bridge Demo Copy"
+        legacyCopy.isEnabled = false
+        PreloadProfileStore.saveActiveProfile(legacyCopy, defaults: defaults)
+        PreloadProfileStore.saveProfiles([legacyCopy], defaults: defaults)
+
+        let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
+        let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+
+        XCTAssertEqual(activeProfile.id, WebViewPreloadProfile.defaultSavedSetupID)
+        XCTAssertEqual(savedProfiles.map(\.name), ["Default"])
+        XCTAssertFalse(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
+    }
+
     func testStoreKeepsEditedNativeBridgeDemoCopy() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

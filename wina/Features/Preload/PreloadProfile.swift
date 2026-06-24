@@ -78,8 +78,7 @@ struct WebViewPreloadProfile: Codable, Equatable, Identifiable {
     var isLegacyGeneratedNativeBridgeDemoCopy: Bool {
         guard name == "Native Bridge Demo Copy" else { return false }
         let demo = Self.nativeBridgeDemoPreset
-        return isEnabled == demo.isEnabled
-            && LegacyCookiePayload.list(cookies) == LegacyCookiePayload.list(demo.cookies)
+        return LegacyCookiePayload.list(cookies) == LegacyCookiePayload.list(demo.cookies)
             && LegacyWindowItemPayload.list(windowItems) == LegacyWindowItemPayload.list(demo.windowItems)
             && LegacyBridgeChannelPayload.list(bridgeChannels) == LegacyBridgeChannelPayload.list(demo.bridgeChannels)
             && capturesWindowPostMessage == demo.capturesWindowPostMessage
