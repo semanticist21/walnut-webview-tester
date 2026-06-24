@@ -44,6 +44,7 @@ struct PreloadProfileSettingsState {
             profile.name = "Untitled Setup"
         }
 
+        profile.isEnabled = true
         PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
     }
 
@@ -113,8 +114,6 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var profileSection: some View {
         Section {
-            Toggle("Enable Page Startup Setup", isOn: $state.profile.isEnabled)
-
             TextField("Profile name", text: $state.profile.name)
                 .textInputAutocapitalization(.words)
 
@@ -157,6 +156,7 @@ struct PreloadProfileSettingsView: View {
                     Button {
                         state.profile = saved
                         showSavedSetupLoader = false
+                        feedbackState.show("Setup loaded")
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(saved.name)

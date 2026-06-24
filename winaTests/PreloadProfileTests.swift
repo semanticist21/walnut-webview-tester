@@ -765,6 +765,24 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(originalSavedProfile?.cookies, [])
     }
 
+    func testApplyCurrentProfileEnablesActiveProfileForHomeCheckmark() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var state = PreloadProfileSettingsState()
+        state.loadIfNeeded(
+            activeProfile: { WebViewPreloadProfile(name: "Draft", isEnabled: false) },
+            savedProfiles: { PreloadProfileStore.savedProfiles(defaults: defaults) }
+        )
+
+        state.applyCurrentProfile(defaults: defaults)
+
+        let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
+        XCTAssertEqual(activeProfile.name, "Draft")
+        XCTAssertTrue(activeProfile.isEnabled)
+    }
+
     func testApplyCurrentProfileDoesNotOverwriteSavedDemoSetup() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

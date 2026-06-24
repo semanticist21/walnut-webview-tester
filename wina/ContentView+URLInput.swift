@@ -253,47 +253,42 @@ extension ContentView {
             VStack(spacing: 8) {
                 ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
                 ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")
-                HStack(spacing: 10) {
-                    Button {
-                        if isPreloadProfileEnabled {
-                            disablePreloadProfileFromHome()
-                        } else {
-                            enablePreloadProfileFromHome()
-                        }
-                    } label: {
+                Button {
+                    if isPreloadProfileEnabled {
+                        disablePreloadProfileFromHome()
+                    } else {
+                        enablePreloadProfileFromHome()
+                        openPreloadSettingsFromHome()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
                         Image(systemName: isPreloadProfileEnabled ? "checkmark.circle.fill" : "circle")
                             .font(.system(size: 16))
                             .foregroundStyle(isPreloadProfileEnabled ? .primary : .tertiary)
                             .contentTransition(.symbolEffect(.replace))
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
+
+                        Text("Page Startup Setup")
+                            .foregroundStyle(isPreloadProfileEnabled ? .primary : .secondary)
+
+                        Spacer()
+
+                        Text(preloadProfileSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        openPreloadSettingsFromHome()
-                    } label: {
-                        HStack(spacing: 10) {
-                            Text("Page Startup Setup")
-                                .foregroundStyle(isPreloadProfileEnabled ? .primary : .secondary)
-
-                            Spacer()
-
-                            Text(preloadProfileSummary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
                 }
-                .font(.system(size: 14, weight: .medium))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
+                .buttonStyle(.plain)
                 .backport.glassEffect(in: .rect(cornerRadius: 12))
+                .accessibilityLabel("Page Startup Setup")
+                .accessibilityValue(isPreloadProfileEnabled ? "On" : "Off")
+                .accessibilityAddTraits(.isButton)
             }
             .frame(width: inputWidth)
             .padding(.top, 12)
