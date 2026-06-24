@@ -66,6 +66,26 @@ struct WebViewPreloadProfile: Codable, Equatable, Identifiable {
         WebViewPreloadProfile()
     }
 
+    static let defaultSavedSetupID = UUID(uuidString: "95B93D1D-F8A0-4B62-9E22-9CE73A1B8F4E")!
+
+    static var defaultSavedSetup: WebViewPreloadProfile {
+        WebViewPreloadProfile(
+            id: defaultSavedSetupID,
+            name: "Default"
+        )
+    }
+
+    var isLegacyGeneratedNativeBridgeDemoCopy: Bool {
+        guard name == "Native Bridge Demo Copy" else { return false }
+        let demo = Self.nativeBridgeDemoPreset
+        return isEnabled == demo.isEnabled
+            && LegacyCookiePayload.list(cookies) == LegacyCookiePayload.list(demo.cookies)
+            && LegacyWindowItemPayload.list(windowItems) == LegacyWindowItemPayload.list(demo.windowItems)
+            && LegacyBridgeChannelPayload.list(bridgeChannels) == LegacyBridgeChannelPayload.list(demo.bridgeChannels)
+            && capturesWindowPostMessage == demo.capturesWindowPostMessage
+            && LegacyCustomScriptPayload.list(customScripts) == LegacyCustomScriptPayload.list(demo.customScripts)
+    }
+
     static let nativeBridgeDemoPresetID = UUID(uuidString: "C1E5AC13-F5CC-4CF2-A609-C2E38484B854")!
 
     static var nativeBridgeDemoPreset: WebViewPreloadProfile {
@@ -125,6 +145,110 @@ struct WebViewPreloadProfile: Codable, Equatable, Identifiable {
             ],
             capturesWindowPostMessage: true
         )
+    }
+}
+
+private struct LegacyCookiePayload: Equatable {
+    let isEnabled: Bool
+    let name: String
+    let value: String
+    let domainMode: PreloadCookieDomainMode
+    let customDomain: String
+    let path: String
+    let expires: PreloadCookieExpiration
+    let isSecure: Bool
+    let isHTTPOnly: Bool
+    let sameSite: PreloadCookieSameSite
+
+    init(_ cookie: PreloadCookie) {
+        isEnabled = cookie.isEnabled
+        name = cookie.name
+        value = cookie.value
+        domainMode = cookie.domainMode
+        customDomain = cookie.customDomain
+        path = cookie.path
+        expires = cookie.expires
+        isSecure = cookie.isSecure
+        isHTTPOnly = cookie.isHTTPOnly
+        sameSite = cookie.sameSite
+    }
+
+    static func list(_ cookies: [PreloadCookie]) -> [Self] {
+        cookies.map(Self.init)
+    }
+}
+
+private struct LegacyWindowItemPayload: Equatable {
+    let isEnabled: Bool
+    let name: String
+    let kind: WindowInjectionKind
+    let valueKind: PreloadValueKind
+    let value: String
+
+    init(_ item: WindowInjectionItem) {
+        isEnabled = item.isEnabled
+        name = item.name
+        kind = item.kind
+        valueKind = item.valueKind
+        value = item.value
+    }
+
+    static func list(_ items: [WindowInjectionItem]) -> [Self] {
+        items.map(Self.init)
+    }
+}
+
+private struct LegacyBridgeChannelPayload: Equatable {
+    let isEnabled: Bool
+    let name: String
+    let responseRules: [LegacyBridgeResponseRulePayload]
+
+    init(_ channel: BridgeChannel) {
+        isEnabled = channel.isEnabled
+        name = channel.name
+        responseRules = LegacyBridgeResponseRulePayload.list(channel.responseRules)
+    }
+
+    static func list(_ channels: [BridgeChannel]) -> [Self] {
+        channels.map(Self.init)
+    }
+}
+
+private struct LegacyBridgeResponseRulePayload: Equatable {
+    let isEnabled: Bool
+    let name: String
+    let matcher: BridgeMatcher
+    let response: BridgeResponse
+    let delayMilliseconds: Int
+
+    init(_ rule: BridgeResponseRule) {
+        isEnabled = rule.isEnabled
+        name = rule.name
+        matcher = rule.matcher
+        response = rule.response
+        delayMilliseconds = rule.delayMilliseconds
+    }
+
+    static func list(_ rules: [BridgeResponseRule]) -> [Self] {
+        rules.map(Self.init)
+    }
+}
+
+private struct LegacyCustomScriptPayload: Equatable {
+    let isEnabled: Bool
+    let name: String
+    let source: String
+    let forMainFrameOnly: Bool
+
+    init(_ script: PreloadCustomScript) {
+        isEnabled = script.isEnabled
+        name = script.name
+        source = script.source
+        forMainFrameOnly = script.forMainFrameOnly
+    }
+
+    static func list(_ scripts: [PreloadCustomScript]) -> [Self] {
+        scripts.map(Self.init)
     }
 }
 

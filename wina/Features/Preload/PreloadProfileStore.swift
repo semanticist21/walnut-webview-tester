@@ -11,13 +11,16 @@ import Observation
 enum PreloadProfileStore {
     static let activeProfileKey = "preloadActiveProfile"
     static let savedProfilesKey = "preloadSavedProfiles"
-    static let builtInProfiles: [WebViewPreloadProfile] = [.nativeBridgeDemoPreset]
+    static let defaultSavedProfiles: [WebViewPreloadProfile] = [.defaultSavedSetup]
 
     static func activeProfile(defaults: UserDefaults = .standard) -> WebViewPreloadProfile {
         guard let data = defaults.data(forKey: activeProfileKey),
             let profile = try? JSONDecoder().decode(WebViewPreloadProfile.self, from: data)
         else {
-            return .empty
+            return .defaultSavedSetup
+        }
+        guard !profile.isLegacyGeneratedNativeBridgeDemoCopy else {
+            return .defaultSavedSetup
         }
         return profile
     }
@@ -31,14 +34,14 @@ enum PreloadProfileStore {
         guard let data = defaults.data(forKey: savedProfilesKey),
             let profiles = try? JSONDecoder().decode([WebViewPreloadProfile].self, from: data)
         else {
-            return builtInProfiles
+            return defaultSavedProfiles
         }
-        return builtInProfiles + profiles.filter { !isBuiltInProfile($0) }
+        let filteredProfiles = profiles.filter { !$0.isLegacyGeneratedNativeBridgeDemoCopy }
+        return filteredProfiles.isEmpty ? defaultSavedProfiles : filteredProfiles
     }
 
     static func saveProfiles(_ profiles: [WebViewPreloadProfile], defaults: UserDefaults = .standard) {
-        let userProfiles = profiles.filter { !isBuiltInProfile($0) }
-        guard let data = try? JSONEncoder().encode(userProfiles) else { return }
+        guard let data = try? JSONEncoder().encode(profiles) else { return }
         defaults.set(data, forKey: savedProfilesKey)
     }
 
@@ -47,13 +50,7 @@ enum PreloadProfileStore {
         _ profile: WebViewPreloadProfile,
         defaults: UserDefaults = .standard
     ) -> WebViewPreloadProfile {
-        var profile = profile
-        if isBuiltInProfile(profile) {
-            profile.id = UUID()
-            profile.name = "\(profile.name) Copy"
-        }
-
-        var profiles = savedProfiles(defaults: defaults).filter { !isBuiltInProfile($0) }
+        var profiles = savedProfiles(defaults: defaults)
         if let index = profiles.firstIndex(where: { $0.id == profile.id }) {
             profiles[index] = profile
         } else {
@@ -61,10 +58,6 @@ enum PreloadProfileStore {
         }
         saveProfiles(profiles, defaults: defaults)
         return profile
-    }
-
-    static func isBuiltInProfile(_ profile: WebViewPreloadProfile) -> Bool {
-        builtInProfiles.contains { $0.id == profile.id }
     }
 }
 

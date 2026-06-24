@@ -50,7 +50,7 @@ extension ContentView {
                 }
                 .frame(width: inputWidth)
                 .contentShape(Rectangle())
-                .onTapGesture { }  // Prevent background tap propagation
+                .onTapGesture {}  // Prevent background tap propagation
 
                 // WebView Type Toggle
                 Picker("WebView Type", selection: $useSafariWebView) {
@@ -72,7 +72,8 @@ extension ContentView {
 
                         TextField(
                             useCallbackTestPage ? "Callback Test Page" : "Enter URL",
-                            text: useCallbackTestPage ? .constant(CallbackTestManager.testPageURL.absoluteString) : $urlText
+                            text: useCallbackTestPage
+                                ? .constant(CallbackTestManager.testPageURL.absoluteString) : $urlText
                         )
                         .textFieldStyle(.plain)
                         .autocorrectionDisabled()
@@ -252,33 +253,46 @@ extension ContentView {
             VStack(spacing: 8) {
                 ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
                 ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")
-                Button {
-                    showPreloadSettings = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: preloadProfileSummary == "Off" ? "circle" : "checkmark.circle.fill")
+                HStack(spacing: 10) {
+                    Button {
+                        if isPreloadProfileEnabled {
+                            disablePreloadProfileFromHome()
+                        } else {
+                            enablePreloadProfileFromHome()
+                        }
+                    } label: {
+                        Image(systemName: isPreloadProfileEnabled ? "checkmark.circle.fill" : "circle")
                             .font(.system(size: 16))
-                            .foregroundStyle(preloadProfileSummary == "Off" ? .tertiary : .primary)
+                            .foregroundStyle(isPreloadProfileEnabled ? .primary : .tertiary)
                             .contentTransition(.symbolEffect(.replace))
-
-                        Text("Startup Setup")
-                            .foregroundStyle(preloadProfileSummary == "Off" ? .secondary : .primary)
-
-                        Spacer()
-
-                        Text(preloadProfileSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
                     }
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
+                    .buttonStyle(.plain)
+
+                    Button {
+                        openPreloadSettingsFromHome()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text("Page Startup Setup")
+                                .foregroundStyle(isPreloadProfileEnabled ? .primary : .secondary)
+
+                            Spacer()
+
+                            Text(preloadProfileSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                .font(.system(size: 14, weight: .medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
                 .backport.glassEffect(in: .rect(cornerRadius: 12))
             }
             .frame(width: inputWidth)

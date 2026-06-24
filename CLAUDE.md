@@ -22,6 +22,13 @@ WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발�
 
 ## Quick Reference
 
+### App Store Release Notes
+
+- 2026-06-22: Walnut iOS App Store Connect app ID is `6755930250`, bundle ID is `com.kobbokkom.wina`; current API key material is read from `~/.private_keys/AuthKey_<KEY_ID>.p8`.
+- For ASC REST calls on this machine, `xcrun altool --generate-jwt --verbose --apiKey ... --apiIssuer ... --p8-file-path ...` prints the JWT on stderr; parse it internally and do not log the token.
+- App Review submission currently uses the modern `reviewSubmissions` flow: create/reuse review submission, create `reviewSubmissionItems` for the `appStoreVersion`, then patch the review submission with `submitted: true`. The older `appStoreVersionSubmissions` create endpoint can return a 403 that only allows DELETE.
+- Newly created App Store versions may have empty `whatsNew`; copy `fastlane/metadata/*/release_notes.txt` into every `appStoreVersionLocalization` before adding the version to a review submission.
+
 ### Build & Run
 ```bash
 # Build and run in simulator

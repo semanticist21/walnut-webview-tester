@@ -65,7 +65,15 @@ enum PreloadScriptBuilder {
 
         switch response.target {
         case .postMessage:
-            return "window.postMessage(\(responseLiteral), '*');"
+            return """
+                (function() {
+                var response = \(responseLiteral);
+                if (typeof window.__winaPreloadMarkNativePostMessage === 'function') {
+                    window.__winaPreloadMarkNativePostMessage(response);
+                }
+                window.postMessage(response, '*');
+                })();
+                """
 
         case .customEvent:
             let eventName = JavaScriptLiteral.quoted(response.eventName)
@@ -143,11 +151,82 @@ enum PreloadScriptBuilder {
                 }
                 return target;
             };
+
+            window.__winaPreloadNativePostMessageTokenKey = '__winaPreloadNativePostMessageToken';
+            window.__winaPreloadNativePostMessageTokens = window.__winaPreloadNativePostMessageTokens || {};
+            window.__winaPreloadNativePostMessagePrimitiveQueue = window.__winaPreloadNativePostMessagePrimitiveQueue || [];
+
+            window.__winaPreloadSerializePostMessageValue = function(value) {
+                try {
+                    return JSON.stringify(value);
+                } catch (_) {
+                    return String(value);
+                }
+            };
+
+            window.__winaPreloadMarkNativePostMessage = function(value) {
+                if (Array.isArray(value)) {
+                    window.__winaPreloadNativePostMessagePrimitiveQueue.push(
+                        window.__winaPreloadSerializePostMessageValue(value)
+                    );
+                    return;
+                }
+
+                if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
+                    var token = String(Date.now()) + ':' + String(Math.random());
+                    window.__winaPreloadNativePostMessageTokens[token] = true;
+                    try {
+                        Object.defineProperty(value, window.__winaPreloadNativePostMessageTokenKey, {
+                            value: token,
+                            enumerable: false,
+                            configurable: true
+                        });
+                    } catch (_) {
+                        value[window.__winaPreloadNativePostMessageTokenKey] = token;
+                    }
+                    return;
+                }
+
+                window.__winaPreloadNativePostMessagePrimitiveQueue.push(
+                    window.__winaPreloadSerializePostMessageValue(value)
+                );
+                if (window.__winaPreloadNativePostMessagePrimitiveQueue.length > 20) {
+                    window.__winaPreloadNativePostMessagePrimitiveQueue.shift();
+                }
+            };
+
+            window.__winaPreloadConsumeNativePostMessage = function(value) {
+                if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
+                    var token = value[window.__winaPreloadNativePostMessageTokenKey];
+                    if (token && window.__winaPreloadNativePostMessageTokens[token]) {
+                        delete window.__winaPreloadNativePostMessageTokens[token];
+                        try {
+                            delete value[window.__winaPreloadNativePostMessageTokenKey];
+                        } catch (_) {}
+                        return true;
+                    }
+                    if (!Array.isArray(value)) {
+                        return false;
+                    }
+                }
+
+                var serialized = window.__winaPreloadSerializePostMessageValue(value);
+                var index = window.__winaPreloadNativePostMessagePrimitiveQueue.indexOf(serialized);
+                if (index !== -1) {
+                    window.__winaPreloadNativePostMessagePrimitiveQueue.splice(index, 1);
+                    return true;
+                }
+                return false;
+            };
         """
 
     private static let postMessageCaptureScript = """
             window.addEventListener('message', function(event) {
                 try {
+                    if (typeof window.__winaPreloadConsumeNativePostMessage === 'function'
+                        && window.__winaPreloadConsumeNativePostMessage(event.data)) {
+                        return;
+                    }
                     if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers.winaPostMessage) {
                         return;
                     }
@@ -168,10 +247,24 @@ enum BridgeTemplateRenderer {
     }
 
     static func render(_ template: String, replacements: [String: String]) -> String {
-        var rendered = template
-        for (key, value) in replacements {
-            rendered = rendered.replacingOccurrences(of: "{{\(key)}}", with: value)
+        var rendered = ""
+        var cursor = template.startIndex
+
+        while let openRange = template[cursor...].range(of: "{{") {
+            rendered += template[cursor..<openRange.lowerBound]
+
+            let tokenStart = openRange.upperBound
+            guard let closeRange = template[tokenStart...].range(of: "}}") else {
+                rendered += template[openRange.lowerBound...]
+                return rendered
+            }
+
+            let key = String(template[tokenStart..<closeRange.lowerBound])
+            rendered += replacements[key] ?? String(template[openRange.lowerBound..<closeRange.upperBound])
+            cursor = closeRange.upperBound
         }
+
+        rendered += template[cursor...]
         return rendered
     }
 
@@ -180,7 +273,7 @@ enum BridgeTemplateRenderer {
             let data = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys]),
             let text = String(data: data, encoding: .utf8)
         {
-            return text
+            return JavaScriptLiteral.escapedJavaScriptUnsafeCharacters(text)
         }
         if let text = message as? String {
             return JavaScriptLiteral.quoted(text)
@@ -196,6 +289,13 @@ enum BridgeTemplateRenderer {
     }
 
     private static func collect(prefix: String, value: Any, into replacements: inout [String: String]) {
+        replacements[prefix] =
+            BridgeMessageValueFormatter.stringValue(
+                value,
+                escapesStringContent: true,
+                nullString: "null"
+            ) ?? ""
+
         if let dictionary = value as? [String: Any] {
             for (key, nested) in dictionary {
                 collect(prefix: "\(prefix).\(key)", value: nested, into: &replacements)
@@ -209,22 +309,6 @@ enum BridgeTemplateRenderer {
             }
             return
         }
-
-        replacements[prefix] = stringValue(value)
-    }
-
-    private static func stringValue(_ value: Any) -> String {
-        if value is NSNull { return "null" }
-        if let text = value as? String { return JavaScriptLiteral.escapedStringContent(text) }
-        if let bool = value as? Bool { return bool ? "true" : "false" }
-        if let number = value as? NSNumber { return number.stringValue }
-        if JSONSerialization.isValidJSONObject(value),
-            let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
-            let text = String(data: data, encoding: .utf8)
-        {
-            return text
-        }
-        return String(describing: value)
     }
 }
 
@@ -260,15 +344,42 @@ enum BridgeRuleMatcher {
         }
 
         guard let current else { return nil }
-        if current is NSNull { return nil }
-        if let text = current as? String { return text }
-        if let bool = current as? Bool { return bool ? "true" : "false" }
-        if let number = current as? NSNumber { return number.stringValue }
-        return String(describing: current)
+        return BridgeMessageValueFormatter.stringValue(
+            current,
+            escapesStringContent: false,
+            nullString: nil
+        )
     }
 }
 
 // MARK: - JavaScript Utilities
+
+private enum BridgeMessageValueFormatter {
+    static func stringValue(
+        _ value: Any,
+        escapesStringContent: Bool,
+        nullString: String?
+    ) -> String? {
+        if value is NSNull { return nullString }
+        if let text = value as? String {
+            return escapesStringContent ? JavaScriptLiteral.escapedStringContent(text) : text
+        }
+        if let number = value as? NSNumber {
+            return isBooleanNumber(number) ? (number.boolValue ? "true" : "false") : number.stringValue
+        }
+        if JSONSerialization.isValidJSONObject(value),
+            let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+            let text = String(data: data, encoding: .utf8)
+        {
+            return JavaScriptLiteral.escapedJavaScriptUnsafeCharacters(text)
+        }
+        return String(describing: value)
+    }
+
+    private static func isBooleanNumber(_ number: NSNumber) -> Bool {
+        CFGetTypeID(number as CFTypeRef) == CFBooleanGetTypeID()
+    }
+}
 
 enum BridgeChannelNameValidator {
     static let reservedNames: Set<String> = [
@@ -321,12 +432,20 @@ enum JavaScriptLiteral {
         else {
             return "\"\""
         }
-        return text
+        return
+            escapedJavaScriptUnsafeCharacters(text)
     }
 
     nonisolated static func escapedStringContent(_ value: String) -> String {
         let quotedValue = quoted(value)
         guard quotedValue.count >= 2 else { return value }
         return String(quotedValue.dropFirst().dropLast())
+    }
+
+    nonisolated static func escapedJavaScriptUnsafeCharacters(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "<", with: "\\u003C")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
     }
 }

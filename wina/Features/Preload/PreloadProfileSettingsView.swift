@@ -31,8 +31,20 @@ struct PreloadProfileSettingsState {
         if reusable.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             reusable.name = "Untitled Setup"
         }
+        reusable.isEnabled = true
         profile = PreloadProfileStore.upsertSavedProfile(reusable, defaults: defaults)
+        PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
         savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
+    }
+
+    mutating func applyCurrentProfile(
+        defaults: UserDefaults = .standard
+    ) {
+        if profile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            profile.name = "Untitled Setup"
+        }
+
+        PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
     }
 
     mutating func deleteSavedProfiles(
@@ -43,16 +55,23 @@ struct PreloadProfileSettingsState {
         PreloadProfileStore.saveProfiles(savedProfiles, defaults: defaults)
         savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
     }
+
+    mutating func startEmptySetup() {
+        profile = WebViewPreloadProfile(name: "Untitled Setup")
+    }
 }
 
 struct PreloadProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var state = PreloadProfileSettingsState()
+    @State private var showSavedSetupLoader = false
+    @State private var feedbackState = CopiedFeedbackState()
 
     var body: some View {
         NavigationStack {
             List {
+                experimentalWarningSection
                 profileSection
                 savedProfilesSection
                 cookiesSection
@@ -60,7 +79,7 @@ struct PreloadProfileSettingsView: View {
                 bridgeSection
                 customScriptsSection
             }
-            .navigationTitle(Text(verbatim: "Page Startup Setup"))
+            .navigationTitle("Page Startup Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -68,28 +87,46 @@ struct PreloadProfileSettingsView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Apply") {
-                        PreloadProfileStore.saveActiveProfile(state.profile)
+                        state.applyCurrentProfile()
                         dismiss()
                     }
                     .fontWeight(.semibold)
                 }
             }
             .onAppear(perform: loadIfNeeded)
+            .sheet(isPresented: $showSavedSetupLoader) {
+                savedSetupLoaderSheet
+            }
+            .copiedFeedbackOverlay($feedbackState.message)
+        }
+    }
+
+    @ViewBuilder
+    private var experimentalWarningSection: some View {
+        Section {
+            Text("Experimental feature. This setup may be unstable across pages.")
+                .font(.footnote)
+                .foregroundStyle(.red)
         }
     }
 
     @ViewBuilder
     private var profileSection: some View {
         Section {
-            Toggle("Enable Startup Setup", isOn: $state.profile.isEnabled)
+            Toggle("Enable Page Startup Setup", isOn: $state.profile.isEnabled)
 
             TextField("Profile name", text: $state.profile.name)
                 .textInputAutocapitalization(.words)
 
             Button {
                 state.saveCurrentProfile()
+                feedbackState.show("Setup saved")
             } label: {
-                Label("Save Current Setup", systemImage: "square.and.arrow.down")
+                Text("Save Current Setup")
+            }
+
+            Button("Start Empty Setup") {
+                state.startEmptySetup()
             }
         } header: {
             Text("Current Setup")
@@ -101,31 +138,53 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var savedProfilesSection: some View {
         Section {
-            ForEach(state.savedProfiles) { saved in
-                Button {
-                    state.profile = saved
-                } label: {
-                    HStack {
+            Button("Load Saved Setup") {
+                showSavedSetupLoader = true
+            }
+
+        } header: {
+            Text("Saved Setups")
+        } footer: {
+            Text("Open saved setups. Swipe left to delete.")
+        }
+    }
+
+    @ViewBuilder
+    private var savedSetupLoaderSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(state.savedProfiles) { saved in
+                    Button {
+                        state.profile = saved
+                        showSavedSetupLoader = false
+                    } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(saved.name)
                                 .foregroundStyle(.primary)
-                            Text(saved.enabledSummary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let summary = savedSetupSummary(for: saved) {
+                                Text(summary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        Spacer()
-                        Image(systemName: saved.id == state.profile.id ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(saved.id == state.profile.id ? .blue : .secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                .deleteDisabled(PreloadProfileStore.isBuiltInProfile(saved))
+                .onDelete(perform: deleteSavedProfiles)
             }
-            .onDelete(perform: deleteSavedProfiles)
-        } header: {
-            Text("Saved Setups")
+            .navigationTitle("Load Saved Setup")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showSavedSetupLoader = false
+                    }
+                }
+            }
         }
+        .presentationDetents([.medium, .large])
     }
 
     @ViewBuilder
@@ -247,6 +306,15 @@ struct PreloadProfileSettingsView: View {
 
     private func deleteSavedProfiles(at offsets: IndexSet) {
         state.deleteSavedProfiles(at: offsets)
+    }
+
+    private func savedSetupSummary(for profile: WebViewPreloadProfile) -> String? {
+        let count =
+            profile.cookies.count + profile.windowItems.count
+            + profile.bridgeChannels.count + profile.customScripts.count
+            + (profile.capturesWindowPostMessage ? 1 : 0)
+        guard count > 0 else { return nil }
+        return count == 1 ? "1 item" : "\(count) items"
     }
 
     private func binding(forCookieID id: UUID) -> Binding<PreloadCookie> {
@@ -576,6 +644,7 @@ private struct BridgeMatcherEditor: View {
             }
         }
         .onAppear(perform: load)
+        .onChange(of: matcher) { _, _ in load() }
         .onChange(of: mode) { _, _ in save() }
         .onChange(of: path) { _, _ in save() }
         .onChange(of: value) { _, _ in save() }
@@ -585,8 +654,11 @@ private struct BridgeMatcherEditor: View {
         switch matcher {
         case .any:
             mode = .any
+            path = "type"
+            value = ""
         case .typeEquals(let expected):
             mode = .typeEquals
+            path = "type"
             value = expected
         case .jsonPathEquals(let currentPath, let expected):
             mode = .jsonPathEquals

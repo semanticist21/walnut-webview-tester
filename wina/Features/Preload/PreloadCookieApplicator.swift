@@ -53,9 +53,12 @@ enum PreloadCookieApplicator {
             .value: preloadCookie.value,
             .domain: domain,
             .path: preloadCookie.path.isEmpty ? "/" : preloadCookie.path,
-            .secure: preloadCookie.isSecure ? "TRUE" : "FALSE",
             .sameSitePolicy: preloadCookie.sameSite.httpCookieString,
         ]
+
+        if preloadCookie.isSecure {
+            properties[.secure] = "TRUE"
+        }
 
         if let expiresDate = preloadCookie.expires.expiresDate {
             properties[.expires] = expiresDate
