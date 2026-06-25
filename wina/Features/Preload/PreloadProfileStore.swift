@@ -11,7 +11,7 @@ import Observation
 enum PreloadProfileStore {
     static let activeProfileKey = "preloadActiveProfile"
     static let savedProfilesKey = "preloadSavedProfiles"
-    static let defaultSavedProfiles: [WebViewPreloadProfile] = [.defaultSavedSetup]
+    static let didRemoveLegacyDemoCopyKey = "preloadDidRemoveLegacyDemoCopy"
 
     static func activeProfile(defaults: UserDefaults = .standard) -> WebViewPreloadProfile {
         guard let data = defaults.data(forKey: activeProfileKey),
@@ -19,9 +19,10 @@ enum PreloadProfileStore {
         else {
             return .defaultSavedSetup
         }
-        guard !profile.isLegacyGeneratedNativeBridgeDemoCopy else {
-            return .defaultSavedSetup
-        }
+        // The active profile is whatever the user explicitly applied; never content-filter it.
+        // Once Apply enables a saved "Native Bridge Demo Copy" it becomes byte-identical to the
+        // demo preset, so filtering here would silently swap it for the disabled default setup
+        // and clear the Home checkmark. Legacy copies are pruned from the saved list only.
         return profile
     }
 
@@ -31,13 +32,16 @@ enum PreloadProfileStore {
     }
 
     static func savedProfiles(defaults: UserDefaults = .standard) -> [WebViewPreloadProfile] {
+        // Pure storage: the saved list is exactly what the user saved. An empty list stays
+        // empty so deletes stick — never inject a default entry here, or "Default" would
+        // resurrect on every read and become impossible to remove. Legacy auto-generated
+        // copies are pruned once via removeLegacyGeneratedDemoCopyIfNeeded, not on each read.
         guard let data = defaults.data(forKey: savedProfilesKey),
             let profiles = try? JSONDecoder().decode([WebViewPreloadProfile].self, from: data)
         else {
-            return defaultSavedProfiles
+            return []
         }
-        let filteredProfiles = profiles.filter { !$0.isLegacyGeneratedNativeBridgeDemoCopy }
-        return filteredProfiles.isEmpty ? defaultSavedProfiles : filteredProfiles
+        return profiles
     }
 
     static func saveProfiles(_ profiles: [WebViewPreloadProfile], defaults: UserDefaults = .standard) {
@@ -58,6 +62,26 @@ enum PreloadProfileStore {
         }
         saveProfiles(profiles, defaults: defaults)
         return profile
+    }
+
+    /// One-time cleanup of the legacy auto-generated "Native Bridge Demo Copy" saved setup.
+    /// Older builds injected this copy automatically; remove it once at launch instead of
+    /// filtering on every read — a runtime filter silently swapped user-applied profiles for
+    /// the default and could not be undone. Runs exactly once, guarded by a defaults flag, so
+    /// a user is free to keep their own "Native Bridge Demo Copy" afterwards.
+    static func removeLegacyGeneratedDemoCopyIfNeeded(defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: didRemoveLegacyDemoCopyKey) else { return }
+        defaults.set(true, forKey: didRemoveLegacyDemoCopyKey)
+
+        guard let data = defaults.data(forKey: savedProfilesKey),
+            let profiles = try? JSONDecoder().decode([WebViewPreloadProfile].self, from: data)
+        else {
+            return
+        }
+        let cleaned = profiles.filter { !$0.isLegacyGeneratedNativeBridgeDemoCopy }
+        if cleaned.count != profiles.count {
+            saveProfiles(cleaned, defaults: defaults)
+        }
     }
 }
 
