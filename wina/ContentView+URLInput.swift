@@ -253,8 +253,8 @@ extension ContentView {
             VStack(spacing: 8) {
                 ToggleChipButton(isOn: $cleanStart, label: "Start with fresh data")
                 ToggleChipButton(isOn: $privateBrowsing, label: "Browse in private session")
-                HStack(spacing: 10) {
-                    // Checkmark toggles enable/disable.
+                HStack(spacing: 0) {
+                    // Tapping the row toggles enable/disable — same behavior as the chips above.
                     Button {
                         if isPreloadProfileEnabled {
                             disablePreloadProfileFromHome()
@@ -262,25 +262,17 @@ extension ContentView {
                             enablePreloadProfileFromHome()
                         }
                     } label: {
-                        Image(systemName: isPreloadProfileEnabled ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 16))
-                            .foregroundStyle(isPreloadProfileEnabled ? .primary : .tertiary)
-                            .contentTransition(.symbolEffect(.replace))
-                            .frame(width: 28)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Page Startup Setup")
-                    .accessibilityValue(isPreloadProfileEnabled ? "On" : "Off")
-
-                    // Tapping the label opens the editor — works whether enabled or disabled,
-                    // so an active setup can be edited without first turning it off.
-                    Button {
-                        openPreloadSettingsFromHome()
-                    } label: {
                         HStack(spacing: 10) {
+                            Image(systemName: isPreloadProfileEnabled ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 16))
+                                .foregroundStyle(isPreloadProfileEnabled ? .primary : .tertiary)
+                                .contentTransition(.symbolEffect(.replace))
+
                             Text("Page Startup Setup")
                                 .foregroundStyle(isPreloadProfileEnabled ? .primary : .secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                                .allowsTightening(true)
 
                             Spacer()
 
@@ -289,16 +281,31 @@ extension ContentView {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
+                        .padding(.leading, 14)
+                        .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Page Startup Setup")
+                    .accessibilityValue(isPreloadProfileEnabled ? "On" : "Off")
+
+                    // Gear opens the editor — works whether enabled or disabled.
+                    Button {
+                        openPreloadSettingsFromHome()
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Edit Page Startup Setup")
                     .accessibilityAddTraits(.isButton)
                 }
                 .font(.system(size: 14, weight: .medium))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(.easeOut(duration: 0.08), value: preloadProfileSummary)
                 .backport.glassEffect(in: .rect(cornerRadius: 12))
