@@ -266,7 +266,7 @@ extension ContentView {
                             .font(.system(size: 16))
                             .foregroundStyle(isPreloadProfileEnabled ? .primary : .tertiary)
                             .contentTransition(.symbolEffect(.replace))
-                            .frame(width: 28, height: 28)
+                            .frame(width: 28)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
