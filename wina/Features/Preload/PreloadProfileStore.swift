@@ -19,9 +19,10 @@ enum PreloadProfileStore {
         else {
             return .defaultSavedSetup
         }
-        guard !profile.isLegacyGeneratedNativeBridgeDemoCopy else {
-            return .defaultSavedSetup
-        }
+        // The active profile is whatever the user explicitly applied; never content-filter it.
+        // Once Apply enables a saved "Native Bridge Demo Copy" it becomes byte-identical to the
+        // demo preset, so filtering here would silently swap it for the disabled default setup
+        // and clear the Home checkmark. Legacy copies are pruned from the saved list only.
         return profile
     }
 

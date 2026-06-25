@@ -607,7 +607,10 @@ final class PreloadProfileTests: XCTestCase {
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
         let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(activeProfile.id, WebViewPreloadProfile.defaultSavedSetupID)
+        // The active profile is returned as-is: whatever the user applied stays active and
+        // keeps its enabled flag. Only the saved list prunes the legacy auto-generated copy.
+        XCTAssertEqual(activeProfile.id, legacyCopy.id)
+        XCTAssertTrue(activeProfile.isEnabled)
         XCTAssertEqual(savedProfiles.map(\.name), ["Default"])
         XCTAssertFalse(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
     }
@@ -780,6 +783,36 @@ final class PreloadProfileTests: XCTestCase {
 
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
         XCTAssertEqual(activeProfile.name, "Draft")
+        XCTAssertTrue(activeProfile.isEnabled)
+    }
+
+    func testApplyingLoadedDemoCopyKeepsHomeCheckmarkChecked() {
+        // Regression: loading a saved "Native Bridge Demo Copy", then Apply (which forces
+        // isEnabled = true) makes the active profile byte-identical to the demo preset.
+        // The active read must NOT swap it for the disabled default setup, or the Home
+        // checkmark clears even though the user just applied an enabled setup.
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var savedDemoCopy = WebViewPreloadProfile.nativeBridgeDemoPreset
+        savedDemoCopy.id = UUID()
+        savedDemoCopy.name = "Native Bridge Demo Copy"
+        savedDemoCopy.isEnabled = false
+        PreloadProfileStore.saveProfiles([savedDemoCopy, .defaultSavedSetup], defaults: defaults)
+
+        var state = PreloadProfileSettingsState()
+        state.loadIfNeeded(
+            activeProfile: { .defaultSavedSetup },
+            savedProfiles: { PreloadProfileStore.savedProfiles(defaults: defaults) }
+        )
+        state.profile = savedDemoCopy  // user taps the saved setup in the loader
+
+        state.applyCurrentProfile(defaults: defaults)
+
+        let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
+        XCTAssertEqual(activeProfile.id, savedDemoCopy.id)
+        XCTAssertEqual(activeProfile.name, "Native Bridge Demo Copy")
         XCTAssertTrue(activeProfile.isEnabled)
     }
 
