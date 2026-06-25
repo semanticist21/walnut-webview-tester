@@ -495,49 +495,46 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(profile.enabledBridgeChannelNames, ["request"])
     }
 
-    func testStoreStartsWithEmptyDefaultSetupAndSupportsCreateReadDelete() {
+    func testSavedSetupListStartsEmptyAndDeletesStayDeleted() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
+        // Saved setups exist only when the user saves one — no forced "Default" entry.
         let initialProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
-        XCTAssertEqual(initialProfiles.map(\.name), ["Default"])
-        XCTAssertEqual(initialProfiles.first?.id, WebViewPreloadProfile.defaultSavedSetupID)
-        XCTAssertFalse(initialProfiles.first?.isEnabled ?? true)
-        XCTAssertEqual(initialProfiles.first?.cookies, [])
-        XCTAssertEqual(initialProfiles.first?.windowItems, [])
-        XCTAssertEqual(initialProfiles.first?.bridgeChannels, [])
-        XCTAssertEqual(initialProfiles.first?.customScripts, [])
+        XCTAssertEqual(initialProfiles, [])
 
         let customProfile = WebViewPreloadProfile(name: "Custom", isEnabled: true)
         PreloadProfileStore.upsertSavedProfile(customProfile, defaults: defaults)
         let createdProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(createdProfiles.map(\.name), ["Custom", "Default"])
+        XCTAssertEqual(createdProfiles.map(\.name), ["Custom"])
         XCTAssertEqual(createdProfiles.first?.id, customProfile.id)
 
         PreloadProfileStore.saveProfiles(
             createdProfiles.filter { $0.id != customProfile.id },
             defaults: defaults
         )
-        let deletedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(deletedProfiles.map(\.name), ["Default"])
-        XCTAssertNil(deletedProfiles.first { $0.id == customProfile.id })
+        // Deleting the last saved setup leaves an empty list; "Default" never resurrects,
+        // even after re-reading the store.
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults), [])
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults), [])
     }
 
-    func testActiveProfileFallbackMatchesSavedDefaultSetup() {
+    func testActiveProfileFallsBackToDefaultWithoutSeedingSavedList() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
-        let savedDefault = PreloadProfileStore.savedProfiles(defaults: defaults).first
 
+        // The active profile falls back to a disabled default object, but that fallback is
+        // never written into the saved list.
         XCTAssertEqual(activeProfile.id, WebViewPreloadProfile.defaultSavedSetupID)
-        XCTAssertEqual(activeProfile.id, savedDefault?.id)
         XCTAssertEqual(activeProfile.name, "Default")
         XCTAssertFalse(activeProfile.isEnabled)
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults), [])
     }
 
     func testSavingInitialDefaultSetupDoesNotCreateDuplicateDefault() {
@@ -589,11 +586,38 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(activeProfile.name, "Untitled Setup")
         XCTAssertTrue(activeProfile.isEnabled)
         XCTAssertEqual(activeProfile.cookies, [])
-        XCTAssertFalse(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
+        // Saving a new empty setup replaces the ACTIVE profile but leaves the saved list as
+        // raw storage — previously saved entries are untouched.
+        XCTAssertTrue(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
         XCTAssertTrue(savedProfiles.contains { $0.id == state.profile.id && $0.name == "Untitled Setup" })
     }
 
-    func testStoreFiltersLegacyGeneratedNativeBridgeDemoCopy() {
+    func testRemoveLegacyGeneratedDemoCopyMigrationRunsOnce() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var legacyCopy = WebViewPreloadProfile.nativeBridgeDemoPreset
+        legacyCopy.id = UUID()
+        legacyCopy.name = "Native Bridge Demo Copy"
+        let custom = WebViewPreloadProfile(name: "Custom", isEnabled: true)
+        PreloadProfileStore.saveProfiles([legacyCopy, custom], defaults: defaults)
+
+        // First run drops the unedited legacy copy and keeps user setups.
+        PreloadProfileStore.removeLegacyGeneratedDemoCopyIfNeeded(defaults: defaults)
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults).map(\.name), ["Custom"])
+
+        // The migration is one-time: re-adding the copy and running again leaves it in place,
+        // so a user may keep their own "Native Bridge Demo Copy" going forward.
+        PreloadProfileStore.saveProfiles([legacyCopy, custom], defaults: defaults)
+        PreloadProfileStore.removeLegacyGeneratedDemoCopyIfNeeded(defaults: defaults)
+        XCTAssertEqual(
+            PreloadProfileStore.savedProfiles(defaults: defaults).map(\.name),
+            ["Native Bridge Demo Copy", "Custom"]
+        )
+    }
+
+    func testActiveProfileIsNeverContentFilteredForLegacyCopy() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -602,17 +626,12 @@ final class PreloadProfileTests: XCTestCase {
         legacyCopy.id = UUID()
         legacyCopy.name = "Native Bridge Demo Copy"
         PreloadProfileStore.saveActiveProfile(legacyCopy, defaults: defaults)
-        PreloadProfileStore.saveProfiles([legacyCopy], defaults: defaults)
 
+        // Whatever the user applied stays active and keeps its enabled flag — the active read
+        // never swaps it for the default setup.
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
-        let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
-
-        // The active profile is returned as-is: whatever the user applied stays active and
-        // keeps its enabled flag. Only the saved list prunes the legacy auto-generated copy.
         XCTAssertEqual(activeProfile.id, legacyCopy.id)
         XCTAssertTrue(activeProfile.isEnabled)
-        XCTAssertEqual(savedProfiles.map(\.name), ["Default"])
-        XCTAssertFalse(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
     }
 
     func testStoreKeepsEditedNativeBridgeDemoCopy() {
@@ -646,10 +665,9 @@ final class PreloadProfileTests: XCTestCase {
         PreloadProfileStore.upsertSavedProfile(demoProfile, defaults: defaults)
         let profiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(profiles.count, 2)
-        XCTAssertEqual(profiles.map(\.name), ["Native Bridge Demo", "Default"])
+        // No forced "Default" entry: the saved list holds only what the user saved.
+        XCTAssertEqual(profiles.map(\.name), ["Native Bridge Demo"])
         XCTAssertEqual(profiles[0].id, WebViewPreloadProfile.nativeBridgeDemoPresetID)
-        XCTAssertEqual(profiles[1].id, WebViewPreloadProfile.defaultSavedSetupID)
     }
 
     func testSettingsStateStartsEmptySetupWithoutSaving() {
@@ -667,7 +685,9 @@ final class PreloadProfileTests: XCTestCase {
 
         let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(savedProfiles.map(\.name), ["Default"])
+        // startEmptySetup only mutates the draft; nothing is persisted, so the saved list
+        // stays empty (no forced "Default").
+        XCTAssertEqual(savedProfiles, [])
         XCTAssertEqual(state.profile.name, "Untitled Setup")
         XCTAssertFalse(state.profile.isEnabled)
         XCTAssertEqual(state.profile.cookies, [])
@@ -843,6 +863,31 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(activeProfile.cookies.last?.name, "edited")
         XCTAssertEqual(persistedDemo?.cookies.map(\.name), savedDemo.cookies.map(\.name))
         XCTAssertFalse(persistedDemo?.cookies.contains { $0.name == "edited" } ?? true)
+    }
+
+    func testDisabledProfileInjectsNoCookies() {
+        let url = URL(string: "https://example.com/path")!
+        let cookie = PreloadCookie(name: "session", value: "abc")
+        let disabled = WebViewPreloadProfile(isEnabled: false, cookies: [cookie])
+        let enabled = WebViewPreloadProfile(isEnabled: true, cookies: [cookie])
+
+        // Turning Page Startup Setup off must suppress cookie injection, even when individual
+        // cookies are enabled — matching how scripts and bridge channels gate on isEnabled.
+        XCTAssertTrue(PreloadCookieApplicator.cookies(for: disabled, url: url).isEmpty)
+        XCTAssertEqual(PreloadCookieApplicator.cookies(for: enabled, url: url).map(\.name), ["session"])
+    }
+
+    func testEnabledProfileSkipsDisabledCookies() {
+        let url = URL(string: "https://example.com/path")!
+        let profile = WebViewPreloadProfile(
+            isEnabled: true,
+            cookies: [
+                PreloadCookie(isEnabled: false, name: "off", value: "x"),
+                PreloadCookie(isEnabled: true, name: "on", value: "y"),
+            ]
+        )
+
+        XCTAssertEqual(PreloadCookieApplicator.cookies(for: profile, url: url).map(\.name), ["on"])
     }
 
     func testCurrentHostCookieUsesNavigationHost() {

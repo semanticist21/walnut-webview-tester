@@ -31,6 +31,9 @@ struct winaApp: App {
         // Clear network body cache from previous session (unless preserveLog is enabled)
         NetworkBodyStorage.shared.clearOnLaunchIfNeeded()
 
+        // One-time removal of the legacy auto-generated preload "Native Bridge Demo Copy"
+        PreloadProfileStore.removeLegacyGeneratedDemoCopyIfNeeded()
+
         // Initialize Google Mobile Ads SDK
         AdManager.shared.initialize()
 

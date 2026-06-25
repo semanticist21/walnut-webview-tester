@@ -9,15 +9,23 @@ import Foundation
 import WebKit
 
 enum PreloadCookieApplicator {
+    /// Builds the HTTPCookies to inject for a profile. Returns nothing when the profile is
+    /// disabled so that turning Page Startup Setup off suppresses every injection — matching
+    /// how bootstrapScript/customScripts/enabledBridgeChannelNames gate on `isEnabled`.
+    static func cookies(for profile: WebViewPreloadProfile, url: URL) -> [HTTPCookie] {
+        guard profile.isEnabled else { return [] }
+        return profile.cookies
+            .filter(\.isEnabled)
+            .compactMap { makeHTTPCookie(from: $0, url: url) }
+    }
+
     static func apply(
         profile: WebViewPreloadProfile,
         url: URL,
         cookieStore: WKHTTPCookieStore,
         completion: @escaping () -> Void
     ) {
-        let cookies = profile.cookies
-            .filter(\.isEnabled)
-            .compactMap { makeHTTPCookie(from: $0, url: url) }
+        let cookies = cookies(for: profile, url: url)
 
         guard !cookies.isEmpty else {
             completion()
