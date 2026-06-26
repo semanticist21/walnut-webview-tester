@@ -31,9 +31,10 @@ struct PreloadProfileSettingsState {
         if reusable.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             reusable.name = "Untitled Setup"
         }
-        reusable.isEnabled = true
+        // Save only adds the draft to the saved list. It must NOT write the active profile —
+        // otherwise Cancel could not roll back, and an explicit Home OFF would be overridden.
+        // Apply is the only action that changes what is active.
         profile = PreloadProfileStore.upsertSavedProfile(reusable, defaults: defaults)
-        PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
         savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
     }
 
@@ -44,7 +45,8 @@ struct PreloadProfileSettingsState {
             profile.name = "Untitled Setup"
         }
 
-        profile.isEnabled = true
+        // Persist whatever enabled state the user chose (the Enable toggle / loading a saved
+        // setup). Apply no longer force-enables, so editing a disabled setup keeps it off.
         PreloadProfileStore.saveActiveProfile(profile, defaults: defaults)
     }
 
@@ -114,6 +116,8 @@ struct PreloadProfileSettingsView: View {
     @ViewBuilder
     private var profileSection: some View {
         Section {
+            Toggle("Enable this setup", isOn: $state.profile.isEnabled)
+
             TextField("Profile name", text: $state.profile.name)
                 .textInputAutocapitalization(.words)
 
@@ -130,7 +134,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Current Setup")
         } footer: {
-            Text("Applies cookies, window values, and bridge mocks before a new WKWebView page starts loading.")
+            Text("쿠키·window 값·브리지 목을 새 WKWebView 페이지가 로드되기 전에 적용해요. 켜기를 끄면 이 설정의 모든 주입이 멈추고, 이름을 정해 저장하면 저장된 설정 목록에 들어가요.")
         }
     }
 
@@ -144,7 +148,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Saved Setups")
         } footer: {
-            Text("Open saved setups. Swipe left to delete.")
+            Text("저장해 둔 시작 설정을 다시 불러와요. 불러오면 켜진 상태로 채워지고, 목록에서 왼쪽으로 밀어 삭제할 수 있어요.")
         }
     }
 
@@ -154,7 +158,11 @@ struct PreloadProfileSettingsView: View {
             List {
                 ForEach(state.savedProfiles) { saved in
                     Button {
-                        state.profile = saved
+                        // Loading a saved setup means the user intends to use it, so enable the
+                        // draft. Apply then persists this; the Enable toggle still lets them opt out.
+                        var loaded = saved
+                        loaded.isEnabled = true
+                        state.profile = loaded
                         showSavedSetupLoader = false
                         feedbackState.show("Setup loaded")
                     } label: {
@@ -210,6 +218,8 @@ struct PreloadProfileSettingsView: View {
             }
         } header: {
             Text("Cookies")
+        } footer: {
+            Text("페이지가 열리기 전에 미리 심을 쿠키를 등록해요. 활성화된 쿠키만 첫 로드 전에 주입되고, 도메인·경로·만료·SameSite·Secure·HTTP Only까지 맞출 수 있어요.")
         }
     }
 
@@ -236,6 +246,8 @@ struct PreloadProfileSettingsView: View {
             }
         } header: {
             Text("Window")
+        } footer: {
+            Text("페이지 스크립트가 실행되기 전에 window에 값이나 함수를 미리 주입해요. window.appVersion 같은 점(.) 경로로 변수·반환 함수·함수 본문을 지정하면 문서 시작 시점에 적용돼요. 네이티브 환경을 흉내 낼 때 써요.")
         }
     }
 
@@ -270,7 +282,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Bridge Mock")
         } footer: {
-            Text("Channels become window.webkit.messageHandlers.<name>. Responses can post back to the page.")
+            Text("네이티브 브리지를 흉내 내요. 채널은 window.webkit.messageHandlers.<이름>으로 노출되고, 응답 규칙(전체 / type 일치 / JSON 경로 일치)으로 들어온 메시지에 골라서 응답을 돌려줄 수 있어요. 'Capture window.postMessage'를 켜면 페이지가 보낸 postMessage가 콘솔 탭에 배지로 표시돼요.")
         }
     }
 
@@ -297,6 +309,8 @@ struct PreloadProfileSettingsView: View {
             }
         } header: {
             Text("Advanced")
+        } footer: {
+            Text("페이지가 로드되기 전(문서 시작 시점)에 직접 작성한 자바스크립트를 실행해요. 각 스크립트는 try/catch로 감싸여 오류가 나도 콘솔 경고로만 남고, 메인 프레임만 또는 모든 프레임에 적용할지 고를 수 있어요.")
         }
     }
 

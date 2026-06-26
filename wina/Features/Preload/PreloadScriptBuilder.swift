@@ -119,10 +119,17 @@ enum PreloadScriptBuilder {
             return "window.__winaPreloadSetPath(\(pathLiteral), function() { return \(literal); });"
 
         case .functionBody:
+            // Build the function from a string via `new Function` so a SYNTAX error in the
+            // user's body throws a catchable error at runtime instead of failing to parse the
+            // whole shared bootstrap IIFE (which would silently drop helpers + every other
+            // item). The try/catch also contains runtime errors, mirroring customScripts.
+            let bodyLiteral = JavaScriptLiteral.quoted(item.value)
             return """
-                window.__winaPreloadSetPath(\(pathLiteral), function() {
-                \(item.value)
-                });
+                try {
+                    window.__winaPreloadSetPath(\(pathLiteral), new Function(\(bodyLiteral)));
+                } catch (error) {
+                    console.warn('[Walnut Preload] window item failed:', error);
+                }
                 """
         }
     }
