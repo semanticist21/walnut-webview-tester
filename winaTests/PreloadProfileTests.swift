@@ -266,6 +266,25 @@ final class PreloadProfileTests: XCTestCase {
             context.evaluateScript("JSON.stringify(window.native.payload())").toString(), #"{"ok":true,"count":2}"#)
     }
 
+    func testBadFunctionBodyWindowItemDoesNotBreakSiblingInjection() {
+        let profile = WebViewPreloadProfile(
+            isEnabled: true,
+            windowItems: [
+                WindowInjectionItem(name: "good.value", kind: .variable, valueKind: .string, value: "ok"),
+                // Syntax error in the body. Built via `new Function`, so it throws a catchable
+                // error at runtime instead of failing to parse the whole shared bootstrap.
+                WindowInjectionItem(name: "bad.fn", kind: .functionBody, value: "return ( ; }{"),
+            ]
+        )
+        let context = makeJavaScriptContext()
+        context.evaluateScript("var window = this; var console = { warn: function() {}, log: function() {} };")
+        context.evaluateScript(PreloadScriptBuilder.bootstrapScript(for: profile))
+
+        // The broken functionBody item must not take down helpers or sibling items.
+        XCTAssertEqual(context.evaluateScript("window.good.value").toString(), "ok")
+        XCTAssertEqual(context.evaluateScript("typeof window.__winaPreloadSetPath").toString(), "function")
+    }
+
     func testResponseScriptExecutesPostMessageInJavaScriptContext() throws {
         let response = BridgeResponse(
             target: .postMessage,
@@ -552,14 +571,16 @@ final class PreloadProfileTests: XCTestCase {
 
         let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
+        // Saving the initial default draft adds exactly one "Default" entry (no duplicate) and
+        // does not force-enable or write the active profile — Save only touches the saved list.
         XCTAssertEqual(savedProfiles.map(\.name), ["Default"])
         XCTAssertEqual(savedProfiles.first?.id, WebViewPreloadProfile.defaultSavedSetupID)
         XCTAssertEqual(activeProfile.id, WebViewPreloadProfile.defaultSavedSetupID)
-        XCTAssertTrue(activeProfile.isEnabled)
-        XCTAssertTrue(savedProfiles.first?.isEnabled ?? false)
+        XCTAssertFalse(activeProfile.isEnabled)
+        XCTAssertFalse(savedProfiles.first?.isEnabled ?? true)
     }
 
-    func testSaveCurrentProfileActivatesEmptySetupAndReplacesPreviousActiveProfile() {
+    func testSaveCurrentProfileAddsToListWithoutTouchingActive() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -582,14 +603,12 @@ final class PreloadProfileTests: XCTestCase {
         let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
         let savedProfiles = PreloadProfileStore.savedProfiles(defaults: defaults)
 
-        XCTAssertEqual(activeProfile.id, state.profile.id)
-        XCTAssertEqual(activeProfile.name, "Untitled Setup")
-        XCTAssertTrue(activeProfile.isEnabled)
-        XCTAssertEqual(activeProfile.cookies, [])
-        // Saving a new empty setup replaces the ACTIVE profile but leaves the saved list as
-        // raw storage — previously saved entries are untouched.
-        XCTAssertTrue(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
+        // Save only writes the saved list — the ACTIVE profile is untouched, so Apply remains
+        // the single action that changes what is active (and Cancel can truly roll back).
+        XCTAssertEqual(activeProfile.id, previousActive.id)
+        XCTAssertEqual(activeProfile.name, "Native Bridge Demo Copy")
         XCTAssertTrue(savedProfiles.contains { $0.id == state.profile.id && $0.name == "Untitled Setup" })
+        XCTAssertTrue(savedProfiles.contains { $0.name == "Native Bridge Demo Copy" })
     }
 
     func testRemoveLegacyGeneratedDemoCopyMigrationRunsOnce() {
@@ -788,29 +807,37 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertEqual(originalSavedProfile?.cookies, [])
     }
 
-    func testApplyCurrentProfileEnablesActiveProfileForHomeCheckmark() {
+    func testApplyCurrentProfilePreservesEnabledState() {
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        var state = PreloadProfileSettingsState()
-        state.loadIfNeeded(
+        // Apply persists whatever the Enable toggle says — it no longer force-enables. Editing a
+        // setup the user disabled from Home keeps it disabled (Home checkmark stays off).
+        var offState = PreloadProfileSettingsState()
+        offState.loadIfNeeded(
             activeProfile: { WebViewPreloadProfile(name: "Draft", isEnabled: false) },
-            savedProfiles: { PreloadProfileStore.savedProfiles(defaults: defaults) }
+            savedProfiles: { [] }
         )
+        offState.applyCurrentProfile(defaults: defaults)
+        XCTAssertEqual(PreloadProfileStore.activeProfile(defaults: defaults).name, "Draft")
+        XCTAssertFalse(PreloadProfileStore.activeProfile(defaults: defaults).isEnabled)
 
-        state.applyCurrentProfile(defaults: defaults)
-
-        let activeProfile = PreloadProfileStore.activeProfile(defaults: defaults)
-        XCTAssertEqual(activeProfile.name, "Draft")
-        XCTAssertTrue(activeProfile.isEnabled)
+        // An enabled draft (e.g. the Enable toggle on) stays enabled.
+        var onState = PreloadProfileSettingsState()
+        onState.loadIfNeeded(
+            activeProfile: { WebViewPreloadProfile(name: "Draft", isEnabled: true) },
+            savedProfiles: { [] }
+        )
+        onState.applyCurrentProfile(defaults: defaults)
+        XCTAssertTrue(PreloadProfileStore.activeProfile(defaults: defaults).isEnabled)
     }
 
     func testApplyingLoadedDemoCopyKeepsHomeCheckmarkChecked() {
-        // Regression: loading a saved "Native Bridge Demo Copy", then Apply (which forces
-        // isEnabled = true) makes the active profile byte-identical to the demo preset.
-        // The active read must NOT swap it for the disabled default setup, or the Home
-        // checkmark clears even though the user just applied an enabled setup.
+        // Regression: loading a saved "Native Bridge Demo Copy" enables the draft and Apply
+        // persists it, making the active profile byte-identical to the demo preset. The active
+        // read must NOT swap it for the disabled default setup, or the Home checkmark clears
+        // even though the user just applied an enabled setup.
         let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -826,7 +853,10 @@ final class PreloadProfileTests: XCTestCase {
             activeProfile: { .defaultSavedSetup },
             savedProfiles: { PreloadProfileStore.savedProfiles(defaults: defaults) }
         )
-        state.profile = savedDemoCopy  // user taps the saved setup in the loader
+        // The loader enables the draft on selection (intent to use).
+        var loaded = savedDemoCopy
+        loaded.isEnabled = true
+        state.profile = loaded
 
         state.applyCurrentProfile(defaults: defaults)
 

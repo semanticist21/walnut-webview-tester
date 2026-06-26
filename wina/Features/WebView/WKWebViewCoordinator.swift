@@ -60,21 +60,50 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
             body: bodyText
         )
 
-        guard message.name != PreloadBridgeConstants.postMessageCaptureChannel,
-              let channel = preloadProfile.bridgeChannels.first(where: {
-                  $0.isEnabled && $0.name == message.name
-              }) else {
+        // Captured window.postMessage: surface it in the normal Console tab with a distinct
+        // badge. This is the only user-visible output of the capture toggle.
+        if message.name == PreloadBridgeConstants.postMessageCaptureChannel {
+            let dict = message.body as? [String: Any]
+            let origin = dict?["origin"] as? String ?? "?"
+            let dataText = toMessageString(dict?["data"]) ?? bodyText
+            emitPreloadConsoleBadge(label: "📨 postMessage", background: "#5856D6", trailing: dataText, source: origin)
             return
         }
 
-        for rule in channel.responseRules where rule.isEnabled && BridgeRuleMatcher.matches(rule.matcher, message: message.body) {
-            let script = PreloadScriptBuilder.responseScript(
-                for: rule.response,
-                message: message.body,
-                channel: message.name
-            )
-            schedulePreloadBridgeResponse(script, channel: message.name, delayMilliseconds: rule.delayMilliseconds)
+        // Show inbound bridge traffic in the Console as well.
+        emitPreloadConsoleBadge(label: "📥 bridge", background: "#0D9488", trailing: bodyText, source: message.name)
+
+        // Evaluate rules across ALL enabled channels with this name — duplicates are not silently
+        // shadowed (the editor defaults every new channel to "request").
+        let matchingChannels = preloadProfile.bridgeChannels.filter { $0.isEnabled && $0.name == message.name }
+        guard !matchingChannels.isEmpty else { return }
+
+        for channel in matchingChannels {
+            for rule in channel.responseRules where rule.isEnabled && BridgeRuleMatcher.matches(rule.matcher, message: message.body) {
+                let script = PreloadScriptBuilder.responseScript(
+                    for: rule.response,
+                    message: message.body,
+                    channel: message.name
+                )
+                schedulePreloadBridgeResponse(script, channel: message.name, delayMilliseconds: rule.delayMilliseconds)
+            }
         }
+    }
+
+    // Emits a Chrome-DevTools-style colored pill into the in-app Console by reusing the existing
+    // %c styledSegments renderer. Native -> ConsoleManager only (no JS console.log), so it cannot
+    // re-enter the page console hook. Respects ConsoleManager.isCapturing.
+    private func emitPreloadConsoleBadge(label: String, background: String, trailing: String, source: String?) {
+        let segments: [[String: Any]] = [
+            ["text": " \(label) ", "color": "white", "backgroundColor": background, "isBold": true, "fontSize": 11],
+            ["text": " \(trailing)", "color": "gray", "isBold": false, "fontSize": 12],
+        ]
+        navigator?.consoleManager.addLog(
+            type: "log",
+            message: "[\(label)] \(trailing)",
+            source: source,
+            styledSegments: segments
+        )
     }
 
     private func schedulePreloadBridgeResponse(
@@ -91,6 +120,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
                 direction: .responded,
                 body: script
             )
+            self?.emitPreloadConsoleBadge(label: "📤 bridge", background: "#16A34A", trailing: "responded on \(channel)", source: channel)
         }
 
         if delayMilliseconds > 0 {
