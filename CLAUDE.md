@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Walnut (wina)** - WKWebView & SFSafariViewController 테스터 앱
 
-WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 18.4+, ~100 Swift files
+WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발자 도구. SwiftUI 기반, iOS 18.4+, ~130 Swift files
 
 **주요 기능**:
 - **WKWebView**: 설정 옵션 테스트, DevTools (Console/Network/Storage/Performance/Sources/Accessibility), 스크린샷/녹화
@@ -31,10 +31,18 @@ WKWebView와 SFSafariViewController 설정을 실시간 테스트하는 개발�
 
 ### Build & Run
 ```bash
-# Build and run in simulator
+# Fastest loop: boot sim + build + install + launch (Makefile)
+make dev                          # default: iPhone 17 Pro, Debug, .build/DerivedData
+make dev SIMULATOR="iPhone 16"    # override simulator
+make dev DEVICE_ID=<udid>         # target a specific booted device
+make build                        # build only
+make devices                      # list available simulators
+make clean-derived                # rm -rf .build/DerivedData
+
+# Or open in Xcode
 open wina.xcodeproj && Cmd+R
 
-# Run on specific device
+# Run on specific device (raw xcodebuild)
 xcodebuild -project wina.xcodeproj -scheme wina -destination 'platform=iOS,name=iPhone 16,OS=latest'
 ```
 
@@ -87,6 +95,7 @@ wina/
 │   ├── Info/            # SharedInfoWebView, API Capability 감지, 벤치마크
 │   ├── Network/         # NetworkManager + UI (fetch/XHR + scroll buttons + domain filtering)
 │   ├── Performance/     # Web Vitals + Navigation Timing
+│   ├── Preload/         # 시작 설정: 페이지 로드 전 주입할 쿠키/JS 프로필 (PreloadProfileStore + ScriptBuilder + CookieApplicator)
 │   ├── Resources/       # Network 탭 리소스 타이밍 & 크기
 │   ├── SearchText/      # SearchTextOverlay (in-page text search, Cmd+F style)
 │   ├── Settings/        # SettingsView, ConfigurationSettingsView, SafariVCSettingsView, EmulationSettingsView
