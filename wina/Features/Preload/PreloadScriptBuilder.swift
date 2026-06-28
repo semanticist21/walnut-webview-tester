@@ -453,16 +453,16 @@ enum BridgeTemplateRenderer {
 }
 
 enum BridgeResponseBodyValidator {
-    static func isValidTemplate(_ template: String) -> Bool {
+    nonisolated static func isValidTemplate(_ template: String) -> Bool {
         guard invalidTemplateToken(in: template) == nil else { return false }
         return isValidJSONFragment(replacingTemplateTokens(in: template, with: "null"))
     }
 
-    static func isValidRenderedBody(_ body: String) -> Bool {
+    nonisolated static func isValidRenderedBody(_ body: String) -> Bool {
         isValidJSONFragment(body)
     }
 
-    private static func replacingTemplateTokens(in template: String, with replacement: String) -> String {
+    nonisolated private static func replacingTemplateTokens(in template: String, with replacement: String) -> String {
         var rendered = ""
         var cursor = template.startIndex
 
@@ -482,7 +482,7 @@ enum BridgeResponseBodyValidator {
         return rendered
     }
 
-    private static func invalidTemplateToken(in template: String) -> String? {
+    nonisolated private static func invalidTemplateToken(in template: String) -> String? {
         var cursor = template.startIndex
 
         while let openRange = template[cursor...].range(of: "{{") {
@@ -501,7 +501,7 @@ enum BridgeResponseBodyValidator {
         return nil
     }
 
-    private static func isValidMessagePathToken(_ token: String) -> Bool {
+    nonisolated private static func isValidMessagePathToken(_ token: String) -> Bool {
         guard token.hasPrefix("message.") else { return false }
         let suffix = token.dropFirst("message.".count)
         return suffix
@@ -509,7 +509,7 @@ enum BridgeResponseBodyValidator {
             .allSatisfy { !$0.isEmpty }
     }
 
-    private static func isValidJSONFragment(_ value: String) -> Bool {
+    nonisolated private static func isValidJSONFragment(_ value: String) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
         return (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil
     }
