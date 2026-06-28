@@ -203,6 +203,130 @@ final class WKWebViewCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDelayedBridgeResponseWorkItemIsRemovedAfterExecution() {
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = WebViewNavigator()
+        Self.retainedNavigators.append(navigator)
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+
+        coordinator.schedulePreloadBridgeResponse(
+            "window.__walnutResponse = true;",
+            channel: "request",
+            delayMilliseconds: 10
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 1)
+
+        let expectation = expectation(description: "delayed bridge response fires")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(50)) {
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 0)
+        XCTAssertEqual(navigator.preloadBridgeLogManager.entries.filter { $0.direction == .responded }.count, 1)
+    }
+
+    @MainActor
+    func testDelayedBridgeResponseIsCancelledOnCommit() {
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = WebViewNavigator()
+        Self.retainedNavigators.append(navigator)
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+
+        coordinator.schedulePreloadBridgeResponse(
+            "window.__walnutResponse = true;",
+            channel: "request",
+            delayMilliseconds: 50
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 1)
+
+        coordinator.webView(WKWebView(frame: .zero), didCommit: nil)
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 0)
+
+        let expectation = expectation(description: "cancelled bridge response would have fired")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+
+        XCTAssertFalse(navigator.preloadBridgeLogManager.entries.contains { $0.direction == .responded })
+    }
+
+    @MainActor
+    func testDelayedBridgeResponseIsCancelledWhenMainFrameNavigationStartsBeforeCommit() {
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = WebViewNavigator()
+        Self.retainedNavigators.append(navigator)
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+
+        coordinator.schedulePreloadBridgeResponse(
+            "window.__walnutResponse = true;",
+            channel: "request",
+            delayMilliseconds: 50
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 1)
+
+        coordinator.handleMainFrameNavigationStarted(
+            from: URL(string: "https://example.com/old"),
+            to: URL(string: "https://example.com/new")
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 0)
+
+        let delayedResponseExpectation = expectation(description: "cancelled bridge response would have fired")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+            delayedResponseExpectation.fulfill()
+        }
+        wait(for: [delayedResponseExpectation], timeout: 1.0)
+
+        XCTAssertFalse(navigator.preloadBridgeLogManager.entries.contains { $0.direction == .responded })
+    }
+
+    @MainActor
+    func testDelayedBridgeResponseIsNotCancelledForSameDocumentNavigation() {
+        var isLoading = false
+        let binding = Binding(
+            get: { isLoading },
+            set: { isLoading = $0 }
+        )
+        let navigator = WebViewNavigator()
+        Self.retainedNavigators.append(navigator)
+        let coordinator = WKWebViewCoordinator(isLoading: binding, navigator: navigator)
+
+        coordinator.schedulePreloadBridgeResponse(
+            "window.__walnutResponse = true;",
+            channel: "request",
+            delayMilliseconds: 50
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 1)
+
+        coordinator.handleMainFrameNavigationStarted(
+            from: URL(string: "https://example.com/page#old"),
+            to: URL(string: "https://example.com/page#new")
+        )
+        XCTAssertEqual(coordinator.pendingBridgeResponseWorkItemCount, 1)
+
+        let delayedResponseExpectation = expectation(description: "bridge response fired")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+            delayedResponseExpectation.fulfill()
+        }
+        wait(for: [delayedResponseExpectation], timeout: 1.0)
+
+        XCTAssertTrue(navigator.preloadBridgeLogManager.entries.contains { $0.direction == .responded })
+    }
+
+    @MainActor
     func testSyncErudaWithSettingsCallsInjectWhenEnabled() async {
         // 설정값이 true면 inject 경로를 타는지 검증합니다.
         let defaults = UserDefaults.standard

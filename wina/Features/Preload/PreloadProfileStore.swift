@@ -110,7 +110,7 @@ final class PreloadBridgeLogManager {
                 date: Date(),
                 channel: channel,
                 direction: direction,
-                body: body
+                body: PreloadBridgeLogFormatter.truncated(body)
             ),
             at: 0
         )
@@ -122,5 +122,20 @@ final class PreloadBridgeLogManager {
 
     func clear() {
         entries.removeAll()
+    }
+}
+
+enum PreloadBridgeLogFormatter {
+    static let maxBodyLength = 20_000
+
+    static func truncated(_ body: String, maxLength: Int = maxBodyLength) -> String {
+        guard body.count > maxLength else { return body }
+        var omitted = body.count - maxLength
+        var suffix = "\n... [truncated \(omitted) characters]"
+        var prefixLength = max(0, maxLength - suffix.count)
+        omitted = body.count - prefixLength
+        suffix = "\n... [truncated \(omitted) characters]"
+        prefixLength = max(0, maxLength - suffix.count)
+        return "\(body.prefix(prefixLength))\(suffix)"
     }
 }

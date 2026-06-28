@@ -9,6 +9,7 @@ xcuserdata/
 .serena/
 
 # Build
+/.build/
 build/
 DerivedData/
 

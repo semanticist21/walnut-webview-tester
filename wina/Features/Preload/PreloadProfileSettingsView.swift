@@ -14,6 +14,10 @@ struct PreloadProfileSettingsState {
     var savedProfiles: [WebViewPreloadProfile] = []
     private(set) var hasLoaded = false
 
+    var validationMessage: String? {
+        PreloadProfileValidation.message(for: profile)
+    }
+
     mutating func loadIfNeeded(
         activeProfile: () -> WebViewPreloadProfile = { PreloadProfileStore.activeProfile() },
         savedProfiles: () -> [WebViewPreloadProfile] = { PreloadProfileStore.savedProfiles() }
@@ -27,6 +31,8 @@ struct PreloadProfileSettingsState {
     mutating func saveCurrentProfile(
         defaults: UserDefaults = .standard
     ) {
+        guard validationMessage == nil else { return }
+
         var reusable = profile
         if reusable.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             reusable.name = "Untitled Setup"
@@ -41,6 +47,8 @@ struct PreloadProfileSettingsState {
     mutating func applyCurrentProfile(
         defaults: UserDefaults = .standard
     ) {
+        guard validationMessage == nil else { return }
+
         if profile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             profile.name = "Untitled Setup"
         }
@@ -61,6 +69,34 @@ struct PreloadProfileSettingsState {
 
     mutating func startEmptySetup() {
         profile = WebViewPreloadProfile(name: "Untitled Setup")
+    }
+}
+
+private enum PreloadProfileValidation {
+    static func message(for profile: WebViewPreloadProfile) -> String? {
+        guard profile.isEnabled else { return nil }
+
+        for channel in profile.bridgeChannels where channel.isEnabled {
+            if !BridgeChannelNameValidator.isValid(channel.name)
+                || BridgeChannelNameValidator.reservedNames.contains(channel.name)
+            {
+                return "Channel name must be valid and not reserved."
+            }
+
+            for rule in channel.responseRules where rule.isEnabled {
+                if !BridgeResponseBodyValidator.isValidTemplate(rule.response.bodyTemplate) {
+                    return "Response JSON syntax and placeholders must be valid before applying."
+                }
+
+                if rule.response.target == .callback,
+                   !JavaScriptPath.isValid(rule.response.callbackName)
+                {
+                    return "Callback name must be a valid JavaScript path."
+                }
+            }
+        }
+
+        return nil
     }
 }
 
@@ -94,6 +130,7 @@ struct PreloadProfileSettingsView: View {
                         dismiss()
                     }
                     .fontWeight(.semibold)
+                    .disabled(state.validationMessage != nil)
                 }
             }
             .onAppear(perform: loadIfNeeded)
@@ -121,12 +158,19 @@ struct PreloadProfileSettingsView: View {
             TextField("Profile name", text: $state.profile.name)
                 .textInputAutocapitalization(.words)
 
+            if let validationMessage = state.validationMessage {
+                Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
             Button {
                 state.saveCurrentProfile()
                 feedbackState.show("Setup saved")
             } label: {
                 Text("Save Current Setup")
             }
+            .disabled(state.validationMessage != nil)
 
             Button("Start Empty Setup") {
                 state.startEmptySetup()
@@ -140,16 +184,19 @@ struct PreloadProfileSettingsView: View {
 
     @ViewBuilder
     private var savedProfilesSection: some View {
-        Section {
-            Button("Load Saved Setup") {
-                showSavedSetupLoader = true
+        Section(
+            content: {
+                Button("Load Saved Setup") {
+                    showSavedSetupLoader = true
+                }
+            },
+            header: {
+                Text("Saved Setups")
+            },
+            footer: {
+                Text("저장해 둔 시작 설정을 그대로 다시 불러와요. 목록에서 왼쪽으로 밀어 삭제할 수 있어요.")
             }
-
-        } header: {
-            Text("Saved Setups")
-        } footer: {
-            Text("저장해 둔 시작 설정을 다시 불러와요. 불러오면 켜진 상태로 채워지고, 목록에서 왼쪽으로 밀어 삭제할 수 있어요.")
-        }
+        )
     }
 
     @ViewBuilder
@@ -158,11 +205,7 @@ struct PreloadProfileSettingsView: View {
             List {
                 ForEach(state.savedProfiles) { saved in
                     Button {
-                        // Loading a saved setup means the user intends to use it, so enable the
-                        // draft. Apply then persists this; the Enable toggle still lets them opt out.
-                        var loaded = saved
-                        loaded.isEnabled = true
-                        state.profile = loaded
+                        state.profile = saved
                         showSavedSetupLoader = false
                         feedbackState.show("Setup loaded")
                     } label: {
@@ -581,6 +624,12 @@ private struct BridgeRuleEditorView: View {
                 TextEditor(text: $rule.response.bodyTemplate)
                     .font(.system(.body, design: .monospaced))
                     .frame(minHeight: 180)
+
+                if !BridgeResponseBodyValidator.isValidTemplate(rule.response.bodyTemplate) {
+                    Label("Response JSON syntax and placeholders must be valid.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
             } header: {
                 Text("Response JSON")
             } footer: {
@@ -611,6 +660,12 @@ private struct BridgeRuleEditorView: View {
                 TextField("Callback name", text: $rule.response.callbackName)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+
+                if !JavaScriptPath.isValid(rule.response.callbackName) {
+                    Label("Use a dotted JavaScript function path.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
             } footer: {
                 Text("Use a dotted function path like app.onNativeResponse.")
             }

@@ -26,7 +26,13 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     private var shouldForceErudaInitOnNextFinish: Bool = false
     // didFinish 연속 호출 시 이전 Eruda 동기화 작업을 취소하고 최신 작업만 유지합니다.
     private var erudaSyncTask: Task<Void, Never>?
+    private var bridgeResponseGeneration = 0
+    private var pendingBridgeResponseWorkItems: [UUID: DispatchWorkItem] = [:]
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "wina", category: "ConsoleBridge")
+
+    var pendingBridgeResponseWorkItemCount: Int {
+        pendingBridgeResponseWorkItems.count
+    }
 
     init(
         isLoading: Binding<Bool>,
@@ -53,7 +59,9 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
     }
 
     private func handlePreloadBridgeMessage(_ message: WKScriptMessage) {
-        let bodyText = toMessageString(message.body) ?? String(describing: message.body)
+        let bodyText = PreloadBridgeLogFormatter.truncated(
+            toMessageString(message.body) ?? String(describing: message.body)
+        )
         navigator?.preloadBridgeLogManager.add(
             channel: message.name,
             direction: .received,
@@ -65,7 +73,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         if message.name == PreloadBridgeConstants.postMessageCaptureChannel {
             let dict = message.body as? [String: Any]
             let origin = dict?["origin"] as? String ?? "?"
-            let dataText = toMessageString(dict?["data"]) ?? bodyText
+            let dataText = PreloadBridgeLogFormatter.truncated(toMessageString(dict?["data"]) ?? bodyText)
             emitPreloadConsoleBadge(label: "📨 postMessage", background: "#5856D6", trailing: dataText, source: origin)
             return
         }
@@ -106,28 +114,55 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         )
     }
 
-    private func schedulePreloadBridgeResponse(
+    func schedulePreloadBridgeResponse(
         _ script: String,
         channel: String,
         delayMilliseconds: Int
     ) {
         guard !script.isEmpty else { return }
+        let generation = bridgeResponseGeneration
+        let workItemID = UUID()
 
         let execute = { [weak self] in
-            self?.webView?.evaluateJavaScript(script)
-            self?.navigator?.preloadBridgeLogManager.add(
+            guard let self else { return }
+            defer { self.pendingBridgeResponseWorkItems[workItemID] = nil }
+            guard self.bridgeResponseGeneration == generation else { return }
+            self.webView?.evaluateJavaScript(script)
+            self.navigator?.preloadBridgeLogManager.add(
                 channel: channel,
                 direction: .responded,
                 body: script
             )
-            self?.emitPreloadConsoleBadge(label: "📤 bridge", background: "#16A34A", trailing: "responded on \(channel)", source: channel)
+            self.emitPreloadConsoleBadge(label: "📤 bridge", background: "#16A34A", trailing: "responded on \(channel)", source: channel)
         }
 
         if delayMilliseconds > 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delayMilliseconds), execute: execute)
+            let workItem = DispatchWorkItem(block: execute)
+            pendingBridgeResponseWorkItems[workItemID] = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delayMilliseconds), execute: workItem)
         } else {
             execute()
         }
+    }
+
+    private func cancelPendingBridgeResponses() {
+        bridgeResponseGeneration += 1
+        pendingBridgeResponseWorkItems.values.forEach { $0.cancel() }
+        pendingBridgeResponseWorkItems.removeAll()
+    }
+
+    func handleMainFrameNavigationStarted(from currentURL: URL?, to targetURL: URL?) {
+        guard !Self.isSameDocumentNavigation(from: currentURL, to: targetURL) else { return }
+        cancelPendingBridgeResponses()
+    }
+
+    private static func isSameDocumentNavigation(from currentURL: URL?, to targetURL: URL?) -> Bool {
+        guard let currentURL, let targetURL else { return false }
+        var currentComponents = URLComponents(url: currentURL, resolvingAgainstBaseURL: false)
+        var targetComponents = URLComponents(url: targetURL, resolvingAgainstBaseURL: false)
+        currentComponents?.fragment = nil
+        targetComponents?.fragment = nil
+        return currentComponents?.url == targetComponents?.url
     }
 
     private func handleNetworkMessage(_ message: WKScriptMessage) {
@@ -253,6 +288,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         loadingObservation?.invalidate()
         loadingObservation = nil
         webView = nil
+        cancelPendingBridgeResponses()
         erudaSyncTask?.cancel()
         erudaSyncTask = nil
         shouldForceErudaInitOnNextFinish = false
@@ -303,6 +339,9 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
         let isMainFrameNavigation = navigationAction.targetFrame?.isMainFrame ?? true
+        if isMainFrameNavigation {
+            handleMainFrameNavigationStarted(from: webView.url, to: navigationAction.request.url)
+        }
 
         // Handle reload: use preserveLog setting
         if navigationAction.navigationType == .reload, isMainFrameNavigation {
@@ -389,6 +428,7 @@ class WKWebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScri
 
     // 메인 문서가 실제로 커밋된 시점의 URL로 clear 전략을 적용합니다.
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        cancelPendingBridgeResponses()
         let committedURL = webView.url
 
         if shouldSkipNextCommitClearStrategy {

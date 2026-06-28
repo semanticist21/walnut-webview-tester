@@ -59,8 +59,13 @@ enum PreloadScriptBuilder {
         message: Any,
         channel: String
     ) -> String {
-        let renderedBody = BridgeTemplateRenderer.render(response.bodyTemplate, message: message)
-        let responseLiteral = JavaScriptLiteral.literal(from: renderedBody, valueKind: .json)
+        guard BridgeResponseBodyValidator.isValidTemplate(response.bodyTemplate) else {
+            return ""
+        }
+        let renderedBody = BridgeTemplateRenderer.renderResponseBody(response.bodyTemplate, message: message)
+        guard let responseLiteral = JavaScriptLiteral.jsonLiteral(from: renderedBody) else {
+            return ""
+        }
         let channelLiteral = JavaScriptLiteral.quoted(channel)
 
         switch response.target {
@@ -171,11 +176,18 @@ enum PreloadScriptBuilder {
                 }
             };
 
+            window.__winaPreloadPushNativePostMessagePrimitive = function(value) {
+                window.__winaPreloadNativePostMessagePrimitiveQueue.push(
+                    window.__winaPreloadSerializePostMessageValue(value)
+                );
+                if (window.__winaPreloadNativePostMessagePrimitiveQueue.length > 20) {
+                    window.__winaPreloadNativePostMessagePrimitiveQueue.shift();
+                }
+            };
+
             window.__winaPreloadMarkNativePostMessage = function(value) {
                 if (Array.isArray(value)) {
-                    window.__winaPreloadNativePostMessagePrimitiveQueue.push(
-                        window.__winaPreloadSerializePostMessageValue(value)
-                    );
+                    window.__winaPreloadPushNativePostMessagePrimitive(value);
                     return;
                 }
 
@@ -194,12 +206,7 @@ enum PreloadScriptBuilder {
                     return;
                 }
 
-                window.__winaPreloadNativePostMessagePrimitiveQueue.push(
-                    window.__winaPreloadSerializePostMessageValue(value)
-                );
-                if (window.__winaPreloadNativePostMessagePrimitiveQueue.length > 20) {
-                    window.__winaPreloadNativePostMessagePrimitiveQueue.shift();
-                }
+                window.__winaPreloadPushNativePostMessagePrimitive(value);
             };
 
             window.__winaPreloadConsumeNativePostMessage = function(value) {
@@ -250,10 +257,22 @@ enum PreloadScriptBuilder {
 
 enum BridgeTemplateRenderer {
     static func render(_ template: String, message: Any) -> String {
-        render(template, replacements: messageReplacements(message))
+        renderResponseBody(template, message: message)
     }
 
-    static func render(_ template: String, replacements: [String: String]) -> String {
+    static func renderResponseBody(_ template: String, message: Any) -> String {
+        renderResponseBody(
+            template,
+            textReplacements: messageReplacements(message),
+            jsonReplacements: messageJSONLiteralReplacements(message)
+        )
+    }
+
+    static func render(
+        _ template: String,
+        replacements: [String: String],
+        unresolvedReplacement: String? = nil
+    ) -> String {
         var rendered = ""
         var cursor = template.startIndex
 
@@ -267,7 +286,9 @@ enum BridgeTemplateRenderer {
             }
 
             let key = String(template[tokenStart..<closeRange.lowerBound])
-            rendered += replacements[key] ?? String(template[openRange.lowerBound..<closeRange.upperBound])
+            rendered += replacements[key]
+                ?? unresolvedReplacement
+                ?? String(template[openRange.lowerBound..<closeRange.upperBound])
             cursor = closeRange.upperBound
         }
 
@@ -277,7 +298,7 @@ enum BridgeTemplateRenderer {
 
     static func messageJSONString(_ message: Any) -> String {
         if JSONSerialization.isValidJSONObject(message),
-            let data = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys]),
+           let data = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys]),
             let text = String(data: data, encoding: .utf8)
         {
             return JavaScriptLiteral.escapedJavaScriptUnsafeCharacters(text)
@@ -288,10 +309,104 @@ enum BridgeTemplateRenderer {
         return "null"
     }
 
+    private static func renderResponseBody(
+        _ template: String,
+        textReplacements: [String: String],
+        jsonReplacements: [String: String]
+    ) -> String {
+        var rendered = ""
+        var cursor = template.startIndex
+
+        while let openRange = template[cursor...].range(of: "{{") {
+            rendered += template[cursor..<openRange.lowerBound]
+            let tokenStart = openRange.upperBound
+            guard let closeRange = template[tokenStart...].range(of: "}}") else {
+                rendered += template[openRange.lowerBound...]
+                return rendered
+            }
+
+            let key = String(template[tokenStart..<closeRange.lowerBound])
+            if isFullQuotedToken(rendered: rendered, template: template, closeUpperBound: closeRange.upperBound),
+               !isJSONStringObjectKey(template: template, closeUpperBound: closeRange.upperBound)
+            {
+                rendered.removeLast()
+                rendered += jsonReplacements[key] ?? "null"
+                cursor = template.index(after: closeRange.upperBound)
+            } else if isInsideJSONString(rendered) {
+                rendered += textReplacements[key] ?? "null"
+                cursor = closeRange.upperBound
+            } else {
+                rendered += jsonReplacements[key] ?? "null"
+                cursor = closeRange.upperBound
+            }
+        }
+
+        rendered += template[cursor...]
+        return rendered
+    }
+
+    private static func isFullQuotedToken(
+        rendered: String,
+        template: String,
+        closeUpperBound: String.Index
+    ) -> Bool {
+        endsWithUnescapedQuote(rendered)
+            && closeUpperBound < template.endIndex
+            && template[closeUpperBound] == "\""
+    }
+
+    private static func endsWithUnescapedQuote(_ text: String) -> Bool {
+        guard text.last == "\"" else { return false }
+        var backslashCount = 0
+        var index = text.index(before: text.endIndex)
+        while index > text.startIndex {
+            index = text.index(before: index)
+            guard text[index] == "\\" else { break }
+            backslashCount += 1
+        }
+        return backslashCount.isMultiple(of: 2)
+    }
+
+    private static func isJSONStringObjectKey(template: String, closeUpperBound: String.Index) -> Bool {
+        guard closeUpperBound < template.endIndex else { return false }
+        var index = template.index(after: closeUpperBound)
+        while index < template.endIndex {
+            let character = template[index]
+            if character == ":" { return true }
+            if !character.isWhitespace { return false }
+            index = template.index(after: index)
+        }
+        return false
+    }
+
+    private static func isInsideJSONString(_ rendered: String) -> Bool {
+        var quoteCount = 0
+        var backslashCount = 0
+
+        for character in rendered {
+            if character == "\\" {
+                backslashCount += 1
+                continue
+            }
+
+            if character == "\"", backslashCount.isMultiple(of: 2) {
+                quoteCount += 1
+            }
+            backslashCount = 0
+        }
+
+        return !quoteCount.isMultiple(of: 2)
+    }
+
     private static func messageReplacements(_ message: Any) -> [String: String] {
-        var replacements = ["message": messageJSONString(message)]
-        guard let dictionary = message as? [String: Any] else { return replacements }
-        collect(prefix: "message", value: dictionary, into: &replacements)
+        var replacements: [String: String] = [:]
+        collect(prefix: "message", value: message, into: &replacements)
+        return replacements
+    }
+
+    private static func messageJSONLiteralReplacements(_ message: Any) -> [String: String] {
+        var replacements: [String: String] = [:]
+        collectJSONLiteral(prefix: "message", value: message, into: &replacements)
         return replacements
     }
 
@@ -316,6 +431,87 @@ enum BridgeTemplateRenderer {
             }
             return
         }
+    }
+
+    private static func collectJSONLiteral(prefix: String, value: Any, into replacements: inout [String: String]) {
+        replacements[prefix] = BridgeMessageValueFormatter.jsonLiteral(value)
+
+        if let dictionary = value as? [String: Any] {
+            for (key, nested) in dictionary {
+                collectJSONLiteral(prefix: "\(prefix).\(key)", value: nested, into: &replacements)
+            }
+            return
+        }
+
+        if let array = value as? [Any] {
+            for (index, nested) in array.enumerated() {
+                collectJSONLiteral(prefix: "\(prefix).\(index)", value: nested, into: &replacements)
+            }
+            return
+        }
+    }
+}
+
+enum BridgeResponseBodyValidator {
+    static func isValidTemplate(_ template: String) -> Bool {
+        guard invalidTemplateToken(in: template) == nil else { return false }
+        return isValidJSONFragment(replacingTemplateTokens(in: template, with: "null"))
+    }
+
+    static func isValidRenderedBody(_ body: String) -> Bool {
+        isValidJSONFragment(body)
+    }
+
+    private static func replacingTemplateTokens(in template: String, with replacement: String) -> String {
+        var rendered = ""
+        var cursor = template.startIndex
+
+        while let openRange = template[cursor...].range(of: "{{") {
+            rendered += template[cursor..<openRange.lowerBound]
+            let tokenStart = openRange.upperBound
+            guard let closeRange = template[tokenStart...].range(of: "}}") else {
+                rendered += template[openRange.lowerBound...]
+                return rendered
+            }
+
+            rendered += replacement
+            cursor = closeRange.upperBound
+        }
+
+        rendered += template[cursor...]
+        return rendered
+    }
+
+    private static func invalidTemplateToken(in template: String) -> String? {
+        var cursor = template.startIndex
+
+        while let openRange = template[cursor...].range(of: "{{") {
+            let tokenStart = openRange.upperBound
+            guard let closeRange = template[tokenStart...].range(of: "}}") else {
+                return String(template[tokenStart...])
+            }
+
+            let token = String(template[tokenStart..<closeRange.lowerBound])
+            guard token == "message" || isValidMessagePathToken(token) else {
+                return token
+            }
+            cursor = closeRange.upperBound
+        }
+
+        return nil
+    }
+
+    private static func isValidMessagePathToken(_ token: String) -> Bool {
+        guard token.hasPrefix("message.") else { return false }
+        let suffix = token.dropFirst("message.".count)
+        return suffix
+            .split(separator: ".", omittingEmptySubsequences: false)
+            .allSatisfy { !$0.isEmpty }
+    }
+
+    private static func isValidJSONFragment(_ value: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
+        return (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil
     }
 }
 
@@ -375,12 +571,29 @@ private enum BridgeMessageValueFormatter {
             return isBooleanNumber(number) ? (number.boolValue ? "true" : "false") : number.stringValue
         }
         if JSONSerialization.isValidJSONObject(value),
-            let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
-            let text = String(data: data, encoding: .utf8)
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+           let text = String(data: data, encoding: .utf8)
+        {
+            return escapesStringContent
+                ? JavaScriptLiteral.escapedStringContent(text)
+                : JavaScriptLiteral.escapedJavaScriptUnsafeCharacters(text)
+        }
+        return String(describing: value)
+    }
+
+    static func jsonLiteral(_ value: Any) -> String {
+        if value is NSNull { return "null" }
+        if let text = value as? String { return JavaScriptLiteral.quoted(text) }
+        if let number = value as? NSNumber {
+            return isBooleanNumber(number) ? (number.boolValue ? "true" : "false") : number.stringValue
+        }
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+           let text = String(data: data, encoding: .utf8)
         {
             return JavaScriptLiteral.escapedJavaScriptUnsafeCharacters(text)
         }
-        return String(describing: value)
+        return JavaScriptLiteral.quoted(String(describing: value))
     }
 
     private static func isBooleanNumber(_ number: NSNumber) -> Bool {
@@ -405,15 +618,19 @@ enum BridgeChannelNameValidator {
 
 enum JavaScriptPath {
     nonisolated static func isValid(_ path: String) -> Bool {
-        let parts = path.split(separator: ".").map(String.init)
+        let parts = pathParts(path)
         guard !parts.isEmpty else { return false }
         return parts.allSatisfy(BridgeChannelNameValidator.isValid)
     }
 
     nonisolated static func arrayLiteral(_ path: String) -> String {
-        let parts = path.split(separator: ".").map(String.init)
+        let parts = pathParts(path)
         let quoted = parts.map(JavaScriptLiteral.quoted).joined(separator: ", ")
         return "[\(quoted)]"
+    }
+
+    nonisolated private static func pathParts(_ path: String) -> [String] {
+        path.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
     }
 }
 
@@ -424,13 +641,15 @@ enum JavaScriptLiteral {
             return quoted(value)
 
         case .json:
-            guard let data = value.data(using: .utf8),
-                (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil
-            else {
-                return quoted(value)
-            }
-            return value
+            return jsonLiteral(from: value) ?? quoted(value)
         }
+    }
+
+    nonisolated static func jsonLiteral(from value: String) -> String? {
+        guard BridgeResponseBodyValidator.isValidRenderedBody(value) else {
+            return nil
+        }
+        return value
     }
 
     nonisolated static func quoted(_ value: String) -> String {

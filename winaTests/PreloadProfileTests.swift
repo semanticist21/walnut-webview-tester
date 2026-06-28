@@ -243,6 +243,172 @@ final class PreloadProfileTests: XCTestCase {
         XCTAssertTrue(script.contains(#""ok":true"#))
     }
 
+    func testResponseScriptRejectsInvalidJSONBody() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"ok": true"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: [:],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.isEmpty)
+    }
+
+    func testResponseScriptRejectsInvalidPlaceholderAtRuntime() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"id":{{messsage.id}}}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["id": "req-1"],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.isEmpty)
+    }
+
+    func testResponseBodyValidatorAllowsUnquotedPlaceholders() {
+        XCTAssertTrue(
+            BridgeResponseBodyValidator.isValidTemplate(
+                #"{"ok":{{message.payload.ok}},"payload":{{message.payload}}}"#
+            )
+        )
+        XCTAssertFalse(BridgeResponseBodyValidator.isValidTemplate(#"{"ok": true"#))
+        XCTAssertFalse(BridgeResponseBodyValidator.isValidTemplate(#"{"id":{{messsage.id}}}"#))
+        XCTAssertFalse(BridgeResponseBodyValidator.isValidTemplate(#"{"id":{{message.}}}"#))
+        XCTAssertFalse(BridgeResponseBodyValidator.isValidTemplate(#"{"id":{{message..id}}}"#))
+    }
+
+    func testResponseScriptUsesNullForMissingPlaceholders() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"token":{{message.payload.token}}}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["payload": [:]],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""token":null"#))
+    }
+
+    func testResponseScriptUsesNullForMissingQuotedPlaceholder() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"id":"{{message.id}}"}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: [:],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""id":null"#))
+        XCTAssertFalse(script.contains(#""id":"null""#))
+    }
+
+    func testResponseScriptQuotesStringForUnquotedPlaceholder() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"token":{{message.payload.token}}}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["payload": ["token": "abc"]],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""token":"abc""#))
+    }
+
+    func testResponseScriptEscapesStructuredPlaceholderInsideString() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"debug":"payload={{message.payload}}"}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["payload": ["a": "b"]],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""debug":"payload={\"a\":\"b\"}""#))
+    }
+
+    func testResponseScriptKeepsObjectKeyPlaceholderQuoted() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"{{message.key}}":true}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["key": NSNumber(value: 42)],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""42":true"#))
+    }
+
+    func testResponseBodyRendererHandlesEscapedQuoteBeforePlaceholder() throws {
+        let rendered = BridgeTemplateRenderer.renderResponseBody(
+            #"{"debug":"literal quote: \"{{message.id}}"}"#,
+            message: ["id": "abc"]
+        )
+        let data = try XCTUnwrap(rendered.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
+
+        XCTAssertEqual(object["debug"], #"literal quote: "abc"#)
+    }
+
+    func testResponseScriptSupportsTopLevelArrayPlaceholders() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"first":{{message.0}}}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: ["abc"],
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""first":"abc""#))
+    }
+
+    func testResponseScriptSupportsTopLevelPrimitivePlaceholder() {
+        let response = BridgeResponse(
+            target: .postMessage,
+            bodyTemplate: #"{"value":{{message}}}"#
+        )
+
+        let script = PreloadScriptBuilder.responseScript(
+            for: response,
+            message: NSNumber(value: 42),
+            channel: "request"
+        )
+
+        XCTAssertTrue(script.contains(#""value":42"#))
+    }
+
+    func testJavaScriptPathRejectsEmptySegments() {
+        XCTAssertFalse(JavaScriptPath.isValid(".onNativeResponse"))
+        XCTAssertFalse(JavaScriptPath.isValid("app..onNativeResponse"))
+        XCTAssertFalse(JavaScriptPath.isValid("app."))
+        XCTAssertTrue(JavaScriptPath.isValid("app.onNativeResponse"))
+    }
+
     func testBootstrapScriptExecutesWindowItemsInJavaScriptContext() throws {
         let profile = WebViewPreloadProfile(
             isEnabled: true,
@@ -498,6 +664,112 @@ final class PreloadProfileTests: XCTestCase {
 
         XCTAssertEqual(context.evaluateScript("captured.length").toInt32(), 1)
         XCTAssertEqual(context.evaluateScript("captured[0].data.type").toString(), "pageMessage")
+    }
+
+    func testNativeArrayResponseMarkerQueueIsCapped() throws {
+        let profile = WebViewPreloadProfile(
+            isEnabled: true,
+            capturesWindowPostMessage: true
+        )
+        let context = makeJavaScriptContext()
+
+        context.evaluateScript("var window = this; window.addEventListener = function() {};")
+        context.evaluateScript(PreloadScriptBuilder.bootstrapScript(for: profile))
+        context.evaluateScript(
+            """
+            for (var i = 0; i < 25; i += 1) {
+                window.__winaPreloadMarkNativePostMessage([{ index: i }]);
+            }
+            """
+        )
+
+        XCTAssertEqual(
+            context.evaluateScript("window.__winaPreloadNativePostMessagePrimitiveQueue.length").toInt32(),
+            20
+        )
+    }
+
+    func testPreloadBridgeLogTruncatesLargeBodies() {
+        let body = String(repeating: "a", count: PreloadBridgeLogFormatter.maxBodyLength + 10)
+        let truncated = PreloadBridgeLogFormatter.truncated(body)
+
+        XCTAssertLessThanOrEqual(truncated.count, PreloadBridgeLogFormatter.maxBodyLength)
+        XCTAssertTrue(truncated.contains("truncated"))
+    }
+
+    func testPreloadSettingsStateRejectsInvalidEnabledCallbackRule() {
+        let suiteName = "PreloadProfileTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let baseline = WebViewPreloadProfile(name: "Baseline", isEnabled: true)
+        PreloadProfileStore.saveActiveProfile(baseline, defaults: defaults)
+
+        var invalid = WebViewPreloadProfile(
+            name: "Invalid",
+            isEnabled: true,
+            bridgeChannels: [
+                BridgeChannel(
+                    name: "request",
+                    responseRules: [
+                        BridgeResponseRule(
+                            response: BridgeResponse(target: .callback, callbackName: "bad-name")
+                        ),
+                    ]
+                ),
+            ]
+        )
+        var state = PreloadProfileSettingsState()
+        state.profile = invalid
+
+        XCTAssertNotNil(state.validationMessage)
+        state.applyCurrentProfile(defaults: defaults)
+        state.saveCurrentProfile(defaults: defaults)
+
+        XCTAssertEqual(PreloadProfileStore.activeProfile(defaults: defaults).name, "Baseline")
+        XCTAssertEqual(PreloadProfileStore.savedProfiles(defaults: defaults), [])
+
+        invalid.isEnabled = false
+        state.profile = invalid
+        XCTAssertNil(state.validationMessage)
+    }
+
+    func testPreloadSettingsStateAllowsInvalidChannelNameWhenProfileDisabled() {
+        var state = PreloadProfileSettingsState()
+        state.profile = WebViewPreloadProfile(
+            name: "Invalid Channel",
+            isEnabled: false,
+            bridgeChannels: [
+                BridgeChannel(
+                    isEnabled: true,
+                    name: "winaPostMessage",
+                    responseRules: [
+                        BridgeResponseRule(response: BridgeResponse(target: .postMessage)),
+                    ]
+                ),
+            ]
+        )
+
+        XCTAssertNil(state.validationMessage)
+    }
+
+    func testPreloadSettingsStateRejectsInvalidChannelNameWhenProfileEnabled() {
+        var state = PreloadProfileSettingsState()
+        state.profile = WebViewPreloadProfile(
+            name: "Invalid Channel",
+            isEnabled: true,
+            bridgeChannels: [
+                BridgeChannel(
+                    isEnabled: true,
+                    name: "winaPostMessage",
+                    responseRules: [
+                        BridgeResponseRule(response: BridgeResponse(target: .postMessage)),
+                    ]
+                ),
+            ]
+        )
+
+        XCTAssertNotNil(state.validationMessage)
     }
 
     func testInvalidChannelNamesAreExcluded() {
