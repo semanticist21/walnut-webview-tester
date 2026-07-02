@@ -91,7 +91,7 @@ struct ContentView: View {
     }
 
     var preloadProfileSummary: String {
-        preloadProfile.enabledSummary
+        preloadProfile.localizedEnabledSummary
     }
 
     let urlParts = [

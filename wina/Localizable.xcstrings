@@ -170097,6 +170097,706 @@
           }
         }
       }
+    },
+    "Page Startup Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "페이지 시작 설정"
+                      }
+                }
+          }
+    },
+    "Experimental feature. This setup may be unstable across pages." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "실험적 기능입니다. 이 설정은 페이지에 따라 불안정할 수 있어요."
+                      }
+                }
+          }
+    },
+    "Enable this setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "이 설정 켜기"
+                      }
+                }
+          }
+    },
+    "Profile name" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "프로필 이름"
+                      }
+                }
+          }
+    },
+    "Save Current Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "현재 설정 저장"
+                      }
+                }
+          }
+    },
+    "Start Empty Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "빈 설정으로 시작"
+                      }
+                }
+          }
+    },
+    "Current Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "현재 설정"
+                      }
+                }
+          }
+    },
+    "Apply cookies, window values, bridge mocks, and custom scripts before each new WKWebView page loads. Turning setup off stops every injection in this setup. Saving with a name adds it to Saved Setups." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "쿠키, window 값, 브리지 목, 사용자 스크립트를 새 WKWebView 페이지가 로드되기 전에 적용해요. 설정을 끄면 이 설정의 모든 주입이 멈추고, 이름을 정해 저장하면 저장된 설정 목록에 들어가요."
+                      }
+                }
+          }
+    },
+    "Saved Setups" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "저장된 설정"
+                      }
+                }
+          }
+    },
+    "Load Saved Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "저장된 설정 불러오기"
+                      }
+                }
+          }
+    },
+    "Reload saved startup setups as-is. Swipe left in the list to delete a saved setup." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "저장해 둔 시작 설정을 그대로 다시 불러와요. 목록에서 왼쪽으로 밀어 삭제할 수 있어요."
+                      }
+                }
+          }
+    },
+    "Setup saved" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "설정 저장됨"
+                      }
+                }
+          }
+    },
+    "Setup loaded" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "설정 불러옴"
+                      }
+                }
+          }
+    },
+    "Untitled Setup" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "이름 없는 설정"
+                      }
+                }
+          }
+    },
+    "Add Cookie" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "쿠키 추가"
+                      }
+                }
+          }
+    },
+    "Register cookies to set before the page opens. Only enabled cookies are injected before the first load, with domain, path, expiration, SameSite, Secure, and HTTP Only options." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "페이지가 열리기 전에 미리 심을 쿠키를 등록해요. 활성화된 쿠키만 첫 로드 전에 주입되고, 도메인, 경로, 만료, SameSite, Secure, HTTP Only까지 맞출 수 있어요."
+                      }
+                }
+          }
+    },
+    "Current host" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "현재 호스트"
+                      }
+                }
+          }
+    },
+    "Custom domain" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용자 도메인"
+                      }
+                }
+          }
+    },
+    "Window Item" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "Window 항목"
+                      }
+                }
+          }
+    },
+    "Add Window Item" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "Window 항목 추가"
+                      }
+                }
+          }
+    },
+    "Inject values or functions into window before page scripts run. Use dotted paths like window.appVersion to set variables, return-value functions, or raw function bodies at document start." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "페이지 스크립트가 실행되기 전에 window에 값이나 함수를 미리 주입해요. window.appVersion 같은 점(.) 경로로 변수, 반환 함수, 함수 본문을 문서 시작 시점에 적용할 수 있어요."
+                      }
+                }
+          }
+    },
+    "Function Body" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "함수 본문"
+                      }
+                }
+          }
+    },
+    "Use dotted names like app.bridge.getToken for nested window values." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "app.bridge.getToken처럼 점(.) 경로를 사용해 중첩 window 값을 지정하세요."
+                      }
+                }
+          }
+    },
+    "Variable" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "변수"
+                      }
+                }
+          }
+    },
+    "Function returns value" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "값을 반환하는 함수"
+                      }
+                }
+          }
+    },
+    "Raw function body" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "원시 함수 본문"
+                      }
+                }
+          }
+    },
+    "Bridge Mock" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "브리지 목"
+                      }
+                }
+          }
+    },
+    "Capture window.postMessage" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "window.postMessage 캡처"
+                      }
+                }
+          }
+    },
+    "Channel" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "채널"
+                      }
+                }
+          }
+    },
+    "Add Channel" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "채널 추가"
+                      }
+                }
+          }
+    },
+    "Mock a native bridge. Channels are exposed as window.webkit.messageHandlers.<name>, and response rules can reply to matching messages by any message, type, or JSON path. Enabling Capture window.postMessage shows page postMessage calls as badges in Console." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "네이티브 브리지를 흉내 내요. 채널은 window.webkit.messageHandlers.<name>으로 노출되고, 응답 규칙은 전체 메시지, type, JSON 경로 조건에 맞는 메시지에 응답할 수 있어요. window.postMessage 캡처를 켜면 페이지가 보낸 postMessage 호출이 콘솔에 배지로 표시돼요."
+                      }
+                }
+          }
+    },
+    "Channel name" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "채널 이름"
+                      }
+                }
+          }
+    },
+    "Use JavaScript identifier not reserved." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "예약어가 아닌 JavaScript 식별자를 사용하세요."
+                      }
+                }
+          }
+    },
+    "Response Rules" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 규칙"
+                      }
+                }
+          }
+    },
+    "Add Response Rule" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 규칙 추가"
+                      }
+                }
+          }
+    },
+    "Response Rule" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 규칙"
+                      }
+                }
+          }
+    },
+    "Respond with" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 방식"
+                      }
+                }
+          }
+    },
+    "Delay" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "지연"
+                      }
+                }
+          }
+    },
+    "Instant" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "즉시"
+                      }
+                }
+          }
+    },
+    "Response JSON" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 JSON"
+                      }
+                }
+          }
+    },
+    "Response JSON syntax and placeholders must be valid." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "응답 JSON 문법과 플레이스홀더가 올바르지 않습니다."
+                      }
+                }
+          }
+    },
+    "Response JSON syntax and placeholders must be valid before applying." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "적용하기 전에 응답 JSON 문법과 플레이스홀더가 올바라야 합니다."
+                      }
+                }
+          }
+    },
+    "Available values: {{message}}, {{message.id}}, {{message.type}}, {{message.payload.token}}" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용 가능한 값: {{message}}, {{message.id}}, {{message.type}}, {{message.payload.token}}"
+                      }
+                }
+          }
+    },
+    "Event name" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "이벤트 이름"
+                      }
+                }
+          }
+    },
+    "Callback name" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "콜백 이름"
+                      }
+                }
+          }
+    },
+    "Use a dotted JavaScript function path." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "점(.)으로 구분된 JavaScript 함수 경로를 사용하세요."
+                      }
+                }
+          }
+    },
+    "Use a dotted function path like app.onNativeResponse." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "app.onNativeResponse처럼 점(.)으로 구분된 함수 경로를 사용하세요."
+                      }
+                }
+          }
+    },
+    "Custom JavaScript" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용자 JavaScript"
+                      }
+                }
+          }
+    },
+    "Use {{message}}, {{response}}, {{channel}} placeholders." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "{{message}}, {{response}}, {{channel}} 플레이스홀더를 사용할 수 있어요."
+                      }
+                }
+          }
+    },
+    "Match" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "일치 조건"
+                      }
+                }
+          }
+    },
+    "Any message" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "모든 메시지"
+                      }
+                }
+          }
+    },
+    "type equals" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "type 일치"
+                      }
+                }
+          }
+    },
+    "JSON path equals" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "JSON 경로 일치"
+                      }
+                }
+          }
+    },
+    "window.postMessage" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "window.postMessage"
+                      }
+                }
+          }
+    },
+    "CustomEvent" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "CustomEvent"
+                      }
+                }
+          }
+    },
+    "Callback function" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "콜백 함수"
+                      }
+                }
+          }
+    },
+    "Custom JS" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용자 JS"
+                      }
+                }
+          }
+    },
+    "Add Custom Script" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용자 스크립트 추가"
+                      }
+                }
+          }
+    },
+    "Run custom JavaScript before the page loads at document start. Each script is wrapped in try/catch, so errors remain console warnings, and scripts can target only the main frame or all frames." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "페이지가 로드되기 전 문서 시작 시점에 직접 작성한 JavaScript를 실행해요. 각 스크립트는 try/catch로 감싸져 오류가 나도 콘솔 경고로만 남고, 메인 프레임만 또는 모든 프레임에 적용할지 고를 수 있어요."
+                      }
+                }
+          }
+    },
+    "Main frame" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "메인 프레임"
+                      }
+                }
+          }
+    },
+    "All frames" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "모든 프레임"
+                      }
+                }
+          }
+    },
+    "Main frame only" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "메인 프레임만"
+                      }
+                }
+          }
+    },
+    "Source" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "소스"
+                      }
+                }
+          }
+    },
+    "Custom Script" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "사용자 스크립트"
+                      }
+                }
+          }
+    },
+    "1 item" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "항목 1개"
+                      }
+                }
+          }
+    },
+    "Channel name must be valid and not reserved." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "채널 이름은 올바른 형식이어야 하며 예약어가 아니어야 합니다."
+                      }
+                }
+          }
+    },
+    "Callback name must be a valid JavaScript path." : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "콜백 이름은 올바른 JavaScript 경로여야 합니다."
+                      }
+                }
+          }
+    },
+    "Cookie" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "쿠키"
+                      }
+                }
+          }
+    },
+    "Cookies" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "쿠키"
+                      }
+                }
+          }
+    },
+    "Window" : {
+          "localizations" : {
+                "ko" : {
+                      "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "Window"
+                      }
+                }
+          }
     }
   },
   "version" : "1.0"

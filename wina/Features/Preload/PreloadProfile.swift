@@ -62,6 +62,14 @@ struct WebViewPreloadProfile: Codable, Equatable, Identifiable {
         return count == 0 ? "On" : "\(count) items"
     }
 
+    var localizedEnabledSummary: String {
+        guard isEnabled else { return String(localized: "Off") }
+        let count =
+            cookies.filter(\.isEnabled).count + windowItems.filter(\.isEnabled).count
+            + bridgeChannels.filter(\.isEnabled).count + customScripts.filter(\.isEnabled).count
+        return count == 0 ? String(localized: "On") : String(localized: "\(count) items")
+    }
+
     static var empty: WebViewPreloadProfile {
         WebViewPreloadProfile()
     }
@@ -304,6 +312,13 @@ enum PreloadCookieDomainMode: String, Codable, CaseIterable, Equatable {
         case .custom: "Custom domain"
         }
     }
+
+    var localizedTitle: String {
+        switch self {
+        case .currentHost: String(localized: "Current host")
+        case .custom: String(localized: "Custom domain")
+        }
+    }
 }
 
 enum PreloadCookieExpiration: String, Codable, CaseIterable, Equatable {
@@ -318,6 +333,15 @@ enum PreloadCookieExpiration: String, Codable, CaseIterable, Equatable {
         case .oneHour: "1 hour"
         case .oneDay: "1 day"
         case .sevenDays: "7 days"
+        }
+    }
+
+    var localizedTitle: String {
+        switch self {
+        case .session: String(localized: "Session")
+        case .oneHour: String(localized: "1 hour")
+        case .oneDay: String(localized: "1 day")
+        case .sevenDays: String(localized: "7 days")
         }
     }
 
@@ -337,6 +361,14 @@ enum PreloadCookieSameSite: String, Codable, CaseIterable, Equatable {
     case none
 
     var title: String { rawValue.capitalized }
+
+    var localizedTitle: String {
+        switch self {
+        case .lax: String(localized: "Lax")
+        case .strict: String(localized: "Strict")
+        case .none: String(localized: "None")
+        }
+    }
 
     var httpCookieString: String {
         switch self {
@@ -386,6 +418,14 @@ enum WindowInjectionKind: String, Codable, CaseIterable, Equatable {
         case .functionBody: "Raw function body"
         }
     }
+
+    var localizedTitle: String {
+        switch self {
+        case .variable: String(localized: "Variable")
+        case .functionReturn: String(localized: "Function returns value")
+        case .functionBody: String(localized: "Raw function body")
+        }
+    }
 }
 
 enum PreloadValueKind: String, Codable, CaseIterable, Equatable {
@@ -396,6 +436,13 @@ enum PreloadValueKind: String, Codable, CaseIterable, Equatable {
         switch self {
         case .string: "String"
         case .json: "JSON"
+        }
+    }
+
+    var localizedTitle: String {
+        switch self {
+        case .string: String(localized: "String")
+        case .json: String(localized: "JSON")
         }
     }
 }
@@ -490,6 +537,15 @@ enum BridgeResponseTarget: String, Codable, CaseIterable, Equatable {
         case .customEvent: "CustomEvent"
         case .callback: "Callback function"
         case .customJavaScript: "Custom JS"
+        }
+    }
+
+    var localizedTitle: String {
+        switch self {
+        case .postMessage: String(localized: "window.postMessage")
+        case .customEvent: String(localized: "CustomEvent")
+        case .callback: String(localized: "Callback function")
+        case .customJavaScript: String(localized: "Custom JS")
         }
     }
 }

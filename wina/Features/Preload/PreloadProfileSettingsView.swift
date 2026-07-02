@@ -80,18 +80,18 @@ private enum PreloadProfileValidation {
             if !BridgeChannelNameValidator.isValid(channel.name)
                 || BridgeChannelNameValidator.reservedNames.contains(channel.name)
             {
-                return "Channel name must be valid and not reserved."
+                return String(localized: "Channel name must be valid and not reserved.")
             }
 
             for rule in channel.responseRules where rule.isEnabled {
                 if !BridgeResponseBodyValidator.isValidTemplate(rule.response.bodyTemplate) {
-                    return "Response JSON syntax and placeholders must be valid before applying."
+                    return String(localized: "Response JSON syntax and placeholders must be valid before applying.")
                 }
 
                 if rule.response.target == .callback,
                    !JavaScriptPath.isValid(rule.response.callbackName)
                 {
-                    return "Callback name must be a valid JavaScript path."
+                    return String(localized: "Callback name must be a valid JavaScript path.")
                 }
             }
         }
@@ -166,7 +166,7 @@ struct PreloadProfileSettingsView: View {
 
             Button {
                 state.saveCurrentProfile()
-                feedbackState.show("Setup saved")
+                feedbackState.show(String(localized: "Setup saved"))
             } label: {
                 Text("Save Current Setup")
             }
@@ -178,7 +178,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Current Setup")
         } footer: {
-            Text("쿠키·window 값·브리지 목을 새 WKWebView 페이지가 로드되기 전에 적용해요. 켜기를 끄면 이 설정의 모든 주입이 멈추고, 이름을 정해 저장하면 저장된 설정 목록에 들어가요.")
+            Text("Apply cookies, window values, bridge mocks, and custom scripts before each new WKWebView page loads. Turning setup off stops every injection in this setup. Saving with a name adds it to Saved Setups.")
         }
     }
 
@@ -194,7 +194,7 @@ struct PreloadProfileSettingsView: View {
                 Text("Saved Setups")
             },
             footer: {
-                Text("저장해 둔 시작 설정을 그대로 다시 불러와요. 목록에서 왼쪽으로 밀어 삭제할 수 있어요.")
+            Text("Reload saved startup setups as-is. Swipe left in the list to delete a saved setup.")
             }
         )
     }
@@ -207,7 +207,7 @@ struct PreloadProfileSettingsView: View {
                     Button {
                         state.profile = saved
                         showSavedSetupLoader = false
-                        feedbackState.show("Setup loaded")
+                feedbackState.show(String(localized: "Setup loaded"))
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(saved.name)
@@ -245,11 +245,11 @@ struct PreloadProfileSettingsView: View {
                 NavigationLink {
                     PreloadCookieEditorView(cookie: binding(forCookieID: cookie.id))
                 } label: {
-                    PreloadEditableRow(
-                        title: cookie.name.isEmpty ? "Cookie" : cookie.name,
-                        subtitle: cookie.domainMode == .currentHost ? "Current host" : cookie.customDomain,
-                        isEnabled: cookie.isEnabled
-                    )
+                PreloadEditableRow(
+                    title: cookieTitle(for: cookie),
+                    subtitle: cookieSubtitle(for: cookie),
+                    isEnabled: cookie.isEnabled
+                )
                 }
             }
             .onDelete { state.profile.cookies.remove(atOffsets: $0) }
@@ -262,7 +262,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Cookies")
         } footer: {
-            Text("페이지가 열리기 전에 미리 심을 쿠키를 등록해요. 활성화된 쿠키만 첫 로드 전에 주입되고, 도메인·경로·만료·SameSite·Secure·HTTP Only까지 맞출 수 있어요.")
+            Text("Register cookies to set before the page opens. Only enabled cookies are injected before the first load, with domain, path, expiration, SameSite, Secure, and HTTP Only options.")
         }
     }
 
@@ -273,11 +273,11 @@ struct PreloadProfileSettingsView: View {
                 NavigationLink {
                     WindowInjectionEditorView(item: binding(forWindowItemID: item.id))
                 } label: {
-                    PreloadEditableRow(
-                        title: item.name.isEmpty ? "Window Item" : "window.\(item.name)",
-                        subtitle: item.kind.title,
-                        isEnabled: item.isEnabled
-                    )
+                PreloadEditableRow(
+                    title: windowItemTitle(for: item),
+                    subtitle: item.kind.localizedTitle,
+                    isEnabled: item.isEnabled
+                )
                 }
             }
             .onDelete { state.profile.windowItems.remove(atOffsets: $0) }
@@ -290,7 +290,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Window")
         } footer: {
-            Text("페이지 스크립트가 실행되기 전에 window에 값이나 함수를 미리 주입해요. window.appVersion 같은 점(.) 경로로 변수·반환 함수·함수 본문을 지정하면 문서 시작 시점에 적용돼요. 네이티브 환경을 흉내 낼 때 써요.")
+            Text("Inject values or functions into window before page scripts run. Use dotted paths like window.appVersion to set variables, return-value functions, or raw function bodies at document start.")
         }
     }
 
@@ -303,11 +303,11 @@ struct PreloadProfileSettingsView: View {
                 NavigationLink {
                     BridgeChannelEditorView(channel: binding(forBridgeChannelID: channel.id))
                 } label: {
-                    PreloadEditableRow(
-                        title: channel.name.isEmpty ? "Channel" : channel.name,
-                        subtitle: "\(channel.responseRules.filter(\.isEnabled).count) rules",
-                        isEnabled: channel.isEnabled
-                    )
+                PreloadEditableRow(
+                    title: channelTitle(for: channel),
+                    subtitle: String(localized: "\(channel.responseRules.filter(\.isEnabled).count) rules"),
+                    isEnabled: channel.isEnabled
+                )
                 }
             }
             .onDelete { state.profile.bridgeChannels.remove(atOffsets: $0) }
@@ -325,7 +325,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Bridge Mock")
         } footer: {
-            Text("네이티브 브리지를 흉내 내요. 채널은 window.webkit.messageHandlers.<이름>으로 노출되고, 응답 규칙(전체 / type 일치 / JSON 경로 일치)으로 들어온 메시지에 골라서 응답을 돌려줄 수 있어요. 'Capture window.postMessage'를 켜면 페이지가 보낸 postMessage가 콘솔 탭에 배지로 표시돼요.")
+            Text("Mock a native bridge. Channels are exposed as window.webkit.messageHandlers.<name>, and response rules can reply to matching messages by any message, type, or JSON path. Enabling Capture window.postMessage shows page postMessage calls as badges in Console.")
         }
     }
 
@@ -336,11 +336,11 @@ struct PreloadProfileSettingsView: View {
                 NavigationLink {
                     CustomPreloadScriptEditorView(script: binding(forCustomScriptID: script.id))
                 } label: {
-                    PreloadEditableRow(
-                        title: script.name,
-                        subtitle: script.forMainFrameOnly ? "Main frame" : "All frames",
-                        isEnabled: script.isEnabled
-                    )
+                PreloadEditableRow(
+                    title: script.name,
+                    subtitle: customScriptSubtitle(for: script),
+                    isEnabled: script.isEnabled
+                )
                 }
             }
             .onDelete { state.profile.customScripts.remove(atOffsets: $0) }
@@ -353,7 +353,7 @@ struct PreloadProfileSettingsView: View {
         } header: {
             Text("Advanced")
         } footer: {
-            Text("페이지가 로드되기 전(문서 시작 시점)에 직접 작성한 자바스크립트를 실행해요. 각 스크립트는 try/catch로 감싸여 오류가 나도 콘솔 경고로만 남고, 메인 프레임만 또는 모든 프레임에 적용할지 고를 수 있어요.")
+            Text("Run custom JavaScript before the page loads at document start. Each script is wrapped in try/catch, so errors remain console warnings, and scripts can target only the main frame or all frames.")
         }
     }
 
@@ -371,7 +371,27 @@ struct PreloadProfileSettingsView: View {
             + profile.bridgeChannels.count + profile.customScripts.count
             + (profile.capturesWindowPostMessage ? 1 : 0)
         guard count > 0 else { return nil }
-        return count == 1 ? "1 item" : "\(count) items"
+        return count == 1 ? String(localized: "1 item") : String(localized: "\(count) items")
+    }
+
+    private func cookieTitle(for cookie: PreloadCookie) -> String {
+        cookie.name.isEmpty ? String(localized: "Cookie") : cookie.name
+    }
+
+    private func cookieSubtitle(for cookie: PreloadCookie) -> String {
+        cookie.domainMode == .currentHost ? String(localized: "Current host") : cookie.customDomain
+    }
+
+    private func windowItemTitle(for item: WindowInjectionItem) -> String {
+        item.name.isEmpty ? String(localized: "Window Item") : "window.\(item.name)"
+    }
+
+    private func channelTitle(for channel: BridgeChannel) -> String {
+        channel.name.isEmpty ? String(localized: "Channel") : channel.name
+    }
+
+    private func customScriptSubtitle(for script: PreloadCustomScript) -> String {
+        script.forMainFrameOnly ? String(localized: "Main frame") : String(localized: "All frames")
     }
 
     private func binding(forCookieID id: UUID) -> Binding<PreloadCookie> {
@@ -457,7 +477,7 @@ private struct PreloadCookieEditorView: View {
             Section {
                 Picker("Domain", selection: $cookie.domainMode) {
                     ForEach(PreloadCookieDomainMode.allCases, id: \.self) { mode in
-                        Text(mode.title).tag(mode)
+                        Text(mode.localizedTitle).tag(mode)
                     }
                 }
                 if cookie.domainMode == .custom {
@@ -473,19 +493,19 @@ private struct PreloadCookieEditorView: View {
             Section {
                 Picker("Expires", selection: $cookie.expires) {
                     ForEach(PreloadCookieExpiration.allCases, id: \.self) { expiration in
-                        Text(expiration.title).tag(expiration)
+                        Text(expiration.localizedTitle).tag(expiration)
                     }
                 }
                 Picker("SameSite", selection: $cookie.sameSite) {
                     ForEach(PreloadCookieSameSite.allCases, id: \.self) { sameSite in
-                        Text(sameSite.title).tag(sameSite)
+                        Text(sameSite.localizedTitle).tag(sameSite)
                     }
                 }
                 Toggle("Secure", isOn: $cookie.isSecure)
                 Toggle("HTTP Only", isOn: $cookie.isHTTPOnly)
             }
         }
-        .navigationTitle(Text(verbatim: "Cookie"))
+        .navigationTitle("Cookie")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -504,13 +524,13 @@ private struct WindowInjectionEditorView: View {
                     .autocorrectionDisabled()
                 Picker("Type", selection: $item.kind) {
                     ForEach(WindowInjectionKind.allCases, id: \.self) { kind in
-                        Text(kind.title).tag(kind)
+                        Text(kind.localizedTitle).tag(kind)
                     }
                 }
                 if item.kind != .functionBody {
                     Picker("Value", selection: $item.valueKind) {
                         ForEach(PreloadValueKind.allCases, id: \.self) { kind in
-                            Text(kind.title).tag(kind)
+                        Text(kind.localizedTitle).tag(kind)
                         }
                     }
                 }
@@ -526,7 +546,7 @@ private struct WindowInjectionEditorView: View {
                 Text("Use dotted names like app.bridge.getToken to create nested window values.")
             }
         }
-        .navigationTitle(Text(verbatim: "Window Item"))
+        .navigationTitle("Window Item")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -563,7 +583,7 @@ private struct BridgeChannelEditorView: View {
                     } label: {
                         PreloadEditableRow(
                             title: rule.name,
-                            subtitle: rule.response.target.title,
+                            subtitle: rule.response.target.localizedTitle,
                             isEnabled: rule.isEnabled
                         )
                     }
@@ -585,7 +605,7 @@ private struct BridgeChannelEditorView: View {
                 Text("Response Rules")
             }
         }
-        .navigationTitle(Text(verbatim: "Channel"))
+        .navigationTitle("Channel")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -610,7 +630,7 @@ private struct BridgeRuleEditorView: View {
                 BridgeMatcherEditor(matcher: $rule.matcher)
                 Picker("Respond with", selection: $rule.response.target) {
                     ForEach(BridgeResponseTarget.allCases, id: \.self) { target in
-                        Text(target.title).tag(target)
+                        Text(target.localizedTitle).tag(target)
                     }
                 }
                 Picker("Delay", selection: $rule.delayMilliseconds) {
@@ -638,7 +658,7 @@ private struct BridgeRuleEditorView: View {
 
             responseTargetSection
         }
-        .navigationTitle(Text(verbatim: "Response Rule"))
+        .navigationTitle("Response Rule")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -695,7 +715,7 @@ private struct BridgeMatcherEditor: View {
         VStack(alignment: .leading, spacing: 8) {
             Picker("Match", selection: $mode) {
                 ForEach(BridgeMatcherMode.allCases, id: \.self) { mode in
-                    Text(mode.title).tag(mode)
+                    Text(mode.localizedTitle).tag(mode)
                 }
             }
 
@@ -760,6 +780,14 @@ private enum BridgeMatcherMode: CaseIterable {
         case .jsonPathEquals: "JSON path equals"
         }
     }
+
+    var localizedTitle: String {
+        switch self {
+        case .any: String(localized: "Any message")
+        case .typeEquals: String(localized: "type equals")
+        case .jsonPathEquals: String(localized: "JSON path equals")
+        }
+    }
 }
 
 // MARK: - Custom Script Editor
@@ -783,7 +811,7 @@ private struct CustomPreloadScriptEditorView: View {
                 Text("Source")
             }
         }
-        .navigationTitle(Text(verbatim: "Custom Script"))
+        .navigationTitle("Custom Script")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
