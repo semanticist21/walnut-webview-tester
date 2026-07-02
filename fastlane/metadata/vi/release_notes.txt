@@ -1,1 +1,1 @@
-Đã sửa lỗi các nút Chip trên màn hình chính không phản hồi khi chạm.
+Cải thiện Page Startup Setup với văn bản bản địa hóa, bridge mock ổn định hơn và sửa lỗi ghi nhận tin nhắn.

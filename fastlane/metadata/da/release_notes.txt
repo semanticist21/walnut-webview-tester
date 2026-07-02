@@ -1,1 +1,1 @@
-Rettede et problem hvor Chip-knapper på startskærmen ikke reagerede på tryk.
+Forbedringer af Page Startup Setup med lokaliserede tekster, mere stabil bridge-mock og rettelser til beskedopsamling.

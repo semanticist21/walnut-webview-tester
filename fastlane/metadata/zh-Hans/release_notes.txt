@@ -1,1 +1,1 @@
-修复了首页 Chip 按钮触控无响应的问题。
+改进了 Page Startup Setup，加入本地化文本、更可靠的 bridge mock，并修复消息捕获处理。

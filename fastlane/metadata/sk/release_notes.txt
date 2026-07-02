@@ -1,1 +1,1 @@
-Opravený problém, keď tlačidlá Chip na domovskej obrazovke nereagovali na dotyk.
+Vylepšený Page Startup Setup s lokalizovanými textami, spoľahlivejším bridge mockom a opravami zachytávania správ.

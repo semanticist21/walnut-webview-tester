@@ -1,1 +1,1 @@
-iOS 26에서 SafariVC 색상 설정이 Liquid Glass와 충돌하지 않도록 개선했어요.
+Page Startup Setup의 텍스트를 다국어화하고, 브리지 목 안정성과 메시지 캡처 처리를 개선했어요.

@@ -1,1 +1,1 @@
-Probleem opgelost waarbij Chip-knoppen op het beginscherm niet op aanraken reageerden.
+Page Startup Setup verbeterd met gelokaliseerde tekst, betrouwbaardere bridge-mocking en fixes voor berichtregistratie.

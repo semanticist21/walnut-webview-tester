@@ -1,1 +1,1 @@
-Ana ekrandaki Chip düğmelerinin dokunmaya tepki vermemesine neden olan sorun düzeltildi.
+Page Startup Setup yerelleştirilmiş metinler, daha güvenilir bridge mock ve mesaj yakalama düzeltmeleriyle iyileştirildi.

@@ -1,1 +1,1 @@
-Se corrigió un problema por el que los botones Chip de la pantalla de inicio no respondían al toque.
+Mejoras en Page Startup Setup, con textos localizados, una simulación de bridge más fiable y correcciones en la captura de mensajes.

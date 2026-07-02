@@ -1,1 +1,1 @@
-Improved SafariVC color handling on iOS 26 so it no longer conflicts with Liquid Glass.
+Improved Page Startup Setup with localized text, more reliable bridge mocking, and fixes for message capture.

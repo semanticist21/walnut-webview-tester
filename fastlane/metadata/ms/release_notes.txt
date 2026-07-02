@@ -1,1 +1,1 @@
-Membaiki isu butang Chip pada skrin utama yang tidak bertindak balas terhadap sentuhan.
+Page Startup Setup dipertingkat dengan teks setempat, mock bridge yang lebih andal dan pembaikan tangkapan mesej.

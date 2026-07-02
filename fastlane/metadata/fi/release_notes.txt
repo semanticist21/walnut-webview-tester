@@ -1,1 +1,1 @@
-Korjattiin ongelma, jossa aloitusnäytön Chip-painikkeet eivät reagoineet kosketukseen.
+Page Startup Setupia parannettu lokalisoiduilla teksteillä, luotettavammalla bridge-mockilla ja viestien kaappauksen korjauksilla.

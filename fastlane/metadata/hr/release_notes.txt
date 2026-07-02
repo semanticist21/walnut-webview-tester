@@ -1,1 +1,1 @@
-Ispravljen je problem zbog kojeg gumbi Chip na početnom zaslonu nisu reagirali na dodir.
+Poboljšan je Page Startup Setup s lokaliziranim tekstom, pouzdanijim bridge mockom i ispravcima hvatanja poruka.
