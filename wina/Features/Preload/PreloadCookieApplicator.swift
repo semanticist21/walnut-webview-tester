@@ -64,7 +64,9 @@ enum PreloadCookieApplicator {
             .sameSitePolicy: preloadCookie.sameSite.httpCookieString,
         ]
 
-        if preloadCookie.isSecure {
+        // SameSite=None is rejected by modern cookie jars (including WKHTTPCookieStore)
+        // unless Secure is also set, so force it here to match what the browser requires.
+        if preloadCookie.isSecure || preloadCookie.sameSite == .none {
             properties[.secure] = "TRUE"
         }
 

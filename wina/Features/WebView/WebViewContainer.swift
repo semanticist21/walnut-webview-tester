@@ -426,6 +426,7 @@ struct WKWebViewRepresentable: UIViewRepresentable {
         // Remove message handlers to prevent retain cycle
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "consoleLog")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "networkRequest")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "resourceTiming")
         for channelName in coordinator.preloadProfile.enabledBridgeChannelNames {
             uiView.configuration.userContentController.removeScriptMessageHandler(forName: channelName)
         }
